@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FindPicked Games — 经典游戏，即开即玩</title>
-<meta name="description" content="精选经典游戏合集，纯前端，无需下载，打开即玩。">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
+<title>FindPicked Games — Classic Games, Instantly Playable</title>
+<meta name="description" content="A curated collection of classic games, built with pure frontend tech. No downloads, no installs — just play.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ctext x='16' y='22' font-size='18' fill='white' text-anchor='middle' font-family='system-ui'%3EG%3C/text%3E%3C/svg%3E">
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -24,11 +24,10 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', 'PingFang SC', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
   background: var(--bg);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Hero */
@@ -44,7 +43,6 @@ body {
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1.1;
-  color: var(--text-primary);
 }
 
 .hero p {
@@ -61,9 +59,10 @@ body {
   font-size: 13px;
   color: var(--text-tertiary);
   letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
-/* Games Grid */
+/* Grid */
 .games {
   max-width: var(--max-width);
   margin: 0 auto;
@@ -76,7 +75,7 @@ body {
   gap: 24px;
 }
 
-/* Game Card */
+/* Card */
 .card {
   background: var(--bg-card);
   border-radius: var(--radius);
@@ -98,9 +97,13 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 64px;
   background: #f5f5f7;
-  user-select: none;
+  overflow: hidden;
+}
+
+.card-thumb svg {
+  width: 100%;
+  height: 100%;
 }
 
 .card-body {
@@ -136,20 +139,13 @@ body {
   color: var(--text-secondary);
 }
 
-.tag.new {
-  background: var(--accent);
-  color: white;
+.tag.live {
+  background: #e8f5e9;
+  color: #2e7d32;
 }
 
 /* Coming Soon */
-.card.soon {
-  opacity: 0.5;
-  pointer-events: none;
-}
-
-.card.soon .card-thumb {
-  filter: grayscale(1);
-}
+.card.soon { opacity: 0.45; pointer-events: none; }
 
 /* Footer */
 footer {
@@ -162,118 +158,242 @@ footer {
   margin: 0 auto;
 }
 
-footer a {
-  color: var(--accent);
-  text-decoration: none;
-}
+footer a { color: var(--accent); text-decoration: none; }
 
-/* Responsive */
 @media (max-width: 480px) {
   .hero { padding: 60px 16px 48px; }
   .games { padding: 0 16px 60px; }
   .grid { grid-template-columns: 1fr; gap: 16px; }
-  .card-thumb { height: 160px; font-size: 48px; }
+  .card-thumb { height: 160px; }
 }
 
-/* Fade in */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
-.card {
-  animation: fadeIn 0.5s ease both;
-}
-
+.card { animation: fadeIn 0.5s ease both; }
 .card:nth-child(2) { animation-delay: 0.05s; }
 .card:nth-child(3) { animation-delay: 0.1s; }
 .card:nth-child(4) { animation-delay: 0.15s; }
 .card:nth-child(5) { animation-delay: 0.2s; }
 .card:nth-child(6) { animation-delay: 0.25s; }
-.card:nth-child(7) { animation-delay: 0.3s; }
-.card:nth-child(8) { animation-delay: 0.35s; }
 </style>
 </head>
 <body>
 
 <section class="hero">
-  <h1>经典游戏，即开即玩。</h1>
-  <p>精选经典游戏，纯前端实现，无需下载安装。</p>
-  <span class="count">已收录 1 款游戏，持续更新中</span>
+  <h1>Classic games, instantly playable.</h1>
+  <p>A curated collection of timeless games. Pure frontend, no downloads, no installs.</p>
+  <span class="count">1 game live · more coming soon</span>
 </section>
 
 <section class="games">
   <div class="grid">
 
     <a class="card" href="./gomoku/">
-      <div class="card-thumb">⚫</div>
+      <div class="card-thumb">
+        <svg viewBox="0 0 400 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="400" height="200" fill="#f0ebe3"/>
+          <!-- Board lines -->
+          <g stroke="#c4a882" stroke-width="1">
+            <line x1="120" y1="40" x2="120" y2="160"/>
+            <line x1="160" y1="40" x2="160" y2="160"/>
+            <line x1="200" y1="40" x2="200" y2="160"/>
+            <line x1="240" y1="40" x2="240" y2="160"/>
+            <line x1="280" y1="40" x2="280" y2="160"/>
+            <line x1="120" y1="40" x2="280" y2="40"/>
+            <line x1="120" y1="70" x2="280" y2="70"/>
+            <line x1="120" y1="100" x2="280" y2="100"/>
+            <line x1="120" y1="130" x2="280" y2="130"/>
+            <line x1="120" y1="160" x2="280" y2="160"/>
+          </g>
+          <!-- Black stones -->
+          <circle cx="160" cy="70" r="14" fill="#1d1d1f"/>
+          <circle cx="200" cy="100" r="14" fill="#1d1d1f"/>
+          <circle cx="200" cy="70" r="14" fill="#1d1d1f"/>
+          <circle cx="240" cy="130" r="14" fill="#1d1d1f"/>
+          <!-- White stones -->
+          <circle cx="160" cy="100" r="14" fill="#fff" stroke="#ccc" stroke-width="1"/>
+          <circle cx="240" cy="70" r="14" fill="#fff" stroke="#ccc" stroke-width="1"/>
+          <circle cx="160" cy="130" r="14" fill="#fff" stroke="#ccc" stroke-width="1"/>
+          <!-- Subtle shine on black stones -->
+          <circle cx="155" cy="65" r="4" fill="rgba(255,255,255,0.15)"/>
+          <circle cx="195" cy="95" r="4" fill="rgba(255,255,255,0.15)"/>
+          <circle cx="195" cy="65" r="4" fill="rgba(255,255,255,0.15)"/>
+        </svg>
+      </div>
       <div class="card-body">
-        <h3>五子棋</h3>
-        <p>经典策略游戏，支持人机对战，五档 AI 难度。</p>
+        <h3>Gomoku</h3>
+        <p>Classic five-in-a-row strategy. Play against AI with five difficulty levels, or challenge a friend.</p>
         <div class="tags">
-          <span class="tag">策略</span>
-          <span class="tag">AI 对战</span>
-          <span class="tag">双人</span>
+          <span class="tag live">Playable</span>
+          <span class="tag">Strategy</span>
+          <span class="tag">AI Opponent</span>
+          <span class="tag">2 Player</span>
         </div>
       </div>
     </a>
 
     <a class="card soon" href="#">
-      <div class="card-thumb">🐍</div>
+      <div class="card-thumb">
+        <svg viewBox="0 0 400 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="400" height="200" fill="#e8f5e9"/>
+          <!-- Snake body -->
+          <rect x="140" y="80" width="20" height="20" rx="4" fill="#43a047"/>
+          <rect x="160" y="80" width="20" height="20" rx="4" fill="#4caf50"/>
+          <rect x="180" y="80" width="20" height="20" rx="4" fill="#66bb6a"/>
+          <rect x="200" y="80" width="20" height="20" rx="4" fill="#81c784"/>
+          <rect x="200" y="100" width="20" height="20" rx="4" fill="#a5d6a7"/>
+          <rect x="200" y="120" width="20" height="20" rx="4" fill="#c8e6c9"/>
+          <!-- Head -->
+          <rect x="120" y="80" width="20" height="20" rx="4" fill="#2e7d32"/>
+          <circle cx="126" cy="86" r="3" fill="white"/>
+          <circle cx="134" cy="86" r="3" fill="white"/>
+          <!-- Apple -->
+          <circle cx="260" cy="90" r="10" fill="#e53935"/>
+          <line x1="260" y1="80" x2="263" y2="74" stroke="#795548" stroke-width="2" stroke-linecap="round"/>
+          <ellipse cx="266" cy="75" rx="4" ry="3" fill="#66bb6a"/>
+        </svg>
+      </div>
       <div class="card-body">
-        <h3>贪吃蛇</h3>
-        <p>经典街机游戏，简单上手，越玩越快。</p>
+        <h3>Snake</h3>
+        <p>The arcade classic. Eat, grow, don't hit yourself. Simple to learn, impossible to master.</p>
         <div class="tags">
-          <span class="tag">街机</span>
-          <span class="tag">即将上线</span>
+          <span class="tag">Arcade</span>
+          <span class="tag">Coming Soon</span>
         </div>
       </div>
     </a>
 
     <a class="card soon" href="#">
-      <div class="card-thumb">🔢</div>
+      <div class="card-thumb">
+        <svg viewBox="0 0 400 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="400" height="200" fill="#fff3e0"/>
+          <!-- 2048 tiles -->
+          <rect x="130" y="50" width="56" height="56" rx="8" fill="#eee4da"/>
+          <text x="158" y="86" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="22" fill="#776e65">2</text>
+          <rect x="194" y="50" width="56" height="56" rx="8" fill="#ede0c8"/>
+          <text x="222" y="86" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="22" fill="#776e65">4</text>
+          <rect x="130" y="114" width="56" height="56" rx="8" fill="#f2b179"/>
+          <text x="158" y="150" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="20" fill="#fff">128</text>
+          <rect x="194" y="114" width="56" height="56" rx="8" fill="#edc22e"/>
+          <text x="222" y="150" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="16" fill="#fff">2048</text>
+          <rect x="258" y="50" width="56" height="56" rx="8" fill="#f67c5f"/>
+          <text x="286" y="86" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="20" fill="#fff">64</text>
+          <rect x="258" y="114" width="56" height="56" rx="8" fill="#edc850"/>
+          <text x="286" y="150" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="18" fill="#fff">512</text>
+        </svg>
+      </div>
       <div class="card-body">
         <h3>2048</h3>
-        <p>数字合并益智游戏，滑动方块，挑战最高分。</p>
+        <p>Slide, merge, multiply. A deceptively simple number puzzle that's endlessly addictive.</p>
         <div class="tags">
-          <span class="tag">益智</span>
-          <span class="tag">即将上线</span>
+          <span class="tag">Puzzle</span>
+          <span class="tag">Coming Soon</span>
         </div>
       </div>
     </a>
 
     <a class="card soon" href="#">
-      <div class="card-thumb">🧱</div>
+      <div class="card-thumb">
+        <svg viewBox="0 0 400 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="400" height="200" fill="#e3f2fd"/>
+          <!-- Tetris blocks -->
+          <rect x="170" y="120" width="24" height="24" rx="3" fill="#42a5f5" stroke="#1e88e5" stroke-width="1"/>
+          <rect x="194" y="120" width="24" height="24" rx="3" fill="#42a5f5" stroke="#1e88e5" stroke-width="1"/>
+          <rect x="194" y="96" width="24" height="24" rx="3" fill="#42a5f5" stroke="#1e88e5" stroke-width="1"/>
+          <rect x="218" y="96" width="24" height="24" rx="3" fill="#42a5f5" stroke="#1e88e5" stroke-width="1"/>
+          <!-- Fallen blocks -->
+          <rect x="146" y="144" width="24" height="24" rx="3" fill="#ef5350" stroke="#e53935" stroke-width="1"/>
+          <rect x="170" y="144" width="24" height="24" rx="3" fill="#ef5350" stroke="#e53935" stroke-width="1"/>
+          <rect x="194" y="144" width="24" height="24" rx="3" fill="#ffa726" stroke="#fb8c00" stroke-width="1"/>
+          <rect x="218" y="144" width="24" height="24" rx="3" fill="#ffa726" stroke="#fb8c00" stroke-width="1"/>
+          <rect x="218" y="120" width="24" height="24" rx="3" fill="#ffa726" stroke="#fb8c00" stroke-width="1"/>
+          <rect x="242" y="144" width="24" height="24" rx="3" fill="#66bb6a" stroke="#43a047" stroke-width="1"/>
+          <rect x="242" y="120" width="24" height="24" rx="3" fill="#66bb6a" stroke="#43a047" stroke-width="1"/>
+          <!-- Grid hint -->
+          <line x1="146" y1="168" x2="266" y2="168" stroke="#90caf9" stroke-width="1"/>
+        </svg>
+      </div>
       <div class="card-body">
-        <h3>方块消除</h3>
-        <p>经典方块下落游戏，消行得分，节奏越来越快。</p>
+        <h3>Block Drop</h3>
+        <p>The falling block game that defined a generation. Clear lines, chase the high score.</p>
         <div class="tags">
-          <span class="tag">街机</span>
-          <span class="tag">即将上线</span>
+          <span class="tag">Arcade</span>
+          <span class="tag">Coming Soon</span>
         </div>
       </div>
     </a>
 
     <a class="card soon" href="#">
-      <div class="card-thumb">💣</div>
+      <div class="card-thumb">
+        <svg viewBox="0 0 400 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="400" height="200" fill="#efebe9"/>
+          <!-- Mine grid -->
+          <g>
+            <rect x="148" y="58" width="28" height="28" rx="2" fill="#d7ccc8" stroke="#bcaaa4" stroke-width="1"/>
+            <rect x="178" y="58" width="28" height="28" rx="2" fill="#efebe9" stroke="#bcaaa4" stroke-width="1"/>
+            <text x="192" y="78" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="16" fill="#1565c0">1</text>
+            <rect x="208" y="58" width="28" height="28" rx="2" fill="#efebe9" stroke="#bcaaa4" stroke-width="1"/>
+            <text x="222" y="78" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="16" fill="#2e7d32">2</text>
+            <rect x="148" y="88" width="28" height="28" rx="2" fill="#efebe9" stroke="#bcaaa4" stroke-width="1"/>
+            <text x="162" y="108" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="16" fill="#1565c0">1</text>
+            <rect x="178" y="88" width="28" height="28" rx="2" fill="#d7ccc8" stroke="#bcaaa4" stroke-width="1"/>
+            <rect x="208" y="88" width="28" height="28" rx="2" fill="#d7ccc8" stroke="#bcaaa4" stroke-width="1"/>
+            <rect x="148" y="118" width="28" height="28" rx="2" fill="#d7ccc8" stroke="#bcaaa4" stroke-width="1"/>
+            <rect x="178" y="118" width="28" height="28" rx="2" fill="#d7ccc8" stroke="#bcaaa4" stroke-width="1"/>
+            <rect x="208" y="118" width="28" height="28" rx="2" fill="#efebe9" stroke="#bcaaa4" stroke-width="1"/>
+            <text x="222" y="138" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="16" fill="#c62828">3</text>
+          </g>
+          <!-- Flag -->
+          <line x1="192" y1="92" x2="192" y2="112" stroke="#1d1d1f" stroke-width="2"/>
+          <polygon points="192,92 204,98 192,104" fill="#e53935"/>
+          <!-- Mine hint -->
+          <circle cx="258" cy="102" r="12" fill="#424242"/>
+          <line x1="258" y1="88" x2="258" y2="84" stroke="#424242" stroke-width="2"/>
+          <line x1="258" y1="116" x2="258" y2="120" stroke="#424242" stroke-width="2"/>
+          <line x1="244" y1="102" x2="240" y2="102" stroke="#424242" stroke-width="2"/>
+          <line x1="272" y1="102" x2="276" y2="102" stroke="#424242" stroke-width="2"/>
+          <circle cx="255" cy="98" r="3" fill="rgba(255,255,255,0.3)"/>
+        </svg>
+      </div>
       <div class="card-body">
-        <h3>扫雷</h3>
-        <p>逻辑推理经典，小心翼翼地排除每一颗地雷。</p>
+        <h3>Minesweeper</h3>
+        <p>Logic and deduction. Uncover the grid without triggering a single mine.</p>
         <div class="tags">
-          <span class="tag">益智</span>
-          <span class="tag">即将上线</span>
+          <span class="tag">Puzzle</span>
+          <span class="tag">Coming Soon</span>
         </div>
       </div>
     </a>
 
     <a class="card soon" href="#">
-      <div class="card-thumb">🐦</div>
+      <div class="card-thumb">
+        <svg viewBox="0 0 400 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="400" height="200" fill="#e0f7fa"/>
+          <!-- Pipes -->
+          <rect x="160" y="0" width="40" height="70" rx="4" fill="#66bb6a" stroke="#43a047" stroke-width="2"/>
+          <rect x="155" y="60" width="50" height="14" rx="4" fill="#66bb6a" stroke="#43a047" stroke-width="2"/>
+          <rect x="160" y="130" width="40" height="70" rx="4" fill="#66bb6a" stroke="#43a047" stroke-width="2"/>
+          <rect x="155" y="126" width="50" height="14" rx="4" fill="#66bb6a" stroke="#43a047" stroke-width="2"/>
+          <!-- Bird -->
+          <ellipse cx="120" cy="95" rx="16" ry="14" fill="#fdd835"/>
+          <ellipse cx="120" cy="95" rx="14" ry="12" fill="#ffee58"/>
+          <circle cx="126" cy="91" r="4" fill="white"/>
+          <circle cx="127" cy="91" r="2" fill="#1d1d1f"/>
+          <polygon points="134,94 144,96 134,98" fill="#ef6c00"/>
+          <!-- Wing -->
+          <ellipse cx="112" cy="97" rx="8" ry="5" fill="#fbc02d" transform="rotate(-15 112 97)"/>
+          <!-- Ground -->
+          <rect x="0" y="180" width="400" height="20" fill="#a5d6a7"/>
+        </svg>
+      </div>
       <div class="card-body">
-        <h3>像素鸟</h3>
-        <p>一键操作，穿越管道，看你能飞多远。</p>
+        <h3>Flappy Bird</h3>
+        <p>One tap to fly. Navigate the pipes. Sounds easy — it's not.</p>
         <div class="tags">
-          <span class="tag">街机</span>
-          <span class="tag">即将上线</span>
+          <span class="tag">Arcade</span>
+          <span class="tag">Coming Soon</span>
         </div>
       </div>
     </a>
@@ -282,7 +402,7 @@ footer a {
 </section>
 
 <footer>
-  <p>game.findpicked.com · 所有游戏开源免费 · <a href="https://github.com/ikow/findpicked-games" target="_blank">GitHub</a></p>
+  <p>game.findpicked.com · All games are open source and free · <a href="https://github.com/ikow/findpicked-games" target="_blank">GitHub</a></p>
 </footer>
 
 </body>
