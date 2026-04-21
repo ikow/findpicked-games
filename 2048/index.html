@@ -429,14 +429,8 @@ kbd {
   }
 
   function positionTile(el, row, col, animate = true) {
-    // percentage-based positioning: each cell is 1/4 of available space, gap is 10px (or 8px on mobile)
-    // Use calc with CSS variables? Simpler: compute via flex-basis of cells.
-    // tiles container is same size as grid. Each cell takes (100% - 3*gap) / 4 width.
-    const pct = `calc((100% + var(--gap)) * ${col} / 4)`;
-    const pctY = `calc((100% + var(--gap)) * ${row} / 4)`;
-    // Actually let's compute by reading client rect of cells. Simpler & reliable.
-    const cells = gridEl.children;
-    const cell = cells[row * SIZE + col];
+    // Read the actual cell rect so the tile lines up regardless of gap/padding.
+    const cell = gridEl.children[row * SIZE + col];
     const rect = cell.getBoundingClientRect();
     const containerRect = tilesEl.getBoundingClientRect();
     const x = rect.left - containerRect.left;
@@ -446,7 +440,6 @@ kbd {
       const prev = el.style.transition;
       el.style.transition = 'none';
       el.style.transform = `translate(${x}px, ${y}px)`;
-      // force reflow
       el.offsetHeight;
       el.style.transition = prev;
     } else {
