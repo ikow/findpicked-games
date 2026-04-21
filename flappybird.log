@@ -1,0 +1,11 @@
+Built `/private/tmp/findpicked-games/flappybird/index.html`. Single file, no deps.
+
+Highlights:
+- Apple-minimal aesthetic: `#fafafa` body, white card-style stats + stage, soft sky gradient, muted green pipes, simple yellow bird.
+- Font stack and accent color match the design system; Start button is a 44px pill in `#0071e3`.
+- Top-left `←` as a fixed, minimal back link to `../` (the portal).
+- All UI text in English: "Ready?", "Game Over", "Score / Best", "Play Again", etc.
+- Controls: tap / click / Space / ↑. Idle float on the ready screen; rotation tilts on flap/fall; crash flash; best score persisted in `localStorage` (`flappybird.best`).
+- World is rendered in virtual 300×400 units and scaled to the canvas, so it stays crisp at any size and on HiDPI displays. Stage uses `aspect-ratio: 3/4` and `touch-action: manipulation` for mobile.
+
+Open it directly in a browser to play.
