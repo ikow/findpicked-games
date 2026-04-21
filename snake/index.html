@@ -406,6 +406,7 @@ canvas {
   function gameOver() {
     clearInterval(timer);
     state = 'over';
+        setTimeout(() => Leaderboard.submitScore(score), 500);
     overlayTitle.textContent = 'Game over';
     overlayText.textContent =
       'You scored ' + score + (newBest && score > 0 ? '. A new best.' : '.');
@@ -599,5 +600,6 @@ canvas {
   resize();
 })();
 </script>
+<script src="../shared-leaderboard.js"></script>
 </body>
 </html>

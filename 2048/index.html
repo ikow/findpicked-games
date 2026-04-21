@@ -654,6 +654,7 @@ kbd {
     }
     if (!canMove()) {
       over = true;
+        setTimeout(() => Leaderboard.submitScore(score), 500);
       showOverlay('Game Over', `Final score: ${score}`, false);
     }
   }
@@ -742,5 +743,6 @@ kbd {
 })();
 </script>
 
+<script src="../shared-leaderboard.js"></script>
 </body>
 </html>

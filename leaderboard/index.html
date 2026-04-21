@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leaderboard — FindPicked Games</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  background: #fafafa; color: #1d1d1f;
+  -webkit-font-smoothing: antialiased;
+}
+.back { position: fixed; top: 16px; left: 16px; color: #6e6e73; text-decoration: none; font-size: 15px; z-index: 100; }
+.back:hover { color: #1d1d1f; }
+.hero { text-align: center; padding: 80px 24px 48px; max-width: 800px; margin: 0 auto; }
+.hero h1 { font-size: 40px; font-weight: 700; letter-spacing: -0.03em; }
+.hero p { font-size: 17px; color: #6e6e73; margin-top: 12px; }
+.tabs { display: flex; justify-content: center; gap: 8px; padding: 0 24px; flex-wrap: wrap; max-width: 800px; margin: 0 auto 32px; }
+.tab {
+  padding: 8px 20px; border-radius: 100px; border: none; background: #f5f5f7;
+  color: #6e6e73; font-size: 14px; font-weight: 500; cursor: pointer;
+  font-family: inherit; transition: all 0.2s;
+}
+.tab:hover { background: #e8e8ed; }
+.tab.active { background: #0071e3; color: white; }
+.board { max-width: 600px; margin: 0 auto; padding: 0 24px 80px; }
+.board-header {
+  display: grid; grid-template-columns: 48px 1fr 100px 100px;
+  padding: 12px 16px; font-size: 12px; font-weight: 600; color: #86868b;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.row {
+  display: grid; grid-template-columns: 48px 1fr 100px 100px;
+  padding: 14px 16px; border-radius: 12px; align-items: center;
+  transition: background 0.2s;
+}
+.row:nth-child(even) { background: #f5f5f7; }
+.row:hover { background: #e8e8ed; }
+.rank { font-weight: 700; font-size: 16px; color: #86868b; }
+.rank.gold { color: #f5a623; }
+.rank.silver { color: #8e8e93; }
+.rank.bronze { color: #cd7f32; }
+.name { font-weight: 500; font-size: 15px; }
+.score { font-weight: 600; font-size: 15px; font-variant-numeric: tabular-nums; text-align: right; }
+.date { font-size: 13px; color: #86868b; text-align: right; }
+.empty { text-align: center; padding: 60px 24px; color: #86868b; font-size: 15px; }
+.loading { text-align: center; padding: 60px 24px; color: #86868b; }
+@media (max-width: 480px) {
+  .hero { padding: 60px 16px 32px; }
+  .hero h1 { font-size: 28px; }
+  .board { padding: 0 16px 60px; }
+  .board-header, .row { grid-template-columns: 36px 1fr 80px; }
+  .date { display: none; }
+}
+</style>
+</head>
+<body>
+<a class="back" href="../">← Back</a>
+
+<section class="hero">
+  <h1>Leaderboard</h1>
+  <p>Top players across all games. Can you make the list?</p>
+</section>
+
+<div class="tabs" id="tabs"></div>
+
+<section class="board" id="board">
+  <div class="loading">Loading scores...</div>
+</section>
+
+<script>
+const API = 'https://leaderboard.findpicked.com/api/scores';
+const GAMES = [
+  { id: 'snake', name: 'Snake', unit: 'pts' },
+  { id: '2048', name: '2048', unit: 'pts' },
+  { id: 'blockdrop', name: 'Block Drop', unit: 'pts' },
+  { id: 'minesweeper', name: 'Minesweeper', unit: 'sec' },
+  { id: 'flappybird', name: 'Flappy Bird', unit: 'pts' },
+  { id: 'gomoku', name: 'Gomoku', unit: 'wins' },
+];
+
+let allScores = {};
+let activeGame = 'snake';
+
+const tabsEl = document.getElementById('tabs');
+const boardEl = document.getElementById('board');
+
+function renderTabs() {
+  tabsEl.innerHTML = GAMES.map(g =>
+    `<button class="tab ${g.id === activeGame ? 'active' : ''}" data-game="${g.id}">${g.name}</button>`
+  ).join('');
+  tabsEl.querySelectorAll('.tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeGame = btn.dataset.game;
+      renderTabs();
+      renderBoard();
+    });
+  });
+}
+
+function renderBoard() {
+  const scores = allScores[activeGame] || [];
+  const game = GAMES.find(g => g.id === activeGame);
+
+  if (!scores.length) {
+    boardEl.innerHTML = '<div class="empty">No scores yet. Be the first to play!</div>';
+    return;
+  }
+
+  const header = `<div class="board-header"><span>#</span><span>Player</span><span style="text-align:right">Score</span><span style="text-align:right">Date</span></div>`;
+  const rows = scores.map((s, i) => {
+    const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
+    const display = game.unit === 'sec' ? `${s.score}s` : s.score.toLocaleString();
+    return `<div class="row">
+      <span class="rank ${rankClass}">${medal || (i + 1)}</span>
+      <span class="name">${escHtml(s.name)}</span>
+      <span class="score">${display}</span>
+      <span class="date">${s.date || ''}</span>
+    </div>`;
+  }).join('');
+
+  boardEl.innerHTML = header + rows;
+}
+
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+async function load() {
+  try {
+    const res = await fetch(API);
+    const data = await res.json();
+    allScores = data.games || {};
+  } catch (e) {
+    // Fallback: load from localStorage
+    GAMES.forEach(g => {
+      const key = `${g.id}-leaderboard`;
+      try { allScores[g.id] = JSON.parse(localStorage.getItem(key) || '[]'); } catch {}
+    });
+  }
+  renderTabs();
+  renderBoard();
+}
+
+// Check URL hash for game
+if (location.hash) {
+  const h = location.hash.slice(1);
+  if (GAMES.find(g => g.id === h)) activeGame = h;
+}
+
+load();
+</script>
+</body>
+</html>

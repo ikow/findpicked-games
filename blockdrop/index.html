@@ -612,6 +612,7 @@ canvas.board {
 
   function gameOver() {
     state = 'over';
+        setTimeout(() => Leaderboard.submitScore(score), 500);
     if (score > best) { best = score; saveBest(); }
     bestEl.textContent = best;
     overlayTitle.textContent = 'Game Over';
@@ -1044,5 +1045,6 @@ canvas.board {
 
 })();
 </script>
+<script src="../shared-leaderboard.js"></script>
 </body>
 </html>
