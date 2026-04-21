@@ -550,27 +550,56 @@
 
   function pipeRect(x, y, w, h, side) {
     if (h <= 0) return;
-    const body = ctx.createLinearGradient(x, 0, x + w, 0);
-    body.addColorStop(0, '#7fb38b');
-    body.addColorStop(0.35, '#b8dcc0');
-    body.addColorStop(0.65, '#9ec9a8');
-    body.addColorStop(1, '#7fb38b');
-    ctx.fillStyle = body;
-    roundRect(x, y, w, h, 6);
-    ctx.fill();
 
-    // Lip (slightly wider cap).
-    const capH = 14;
-    const lipX = x - 4;
-    const lipW = w + 8;
+    // Body — cylindrical gradient: darker edges, bright specular band in the middle.
+    const body = ctx.createLinearGradient(x, 0, x + w, 0);
+    body.addColorStop(0.00, '#4e7a5c');
+    body.addColorStop(0.12, '#7fb38b');
+    body.addColorStop(0.38, '#c8e3cd');
+    body.addColorStop(0.52, '#afd3b7');
+    body.addColorStop(0.78, '#7fb38b');
+    body.addColorStop(1.00, '#3e6449');
+    ctx.fillStyle = body;
+    roundRect(x, y, w, h, 4);
+    ctx.fill();
+    // Specular highlight streaks (glossy).
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.32)';
+    ctx.fillRect(x + w * 0.26, y, 2.5, h);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.14)';
+    ctx.fillRect(x + w * 0.42, y, 1.5, h);
+    // Shadow on the far side.
+    ctx.fillStyle = 'rgba(30, 60, 40, 0.22)';
+    ctx.fillRect(x + w * 0.82, y, 4, h);
+    // Outline for definition.
+    ctx.strokeStyle = 'rgba(30, 60, 40, 0.45)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Lip cap — slightly wider, rounded, with its own 3D shading.
+    const capH = 16;
+    const lipX = x - 5;
+    const lipW = w + 10;
     const lipY = side === 'top' ? y + h - capH : y;
     const capGrad = ctx.createLinearGradient(lipX, 0, lipX + lipW, 0);
-    capGrad.addColorStop(0, '#6fa17c');
-    capGrad.addColorStop(0.5, '#b8dcc0');
-    capGrad.addColorStop(1, '#6fa17c');
+    capGrad.addColorStop(0.00, '#3e6449');
+    capGrad.addColorStop(0.12, '#7fb38b');
+    capGrad.addColorStop(0.42, '#d6eddb');
+    capGrad.addColorStop(0.58, '#b8dbc0');
+    capGrad.addColorStop(0.88, '#6fa17c');
+    capGrad.addColorStop(1.00, '#3e6449');
     ctx.fillStyle = capGrad;
-    roundRect(lipX, lipY, lipW, capH, 4);
+    roundRect(lipX, lipY, lipW, capH, 5);
     ctx.fill();
+    ctx.strokeStyle = 'rgba(30, 60, 40, 0.45)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    // Thin rim highlight on the inner edge of the cap.
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+    if (side === 'top') {
+      ctx.fillRect(lipX + 4, lipY + 2, lipW - 8, 1.5);
+    } else {
+      ctx.fillRect(lipX + 4, lipY + capH - 3.5, lipW - 8, 1.5);
+    }
   }
 
   function drawGround() {

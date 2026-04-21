@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Hextris · FindPicked Games</title>
+<meta name="description" content="Play Hextris online for free. Rotate the hexagon, catch colored blocks, match three or more to clear.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Cpolygon points='16,6 24,11 24,21 16,26 8,21 8,11' fill='none' stroke='white' stroke-width='2'/%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-hover: #f5f5f7;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: manipulation;
+}
+
+.back {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: var(--text-primary);
+  text-decoration: none;
+  background: var(--bg-card);
+  box-shadow: var(--shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  z-index: 20;
+}
+.back:hover { transform: translateY(-1px); box-shadow: var(--shadow-hover); }
+
+.app {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 12px 16px 16px;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.title {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.pause-btn {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease, color 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.pause-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.pause-btn svg { width: 18px; height: 18px; }
+
+.scores {
+  display: flex;
+  gap: 12px;
+  margin-top: 14px;
+  flex-shrink: 0;
+}
+
+.score-card {
+  background: var(--bg-card);
+  box-shadow: var(--shadow);
+  border-radius: 14px;
+  padding: 12px 18px;
+  flex: 1;
+  text-align: center;
+}
+
+.score-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+}
+
+.score-value {
+  font-size: 26px;
+  font-weight: 700;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.board-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 14px;
+  position: relative;
+}
+
+.board {
+  background: var(--bg-card);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 28px;
+  text-align: center;
+  background: rgba(255,255,255,0.9);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.overlay.visible { opacity: 1; pointer-events: auto; }
+
+.overlay h2 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.overlay p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.5;
+  max-width: 300px;
+}
+
+.btn {
+  height: 44px;
+  padding: 0 28px;
+  border-radius: 22px;
+  border: none;
+  background: var(--accent);
+  color: white;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease, transform 0.1s ease;
+  -webkit-tap-highlight-color: transparent;
+  margin-top: 4px;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn:active { transform: scale(0.97); }
+
+.controls {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.ctrl-btn {
+  background: var(--bg-card);
+  box-shadow: var(--shadow);
+  border: none;
+  border-radius: 16px;
+  height: 64px;
+  font-size: 24px;
+  color: var(--text-primary);
+  font-family: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease, transform 0.08s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.ctrl-btn:active { background: var(--bg-hover); transform: scale(0.97); }
+.ctrl-btn svg { width: 26px; height: 26px; color: var(--text-primary); }
+
+.hint {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  text-align: center;
+  flex-shrink: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .controls { display: none; }
+}
+
+@media (max-height: 640px) {
+  .scores { margin-top: 10px; }
+  .score-card { padding: 8px 14px; }
+  .score-value { font-size: 22px; }
+  .ctrl-btn { height: 54px; }
+}
+</style>
+</head>
+<body>
+<a class="back" href="../" aria-label="Back to games">←</a>
+<div class="app">
+  <nav class="nav">
+    <div class="title">Hextris</div>
+    <button class="pause-btn" id="pause-btn" aria-label="Pause">
+      <svg viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="5" width="3.5" height="14" rx="1"/><rect x="13.5" y="5" width="3.5" height="14" rx="1"/></svg>
+    </button>
+  </nav>
+
+  <div class="scores">
+    <div class="score-card">
+      <div class="score-label">Score</div>
+      <div class="score-value" id="score">0</div>
+    </div>
+    <div class="score-card">
+      <div class="score-label">Best</div>
+      <div class="score-value" id="best">0</div>
+    </div>
+  </div>
+
+  <div class="board-wrap">
+    <div class="board">
+      <canvas id="game"></canvas>
+      <div class="overlay visible" id="overlay">
+        <h2 id="overlay-title">Hextris</h2>
+        <p id="overlay-text">Rotate the hexagon to catch falling blocks. Match three or more of the same color to clear them.</p>
+        <button class="btn" id="action-btn">Play</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl-btn" id="left-btn" aria-label="Rotate left">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 1 2.34 5.66"/><polyline points="4 18 4 12 10 12"/></svg>
+    </button>
+    <button class="ctrl-btn" id="right-btn" aria-label="Rotate right">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 0-2.34 5.66"/><polyline points="20 18 20 12 14 12"/></svg>
+    </button>
+  </div>
+
+  <div class="hint">← / → to rotate &nbsp;·&nbsp; Space to pause</div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('score');
+  const bestEl = document.getElementById('best');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlay-title');
+  const overlayText = document.getElementById('overlay-text');
+  const actionBtn = document.getElementById('action-btn');
+  const pauseBtn = document.getElementById('pause-btn');
+  const leftBtn = document.getElementById('left-btn');
+  const rightBtn = document.getElementById('right-btn');
+
+  // ---- Config ----
+  const COLORS = ['#ff3b30', '#ff9500', '#ffcc00', '#34c759', '#0071e3', '#af52de'];
+  const SIDE_ANGLE = Math.PI / 3;
+  const MAX_STACK = 6;
+  const BH = 20;
+  const R_BASE = 54;
+  const ROT_SPEED = Math.PI * 4.0;
+  const SQRT3 = SQRT3;
+
+  // ---- State ----
+  let dpr = 1;
+  let cx = 0, cy = 0;
+  let R = R_BASE;
+  let blockSize = BH;
+  let scale = 1;
+
+  let state = 'menu'; // menu | playing | paused | over
+  let rotation = 0;     // current rotation (rad), smooth
+  let targetRot = 0;    // target rotation (rad), snapped to 60° steps
+  let stacks = [[],[],[],[],[],[]]; // index 0 = innermost
+  let falling = [];     // { angle, dist, color, spawnLife }
+  let popups = [];      // { x, y, text, life, color }
+  let flashes = [];     // { side, pos, life }
+
+  let score = 0;
+  let best = +localStorage.getItem('hextris-best') || 0;
+  let elapsed = 0;
+  let spawnTimer = 0;
+  let spawnInterval = 1400;
+  let fallSpeed = 60;
+  let numColors = 4;
+  let lastTime = 0;
+
+  bestEl.textContent = best;
+
+  // ---- Sizing ----
+  function resize() {
+    const wrap = document.querySelector('.board');
+    const rect = wrap.getBoundingClientRect();
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+    cx = canvas.width / 2;
+    cy = canvas.height / 2;
+
+    // Scale game so that fully-stacked hex fits comfortably
+    const maxOuterApothem = R_BASE + MAX_STACK * BH + BH * 1.2;
+    const vertexDist = 2 * maxOuterApothem / SQRT3;
+    const available = Math.min(canvas.width, canvas.height) * 0.48;
+    scale = available / vertexDist;
+    R = R_BASE * scale;
+    blockSize = BH * scale;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // ---- Game Control ----
+  function reset() {
+    stacks = [[],[],[],[],[],[]];
+    falling = [];
+    popups = [];
+    flashes = [];
+    rotation = 0;
+    targetRot = 0;
+    score = 0;
+    elapsed = 0;
+    spawnTimer = 600;
+    spawnInterval = 1400;
+    fallSpeed = 60;
+    numColors = 4;
+    updateScore();
+  }
+
+  function start() {
+    reset();
+    state = 'playing';
+    overlay.classList.remove('visible');
+  }
+
+  function pause() {
+    if (state !== 'playing') return;
+    state = 'paused';
+    overlayTitle.textContent = 'Paused';
+    overlayText.textContent = 'Take a breath. The hexagon will wait for you.';
+    actionBtn.textContent = 'Resume';
+    overlay.classList.add('visible');
+  }
+
+  function resume() {
+    if (state !== 'paused') return;
+    state = 'playing';
+    overlay.classList.remove('visible');
+  }
+
+  function gameOver() {
+    state = 'over';
+    if (score > best) {
+      best = score;
+      localStorage.setItem('hextris-best', best);
+      bestEl.textContent = best;
+    }
+    overlayTitle.textContent = 'Game Over';
+    overlayText.textContent = 'You scored ' + score.toLocaleString() + '.';
+    actionBtn.textContent = 'Play Again';
+    overlay.classList.add('visible');
+    if (score > 0 && window.Leaderboard) {
+      setTimeout(() => window.Leaderboard.submitScore(score), 400);
+    }
+  }
+
+  function updateScore() {
+    scoreEl.textContent = score;
+  }
+
+  // ---- Input ----
+  function rotateLeft() {
+    if (state !== 'playing') return;
+    targetRot -= SIDE_ANGLE;
+  }
+  function rotateRight() {
+    if (state !== 'playing') return;
+    targetRot += SIDE_ANGLE;
+  }
+
+  window.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { rotateLeft(); e.preventDefault(); }
+    else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { rotateRight(); e.preventDefault(); }
+    else if (e.key === ' ' || e.key === 'p' || e.key === 'P') {
+      if (state === 'playing') pause();
+      else if (state === 'paused') resume();
+      e.preventDefault();
+    }
+  });
+
+  leftBtn.addEventListener('click', rotateLeft);
+  rightBtn.addEventListener('click', rotateRight);
+
+  pauseBtn.addEventListener('click', () => {
+    if (state === 'playing') pause();
+    else if (state === 'paused') resume();
+  });
+
+  actionBtn.addEventListener('click', () => {
+    if (state === 'menu' || state === 'over') start();
+    else if (state === 'paused') resume();
+  });
+
+  // Tap left/right halves of canvas to rotate
+  canvas.addEventListener('pointerdown', e => {
+    if (state !== 'playing') return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    if (x < rect.width / 2) rotateLeft();
+    else rotateRight();
+  });
+
+  // ---- Core Game Logic ----
+  function spawnBlock() {
+    const angle = Math.floor(Math.random() * 6) * SIDE_ANGLE;
+    const color = COLORS[Math.floor(Math.random() * numColors)];
+    falling.push({
+      angle,
+      dist: R_BASE + (MAX_STACK + 2.5) * BH + Math.random() * 20,
+      color,
+      life: 0,
+    });
+  }
+
+  function update(dt) {
+    elapsed += dt;
+
+    // Difficulty ramp
+    spawnInterval = Math.max(420, 1400 - elapsed * 18);
+    fallSpeed = 60 + elapsed * 2.8;
+    if (elapsed > 25) numColors = 5;
+    if (elapsed > 60) numColors = 6;
+
+    // Smooth rotation
+    const delta = targetRot - rotation;
+    if (Math.abs(delta) > 0.0001) {
+      const step = Math.sign(delta) * Math.min(Math.abs(delta), ROT_SPEED * dt);
+      rotation += step;
+    }
+
+    // Update falling
+    for (let i = falling.length - 1; i >= 0; i--) {
+      const b = falling[i];
+      b.dist -= fallSpeed * dt;
+      b.life += dt;
+
+      // Determine target side (using current rotation)
+      let localAng = b.angle - rotation;
+      // normalize
+      let sideIdx = Math.round(localAng / SIDE_ANGLE);
+      sideIdx = ((sideIdx % 6) + 6) % 6;
+
+      const stackTop = R_BASE + stacks[sideIdx].length * BH;
+      if (b.dist <= stackTop) {
+        stacks[sideIdx].push(b.color);
+        falling.splice(i, 1);
+        resolveMatches();
+        // Check overflow AFTER matches (match may have cleared this stack)
+        if (stacks[sideIdx].length > MAX_STACK) {
+          gameOver();
+          return;
+        }
+      }
+    }
+
+    // Spawn
+    spawnTimer -= dt * 1000;
+    if (spawnTimer <= 0) {
+      spawnBlock();
+      spawnTimer = spawnInterval;
+    }
+
+    // Popups
+    for (let i = popups.length - 1; i >= 0; i--) {
+      popups[i].life -= dt;
+      popups[i].y -= 30 * dt;
+      if (popups[i].life <= 0) popups.splice(i, 1);
+    }
+    // Flashes
+    for (let i = flashes.length - 1; i >= 0; i--) {
+      flashes[i].life -= dt;
+      if (flashes[i].life <= 0) flashes.splice(i, 1);
+    }
+  }
+
+  function resolveMatches() {
+    let cascade = 0;
+    while (true) {
+      const clustersToRemove = findClusters();
+      if (!clustersToRemove.length) break;
+      cascade++;
+      let totalCleared = 0;
+      for (const cluster of clustersToRemove) {
+        totalCleared += cluster.length;
+        for (const [s, k] of cluster) {
+          flashes.push({ side: s, pos: k, life: 0.35 });
+        }
+      }
+      // Score: base per block + cluster bonus + cascade multiplier
+      const gained = clustersToRemove.reduce((acc, c) => acc + c.length * 10 + Math.max(0, c.length - 3) * 15, 0) * cascade;
+      score += gained;
+      updateScore();
+      // Popup near first cluster
+      const first = clustersToRemove[0][0];
+      const ang = first[0] * SIDE_ANGLE + rotation;
+      const r = R + (first[1] + 1) * blockSize;
+      popups.push({
+        x: cx + r * Math.cos(ang),
+        y: cy + r * Math.sin(ang),
+        text: '+' + gained,
+        life: 0.8,
+        color: '#1d1d1f',
+      });
+
+      // Remove cleared blocks per side (compact stacks)
+      const removeSet = new Set();
+      for (const cluster of clustersToRemove) {
+        for (const [s, k] of cluster) removeSet.add(s + ',' + k);
+      }
+      for (let s = 0; s < 6; s++) {
+        const kept = [];
+        for (let k = 0; k < stacks[s].length; k++) {
+          if (!removeSet.has(s + ',' + k)) kept.push(stacks[s][k]);
+        }
+        stacks[s] = kept;
+      }
+    }
+  }
+
+  function findClusters() {
+    const visited = Array.from({length: 6}, (_, s) => new Array(stacks[s].length).fill(false));
+    const results = [];
+    for (let s = 0; s < 6; s++) {
+      for (let k = 0; k < stacks[s].length; k++) {
+        if (visited[s][k]) continue;
+        const color = stacks[s][k];
+        const comp = [];
+        const queue = [[s, k]];
+        visited[s][k] = true;
+        while (queue.length) {
+          const [cs, ck] = queue.shift();
+          comp.push([cs, ck]);
+          // same-side
+          for (const dk of [-1, 1]) {
+            const nk = ck + dk;
+            if (nk >= 0 && nk < stacks[cs].length && !visited[cs][nk] && stacks[cs][nk] === color) {
+              visited[cs][nk] = true;
+              queue.push([cs, nk]);
+            }
+          }
+          // cross-side (same ring position)
+          for (const ds of [-1, 1]) {
+            const ns = (cs + ds + 6) % 6;
+            if (ck < stacks[ns].length && !visited[ns][ck] && stacks[ns][ck] === color) {
+              visited[ns][ck] = true;
+              queue.push([ns, ck]);
+            }
+          }
+        }
+        if (comp.length >= 3) results.push(comp);
+      }
+    }
+    return results;
+  }
+
+  // ---- Rendering ----
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.save();
+    ctx.translate(cx, cy);
+
+    // Rotating part: center hex + stacked blocks
+    ctx.save();
+    ctx.rotate(rotation);
+    drawCenterHex();
+    for (let s = 0; s < 6; s++) {
+      for (let k = 0; k < stacks[s].length; k++) {
+        drawStackBlock(s, k, stacks[s][k]);
+      }
+    }
+    // Flash overlays
+    for (const f of flashes) {
+      drawFlash(f.side, f.pos, f.life / 0.35);
+    }
+    ctx.restore();
+
+    // Falling blocks (world space)
+    for (const b of falling) {
+      drawFalling(b);
+    }
+
+    ctx.restore();
+
+    // Popups (world, but un-rotated, positioned in canvas pixel space)
+    for (const p of popups) {
+      const alpha = Math.min(1, p.life / 0.8);
+      ctx.fillStyle = 'rgba(29,29,31,' + alpha + ')';
+      ctx.font = 'bold ' + Math.round(18 * scale) + 'px -apple-system, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(p.text, p.x, p.y);
+    }
+  }
+
+  function drawCenterHex() {
+    ctx.beginPath();
+    for (let s = 0; s < 6; s++) {
+      const ang = s * SIDE_ANGLE - Math.PI / 6;
+      const vr = 2 * R / SQRT3;
+      const x = vr * Math.cos(ang);
+      const y = vr * Math.sin(ang);
+      if (s === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = '#f5f5f7';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  function drawStackBlock(side, pos, color) {
+    const r1 = R + pos * blockSize;
+    const r2 = R + (pos + 1) * blockSize;
+    ctx.save();
+    ctx.rotate(side * SIDE_ANGLE);
+    const y1 = r1 / SQRT3;
+    const y2 = r2 / SQRT3;
+    ctx.beginPath();
+    ctx.moveTo(r1, -y1);
+    ctx.lineTo(r1,  y1);
+    ctx.lineTo(r2,  y2);
+    ctx.lineTo(r2, -y2);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.92)';
+    ctx.lineWidth = 1.8;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawFlash(side, pos, t) {
+    const r1 = R + pos * blockSize;
+    const r2 = R + (pos + 1) * blockSize;
+    ctx.save();
+    ctx.rotate(side * SIDE_ANGLE);
+    const y1 = r1 / SQRT3;
+    const y2 = r2 / SQRT3;
+    ctx.beginPath();
+    ctx.moveTo(r1, -y1);
+    ctx.lineTo(r1,  y1);
+    ctx.lineTo(r2,  y2);
+    ctx.lineTo(r2, -y2);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(255,255,255,' + (t * 0.85) + ')';
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawFalling(b) {
+    const rInner = b.dist * scale;
+    const rOuter = rInner + blockSize;
+    ctx.save();
+    ctx.rotate(b.angle);
+    const y1 = rInner / SQRT3;
+    const y2 = rOuter / SQRT3;
+    ctx.beginPath();
+    ctx.moveTo(rInner, -y1);
+    ctx.lineTo(rInner,  y1);
+    ctx.lineTo(rOuter,  y2);
+    ctx.lineTo(rOuter, -y2);
+    ctx.closePath();
+    // Subtle fade-in when freshly spawned
+    const alpha = Math.min(1, b.life * 3);
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = b.color;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+    ctx.lineWidth = 1.8;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // ---- Loop (always-on) ----
+  function loop(now) {
+    const dt = Math.min(0.05, (now - lastTime) / 1000);
+    lastTime = now;
+    if (state === 'playing') update(dt);
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  lastTime = performance.now();
+  requestAnimationFrame(loop);
+
+})();
+</script>
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

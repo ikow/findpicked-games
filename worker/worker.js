@@ -5,9 +5,14 @@ const GAMES = {
   snake:       { min: 0, max: 500 },
   '2048':      { min: 0, max: 500000 },
   blockdrop:   { min: 0, max: 999999 },
-  minesweeper: { min: 1, max: 999 },     // seconds, lower=better
+  minesweeper: { min: 1, max: 999 },
   flappybird:  { min: 0, max: 300 },
   gomoku:      { min: 0, max: 9999 },
+  hextris:     { min: 0, max: 999999 },
+  pacman:      { min: 0, max: 999999 },
+  solitaire:   { min: 1, max: 3600 },
+  sudoku:      { min: 1, max: 7200 },
+  wordle:      { min: 1, max: 6 },
 };
 
 const MAX_ENTRIES = 50;
