@@ -1,3 +1,0 @@
-QA report written to `/private/tmp/findpicked-games/flappybird/QA_REPORT.md`.
-
-**Summary:** 9/10, PASS. All 10 checks pass cleanly — controls, mobile layout, back link, localStorage, English copy, and restart flow are all solid. One minor edge case: pressing `Enter` mid-game can trigger a restart because focus lingers on the Start button after `start()`. Fix is a one-liner — `startBtn.blur()` in `start()`.

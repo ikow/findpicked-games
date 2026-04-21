@@ -1,7 +1,0 @@
-GAME: snake
-SCORE: 9/10
-BUGS: D-pad LEFT/RIGHT taps from idle are no-ops; swipe doesn't auto-start game; pause icon/aria-label never toggles to play; `placeFood()` infinite-loop edge case if snake fills board.
-FIXES: Swipe handler should call `startGame()`/`resumeGame()` like the D-pad does; toggle pause-button SVG and aria-label on state changes; pass initial direction into `startGame` so first D-pad tap steers; guard `placeFood` against full board.
-VERDICT: PASS
-
-Report written to `/private/tmp/findpicked-games/snake/QA_REPORT.md`.
