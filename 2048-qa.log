@@ -1,0 +1,10 @@
+QA report written to `/private/tmp/findpicked-games/2048/QA_REPORT.md`.
+
+**Verdict: PASS (9/10)** — the game is solid. All 10 checks pass in practice: loads cleanly, keyboard (arrows/WASD/HJKL/U) + swipe both work, back link at `../` is correct, localStorage best score under `findpicked:2048:best`, 375px viewport handled by media query at 420px, English throughout, GPU-accelerated transforms, game-over + restart flow works.
+
+Three minor issues worth fixing for polish:
+1. Arrow keys still move tiles while the "You Win!" overlay is up
+2. Rapid keypresses can interleave with the 160ms animation pipeline (cosmetic flicker only, game state stays correct)
+3. `positionTile()` is called before DOM insertion in `newTile()` — harmless but dead reflow trick
+
+Specific code fixes listed in the report (lines 688–695 and 709 for input gating, line 574 for a `moving` flag, line 412 re-order).

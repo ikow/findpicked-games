@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>五子棋 · CYBER GOMOKU</title>
+<title>Gomoku</title>
 <style>
   :root {
     --cyan: #00f0ff;
@@ -577,22 +577,25 @@
 </style>
 </head>
 <body>
+<a href="../" style="position:fixed;top:16px;left:16px;color:#6e6e73;text-decoration:none;font-size:15px;z-index:9999;font-family:-apple-system,sans-serif">← Back</a>
+  <a href="../" style="position:fixed;top:12px;left:12px;z-index:300;font-family:inherit;font-size:12px;letter-spacing:0.2em;color:var(--cyan);text-decoration:none;padding:6px 12px;border:1px solid var(--cyan);background:rgba(0,240,255,0.08);text-shadow:0 0 6px rgba(0,240,255,0.6);box-shadow:0 0 10px rgba(0,240,255,0.25)">&larr; BACK</a>
+
   <div class="app">
     <header>
-      <h1 class="glitch" data-text="五 子 棋">五 子 棋</h1>
+      <h1 class="glitch" data-text="G O M O K U">G O M O K U</h1>
       <div class="subtitle">CYBER · GOMOKU · NEON GRID</div>
     </header>
 
     <div class="status-bar" role="status" aria-live="polite">
       <div class="turn-indicator">
         <div id="turnDot" class="turn-dot black"></div>
-        <span id="turnText" class="turn-text">黑棋回合</span>
+        <span id="turnText" class="turn-text">Black's turn</span>
       </div>
       <div class="divider"></div>
       <div class="score">
-        <span>黑 <b id="scoreBlack">0</b></span>
-        <span class="white-score">白 <b id="scoreWhite">0</b></span>
-        <span>手数 <b id="moveCount">0</b></span>
+        <span>B <b id="scoreBlack">0</b></span>
+        <span class="white-score">W <b id="scoreWhite">0</b></span>
+        <span>Moves <b id="moveCount">0</b></span>
       </div>
     </div>
 
@@ -603,53 +606,53 @@
         <div class="hover-marker" id="hoverMarker"></div>
         <div class="hit-layer" id="hitLayer"></div>
       </div>
-      <div class="ai-think" id="aiThink">AI 思考中</div>
+      <div class="ai-think" id="aiThink">AI thinking</div>
     </div>
 
     <div class="controls">
-      <button class="neon primary" id="menuBtn">模式菜单</button>
-      <button class="neon" id="resetBtn">重新开始</button>
-      <button class="neon magenta" id="undoBtn">悔棋</button>
+      <button class="neon primary" id="menuBtn">Mode Menu</button>
+      <button class="neon" id="resetBtn">Restart</button>
+      <button class="neon magenta" id="undoBtn">Undo</button>
     </div>
 
-    <footer>&lt;/ system online · 五子连珠者胜 /&gt;</footer>
+    <footer>&lt;/ system online · Five in a row wins /&gt;</footer>
   </div>
 
   <div class="overlay" id="menuOverlay">
     <div class="panel">
-      <h2>对战模式</h2>
+      <h2>Game Mode</h2>
       <div class="panel-sub">// select game mode</div>
 
       <div class="field">
-        <div class="field-label">模式</div>
+        <div class="field-label">Mode</div>
         <div class="field-options" id="modeOpts">
-          <div class="opt active" data-val="pvp">双人对战</div>
-          <div class="opt" data-val="pve">人机对战</div>
+          <div class="opt active" data-val="pvp">vs Player</div>
+          <div class="opt" data-val="pve">vs AI</div>
         </div>
       </div>
 
       <div class="ai-config" id="aiConfig">
         <div class="field">
-          <div class="field-label">AI 难度</div>
+          <div class="field-label">AI Difficulty</div>
           <div class="field-options" id="diffOpts">
-            <div class="opt" data-val="0">入门</div>
-            <div class="opt" data-val="1">初级</div>
-            <div class="opt active" data-val="2">中级</div>
-            <div class="opt" data-val="3">高级</div>
-            <div class="opt" data-val="4">大师</div>
+            <div class="opt" data-val="0">Beginner</div>
+            <div class="opt" data-val="1">Easy</div>
+            <div class="opt active" data-val="2">Medium</div>
+            <div class="opt" data-val="3">Hard</div>
+            <div class="opt" data-val="4">Master</div>
           </div>
         </div>
         <div class="field">
-          <div class="field-label">执棋方</div>
+          <div class="field-label">Play As</div>
           <div class="field-options" id="sideOpts">
-            <div class="opt active" data-val="black">黑棋 (先手)</div>
-            <div class="opt" data-val="white">白棋 (后手)</div>
+            <div class="opt active" data-val="black">Black (first)</div>
+            <div class="opt" data-val="white">White (second)</div>
           </div>
         </div>
       </div>
 
       <div class="panel-actions">
-        <button class="neon primary" id="startBtn">启 动</button>
+        <button class="neon primary" id="startBtn">Start</button>
       </div>
     </div>
   </div>
@@ -657,11 +660,11 @@
   <div class="overlay" id="toastOverlay">
     <div class="panel toast-panel">
       <div class="winner-tag">// GAME OVER</div>
-      <div class="winner-title" id="winnerTitle">胜 利</div>
+      <div class="winner-title" id="winnerTitle">Victory</div>
       <div class="panel-sub" id="winnerSub">&nbsp;</div>
       <div class="panel-actions" style="justify-content: center;">
-        <button class="neon" id="toastMenu">模式菜单</button>
-        <button class="neon primary" id="toastReset">再来一局</button>
+        <button class="neon" id="toastMenu">Mode Menu</button>
+        <button class="neon primary" id="toastReset">Play Again</button>
       </div>
     </div>
   </div>
@@ -792,20 +795,20 @@
 
   function updateStatus() {
     if (state.aiThinking) {
-      turnText.textContent = 'AI 思考中...';
+      turnText.textContent = 'AI thinking...';
       turnDot.className = 'turn-dot think';
       return;
     }
     if (state.gameOver) {
       const w = state.winningLine ? state.board[state.winningLine[0][0]][state.winningLine[0][1]] : null;
       if (w) {
-        turnText.textContent = (w === BLACK ? '黑棋' : '白棋') + ' 胜利';
+        turnText.textContent = (w === BLACK ? 'Black' : 'White') + ' wins';
         turnDot.className = 'turn-dot ' + (w === BLACK ? 'black' : 'white');
       } else {
-        turnText.textContent = '平 局';
+        turnText.textContent = 'Draw';
       }
     } else {
-      turnText.textContent = (state.current === BLACK ? '黑棋' : '白棋') + '回合';
+      turnText.textContent = (state.current === BLACK ? "Black's turn" : "White's turn");
       turnDot.className = 'turn-dot ' + (state.current === BLACK ? 'black' : 'white');
     }
     scoreBlackEl.textContent = state.score.black;
@@ -975,13 +978,13 @@
   }
 
   function showWinner(color) {
-    winnerTitle.textContent = color === BLACK ? '黑 棋 获 胜' : '白 棋 获 胜';
+    winnerTitle.textContent = color === BLACK ? 'Black Wins' : 'White Wins';
     winnerTitle.className = 'winner-title ' + (color === BLACK ? 'cyan' : 'magenta');
     winnerSub.textContent = color === BLACK ? '// BLACK WINS' : '// WHITE WINS';
     toastOverlay.classList.add('visible');
   }
   function showDraw() {
-    winnerTitle.textContent = '平 局';
+    winnerTitle.textContent = 'Draw';
     winnerTitle.className = 'winner-title yellow';
     winnerSub.textContent = '// DRAW';
     toastOverlay.classList.add('visible');
@@ -1233,7 +1236,7 @@
     // First move safety: center
     if (state.history.length === 0) return { r: 7, c: 7 };
 
-    // Difficulty 0 — 入门: random near existing, but block opponent's immediate win
+    // Difficulty 0 — Beginner: random near existing, but block opponent's immediate win
     if (state.difficulty === 0) {
       // Immediate win?
       const myWin = findImmediateWin(board, aiColor);
@@ -1295,7 +1298,7 @@
   function scheduleAI() {
     if (!isAiTurn()) return;
     setAiThinking(true);
-    // Delay so the user sees the "AI 思考中" indicator.
+    // Delay so the user sees the "AI thinking" indicator.
     const minDelay = state.difficulty >= 3 ? 80 : 250;
     setTimeout(() => {
       // Offload compute via another tiny timeout to let the indicator paint.
@@ -1384,6 +1387,14 @@
   initMenu();
   // Open menu at startup
   menuOverlay.classList.add('visible');
+})();
+</script>
+
+<script>
+(function(){
+  var KEY="gomoku-stats";
+  window.gomokuStats=JSON.parse(localStorage.getItem(KEY)||'{"wins":0,"losses":0,"draws":0}');
+  window.saveGomokuStats=function(){localStorage.setItem(KEY,JSON.stringify(window.gomokuStats))};
 })();
 </script>
 </body>

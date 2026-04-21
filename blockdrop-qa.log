@@ -1,0 +1,15 @@
+QA report written to `blockdrop/QA_REPORT.md`.
+
+**GAME: blockdrop**
+**SCORE: 9/10**
+**VERDICT: PASS**
+
+Code is high quality — clean IIFE, 7-bag randomizer, ghost piece, wall kicks, multi-input layer (keyboard + touchpad + swipe), proper localStorage with try/catch, and a working game-over → restart flow. Only minor polish issues:
+
+- Keyboard-only hint shows on mobile (no keyboard there)
+- Tapping the idle board does nothing (only the Start button works)
+- Touchpad arrows don't restart from game-over (only hard-drop button does)
+- Pause copy mentions `P` on mobile
+- Slightly crowded `.side` row above the board at 375px
+
+All fixes are small CSS/JS tweaks listed in the report. No blocking bugs.

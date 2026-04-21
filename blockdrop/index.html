@@ -265,7 +265,8 @@ canvas.board {
   max-width: 260px;
 }
 
-.hint {
+    @media (max-width: 720px) { .hint { display: none; } }
+    .hint {
   color: var(--text-tertiary);
   font-size: 12px;
   text-align: center;

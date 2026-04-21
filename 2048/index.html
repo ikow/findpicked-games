@@ -687,7 +687,8 @@ kbd {
 
   window.addEventListener('keydown', (e) => {
     if (e.key === 'u' || e.key === 'U') { e.preventDefault(); undo(); return; }
-    const dir = KEY_MAP[e.key];
+    if (overlay.classList.contains('show')) return;
+        const dir = KEY_MAP[e.key];
     if (dir) {
       e.preventDefault();
       move(dir);

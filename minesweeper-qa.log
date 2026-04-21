@@ -1,0 +1,14 @@
+QA report written to `minesweeper/QA_REPORT.md`.
+
+**GAME: minesweeper — SCORE: 9/10 — VERDICT: PASS**
+
+Summary: Loads cleanly, portal back-link (`../index.html`) works, localStorage best-times persist per difficulty, all text English, first-click safety + chord + flood-fill all correct, mobile viewport uses horizontal scroll on Intermediate/Expert.
+
+Real bugs (minor):
+1. Long-press flag can double-toggle on some Android browsers (native `contextmenu` fires after the 350ms touchstart setTimeout, and the contextmenu handler toggles again) — missing `-webkit-touch-callout: none` and no guard.
+2. Mouse clicks silently ignored on touch-capable laptops in Firefox/older Safari because `click` is a `MouseEvent` (no `pointerType`), making the `'ontouchstart' in window && e.pointerType !== 'mouse'` guard always return early.
+3. `.app > *:nth-child(7)` (Best Times) has no `animation-delay`, breaking the fade-in stagger.
+4. Dead calls: `checkWin()` inside `toggleFlag()`; empty `mousedown` handler.
+5. Onboarding message only mentions touch — desktop users aren't told right-click flags.
+
+No crashes, no layout collapse, no broken core flow. Ship-ready; fixes 1–3 are worth doing, 4–6 are polish.

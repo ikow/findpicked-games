@@ -363,6 +363,7 @@
     reset();
     state.mode = 'playing';
     overlay.classList.add('hidden');
+        startBtn.blur();;
     // A small initial flap so the bird doesn't drop immediately.
     state.bird.v = FLAP_V * 0.8;
   }
