@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "findpicked-leaderboard",
+  "main": "worker.js",
+  "compatibility_date": "2025-02-04",
+  "observability": {
+    "enabled": true
+  },
+  "kv_namespaces": [
+    {
+      "binding": "LEADERBOARD",
+      "id": "bb484a02fe2b431aa0c7ea8742e1f144"
+    }
+  ]
+}

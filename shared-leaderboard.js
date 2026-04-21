@@ -1,6 +1,6 @@
 // Shared leaderboard module — with challenge token
 (function() {
-  const API = 'https://leaderboard.findpicked.com/api';
+  const API = 'https://findpicked-leaderboard.ikow233.workers.dev/api';
   const GAME = location.pathname.split('/').filter(Boolean).pop() || 'unknown';
   const LS_KEY = `${GAME}-leaderboard`;
   const LS_NAME = 'findpicked-player-name';
