@@ -1,49 +1,76 @@
 # FindPicked Games — Design System
 
+## Philosophy
+Less, but better. Every pixel earns its place.
+
 ## Color Palette
-### Primary
-- `--neon-cyan: #00d4ff` — Primary accent
-- `--neon-magenta: #ff2d95` — Secondary accent, hot tags
-- `--neon-purple: #7b2ff7` — Gradients
+- `--bg: #fafafa` — Page background
+- `--bg-card: #ffffff` — Card background
+- `--bg-hover: #f5f5f7` — Hover state
+- `--text-primary: #1d1d1f` — Headlines
+- `--text-secondary: #6e6e73` — Body text
+- `--text-tertiary: #86868b` — Captions
+- `--accent: #0071e3` — Links, CTAs
+- `--accent-hover: #0077ed`
+- `--border: rgba(0,0,0,0.08)` — Subtle dividers
+- `--shadow: 0 2px 12px rgba(0,0,0,0.08)` — Card shadow
+- `--shadow-hover: 0 8px 30px rgba(0,0,0,0.12)` — Hover shadow
 
-### Background
-- `--bg-deep: #0a0a0f` — Page bg
-- `--bg-card: #12121a` — Card bg
-- `--bg-surface: #1a1a2e` — Elevated surfaces
-
-### Text
-- `--text-primary: #e0e0e0`
-- `--text-secondary: #888`
-- `--text-accent: #00d4ff`
+### Dark Mode (in-game optional)
+- `--bg: #000000`
+- `--bg-card: #1c1c1e`
+- `--text-primary: #f5f5f7`
+- `--text-secondary: #86868b`
 
 ## Typography
-- Primary: system fonts (-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif)
-- Monospace for scores: 'Courier New', monospace
-- Title: 2.5em portal, 1.8em in-game
+- **Primary:** -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif
+- **Weight hierarchy:** 700 (titles), 600 (subtitles), 400 (body)
+- **Sizes:** 48px hero, 28px section, 20px card title, 15px body, 13px caption
+- **Letter-spacing:** -0.02em on headlines
+- **Line-height:** 1.2 headlines, 1.5 body
 
-## Effects
-- Neon glow: `text-shadow: 0 0 10px #00d4ff, 0 0 40px #00d4ff`
-- Scanlines overlay (optional)
-- Glitch text animation (titles)
-- Card hover: translateY(-4px) + cyan glow
+## Spacing
+- Base unit: 8px
+- Section padding: 80px vertical
+- Card padding: 24px
+- Grid gap: 24px
+- Max content width: 1080px
+
+## Components
+
+### Card
+- White bg, 12px radius, subtle shadow
+- Hover: lift 2px, deeper shadow, smooth 0.3s
+- No borders (shadow defines edges)
+
+### Button
+- Rounded pill: 44px height, 20px horizontal padding, 22px radius
+- Primary: filled accent, white text
+- Secondary: transparent, accent text, accent border
+
+### Tags
+- 12px font, 500 weight, 6px 12px padding, 100px radius
+- Muted bg (#f5f5f7), dark text
+
+## Animation
+- Duration: 0.3s ease
+- Hover lift: translateY(-2px)
+- Page transitions: fade-in 0.5s
+- No bouncing, no glitch, no glow — just smooth and precise
 
 ## Layout
-- Portal: card grid, auto-fill minmax(280px, 1fr), max-width 1400px
-- In-game: centered, max-width 600px, mobile-first
-- Back button top-left → portal
-
-## Standard Components
-- Game header: back btn + title + controls
-- Score bar: current + high score (localStorage)
-- Game over overlay: score + restart button
-- Neon button style
+- Centered, max-width 1080px
+- Generous whitespace between sections
+- Card grid: auto-fill minmax(300px, 1fr)
+- Mobile: single column, 16px padding
 
 ## Rules
 1. Single index.html per game, no external deps
 2. Chinese UI
-3. Mobile + touch support
-4. "返回" link to portal
-5. localStorage for scores/settings
-6. Cyberpunk aesthetic
+3. Mobile + touch first
+4. "返回" link to portal (top-left, minimal)
+5. localStorage for scores
+6. Clean, neutral aesthetic — no neon, no glow
 7. 60fps animations
 8. Keyboard accessible
+9. Every element must have a reason to exist

@@ -1,0 +1,13 @@
+All 3 files are in place:
+
+- `DESIGN_SYSTEM.md` — palette, typography, effects, layout, rules
+- `GAME_ROADMAP.md` — 10 classics after Gomoku, phased by complexity
+- `GAME_SPEC_TEMPLATE.md` — per-game spec skeleton with QA checklist
+
+**Two concrete inconsistencies worth fixing before the next game ships:**
+
+1. **Palette drift between DESIGN_SYSTEM.md and `gomoku/index.html`.** The doc canonicalizes `--neon-cyan: #00d4ff` and `--neon-magenta: #ff2d95` (the landing page's values). Gomoku actually uses `#00f0ff` cyan, `#ff2ad9` magenta, plus `--blue: #3a7bff` and `--yellow: #ffe54c` that aren't in the doc at all. Either update gomoku to match the doc, or expand the doc to include gomoku's richer tokens. Letting this sit will guarantee every new game picks a different shade of "neon cyan."
+
+2. **Path convention mismatch.** `GAME_SPEC_TEMPLATE.md` specifies `games/[slug]/index.html`, but the actual shipped structure is `[slug]/index.html` (Gomoku is at `/gomoku/index.html`, not `/games/gomoku/index.html`). Pick one — I'd keep the flat structure since the landing page already links that way and the URL `game.findpicked.com/gomoku/` reads cleaner than `/games/gomoku/`.
+
+Next step when you're ready: start with **2048** (highest fun-per-complexity) or **Snake** (simpler) — both are on your roadmap and both build reusable primitives (swipe handler, game loop) that pay off across the rest of the list.
