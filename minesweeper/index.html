@@ -542,7 +542,7 @@ header.title p {
 
     btn.addEventListener('click', e => {
       if (e.detail === 0) return;
-      if ('ontouchstart' in window && e.pointerType !== 'mouse') return;
+      if (e.sourceCapabilities && e.sourceCapabilities.firesTouchEvents) return;
       handleTap(btn);
     });
   }

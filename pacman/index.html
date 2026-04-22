@@ -648,8 +648,8 @@ canvas {
 
     // Tunnel wrap.
     if (pac.y > TUNNEL_ROW && pac.y < TUNNEL_ROW + 1) {
-      if (pac.x < -0.5) pac.x = COLS + 0.5;
-      else if (pac.x > COLS + 0.5) pac.x = -0.5;
+      if (pac.x < 0) pac.x += COLS;
+      else if (pac.x >= COLS) pac.x -= COLS;
     }
 
     // Mouth animation (only animate when actually moving).
@@ -843,8 +843,8 @@ canvas {
 
     // Tunnel wrap.
     if (cy === TUNNEL_ROW) {
-      if (g.x < -0.5) g.x = COLS + 0.5;
-      else if (g.x > COLS + 0.5) g.x = -0.5;
+      if (g.x < 0) g.x += COLS;
+      else if (g.x >= COLS) g.x -= COLS;
     }
   }
 
@@ -1144,7 +1144,7 @@ canvas {
           const x0 = px + r - step * i;
           const x1 = px + r - step * (i + 1);
           const mx = (x0 + x1) / 2;
-          ctx.quadraticCurveTo(mx, bottom - step * 0.5, x1, bottom);
+          ctx.quadraticCurveTo(mx, bottom + step * 0.55, x1, bottom);
         }
         ctx.closePath();
         ctx.fill();

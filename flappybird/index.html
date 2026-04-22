@@ -360,6 +360,7 @@
   }
 
   function start() {
+      if (state.deadTimer) { clearTimeout(state.deadTimer); state.deadTimer = null; }
     reset();
     state.mode = 'playing';
     overlay.classList.add('hidden');
@@ -381,6 +382,7 @@
   function die() {
     if (state.mode !== 'playing') return;
     state.mode = 'dead';
+        if (state.deadTimer) clearTimeout(state.deadTimer);
         setTimeout(() => Leaderboard.submitScore(state.score), 800);
     state.flashT = 0.18;
     if (state.score > best) {
