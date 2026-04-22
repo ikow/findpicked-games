@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HexGL — Futuristic 3D Racing | FindPicked Games</title>
+<meta name="description" content="Race at breakneck speed through a futuristic neon track. A stunning WebGL 3D racing game you can play right in your browser.">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,sans-serif;background:#0a0a0a;color:#f5f5f7;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+.back{position:fixed;top:20px;left:20px;z-index:100;color:rgba(255,255,255,0.6);font-size:15px;transition:color 0.2s}
+.back:hover{color:#fff}
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:80px 24px 60px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,rgba(0,113,227,0.15) 0%,transparent 70%)}
+.badge{display:inline-block;background:rgba(0,113,227,0.15);color:#0071e3;font-size:13px;font-weight:600;padding:6px 16px;border-radius:20px;margin-bottom:24px;border:1px solid rgba(0,113,227,0.3)}
+.hero h1{font-size:clamp(40px,8vw,72px);font-weight:700;letter-spacing:-0.03em;line-height:1.05;margin-bottom:16px;background:linear-gradient(135deg,#fff 0%,#0071e3 50%,#00c7be 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{font-size:clamp(16px,2.5vw,20px);color:rgba(255,255,255,0.6);max-width:560px;line-height:1.5;margin-bottom:40px}
+.play-btn{display:inline-flex;align-items:center;gap:10px;background:#0071e3;color:#fff;font-size:18px;font-weight:600;padding:16px 40px;border-radius:14px;transition:transform 0.2s,box-shadow 0.2s;cursor:pointer;border:none;font-family:inherit}
+.play-btn:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,113,227,0.4)}
+.play-btn svg{width:24px;height:24px}
+.preview{max-width:960px;margin:-20px auto 0;padding:0 24px;position:relative;z-index:1}
+.preview-frame{width:100%;aspect-ratio:16/9;border-radius:20px;overflow:hidden;background:#111;border:1px solid rgba(255,255,255,0.08);box-shadow:0 24px 80px rgba(0,0,0,0.6)}
+.preview-frame iframe{width:100%;height:100%;border:none}
+.preview-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0a0a0a,#1a1a2e);cursor:pointer;position:relative}
+.preview-placeholder::after{content:'\25B6';font-size:64px;color:rgba(255,255,255,0.8);text-shadow:0 0 40px rgba(0,113,227,0.5)}
+.features{max-width:900px;margin:80px auto;padding:0 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px}
+.feature{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:28px}
+.feature .icon{font-size:32px;margin-bottom:12px}
+.feature h3{font-size:17px;font-weight:600;margin-bottom:6px}
+.feature p{font-size:14px;color:rgba(255,255,255,0.5);line-height:1.5}
+.controls{max-width:700px;margin:0 auto 80px;padding:0 24px}
+.controls h2{font-size:28px;font-weight:700;text-align:center;margin-bottom:32px;letter-spacing:-0.02em}
+.control-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.control-item{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px}
+.key{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;font-family:monospace;white-space:nowrap;min-width:40px;text-align:center}
+.control-item span{font-size:14px;color:rgba(255,255,255,0.6)}
+.credits{text-align:center;padding:40px 24px 60px;border-top:1px solid rgba(255,255,255,0.06);color:rgba(255,255,255,0.3);font-size:13px;line-height:1.8}
+.credits a{color:rgba(255,255,255,0.5);text-decoration:underline}
+.fullscreen-btn{position:fixed;bottom:20px;right:20px;z-index:100;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;cursor:pointer;backdrop-filter:blur(10px);display:none;font-family:inherit}
+.fullscreen-btn:hover{background:rgba(255,255,255,0.2)}
+@media(max-width:600px){.control-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}}
+</style>
+</head>
+<body>
+<a href="../" class="back">&larr; Back to Games</a>
+<div class="hero">
+  <span class="badge">Featured Game &middot; WebGL 3D</span>
+  <h1>HexGL</h1>
+  <p>A futuristic racing game built with WebGL. Blaze through neon-lit tracks at impossible speeds. No downloads needed.</p>
+  <button class="play-btn" onclick="launchGame()">
+    <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+    Play Now
+  </button>
+</div>
+<div class="preview">
+  <div class="preview-frame" id="gameFrame">
+    <div class="preview-placeholder" onclick="launchGame()"></div>
+  </div>
+</div>
+<div class="features">
+  <div class="feature"><div class="icon">&#127950;</div><h3>3D WebGL Racing</h3><p>Full 3D graphics powered by Three.js. Smooth 60fps gameplay with dynamic lighting and particle effects.</p></div>
+  <div class="feature"><div class="icon">&#9889;</div><h3>Breakneck Speed</h3><p>Race through a futuristic track at extreme velocity. Hit boost pads to go even faster.</p></div>
+  <div class="feature"><div class="icon">&#127918;</div><h3>Keyboard & Touch</h3><p>Play with arrow keys on desktop or touch controls on mobile. Gamepad support included.</p></div>
+</div>
+<div class="controls">
+  <h2>Controls</h2>
+  <div class="control-grid">
+    <div class="control-item"><div class="key">&uarr;</div><span>Accelerate</span></div>
+    <div class="control-item"><div class="key">&darr;</div><span>Brake</span></div>
+    <div class="control-item"><div class="key">&larr;</div><span>Steer Left</span></div>
+    <div class="control-item"><div class="key">&rarr;</div><span>Steer Right</span></div>
+    <div class="control-item"><div class="key">A / D</div><span>Airbrake Left / Right</span></div>
+    <div class="control-item"><div class="key">ESC</div><span>Pause</span></div>
+  </div>
+</div>
+<div class="credits">
+  <p>HexGL created by <a href="https://github.com/BKcore/HexGL" target="_blank" rel="noopener">Thibaut Despoulain (BKcore)</a></p>
+  <p>Open source under the MIT License</p>
+  <p>Hosted on <a href="../">FindPicked Games</a></p>
+</div>
+<button class="fullscreen-btn" id="fsBtn" onclick="toggleFullscreen()">&#x26F6; Fullscreen</button>
+<script>
+let gameLoaded=false;
+function launchGame(){
+  if(gameLoaded)return;
+  gameLoaded=true;
+  const f=document.getElementById('gameFrame');
+  f.innerHTML='<iframe src="game/" allowfullscreen></iframe>';
+  document.getElementById('fsBtn').style.display='block';
+  f.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function toggleFullscreen(){
+  const iframe=document.querySelector('#gameFrame iframe');
+  if(!iframe)return;
+  if(iframe.requestFullscreen)iframe.requestFullscreen();
+  else if(iframe.webkitRequestFullscreen)iframe.webkitRequestFullscreen();
+}
+</script>
+</body>
+</html>
