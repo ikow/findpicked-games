@@ -881,7 +881,7 @@ canvas {
     actionBtn.textContent = 'Play again';
     overlay.classList.add('visible');
     setTimeout(() => {
-      try { Leaderboard.submitScore(score); } catch (e) {}
+      try { window.Leaderboard && Leaderboard.submitScore(score); } catch (e) {}
     }, 400);
   }
 

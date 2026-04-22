@@ -429,7 +429,7 @@ canvas {
     actionBtn.textContent = 'Play Again';
     overlay.classList.add('visible');
     if (score > 0 && window.Leaderboard) {
-      setTimeout(() => window.Leaderboard.submitScore(score), 400);
+      setTimeout(() => window.window.Leaderboard && Leaderboard.submitScore(score), 400);
     }
   }
 

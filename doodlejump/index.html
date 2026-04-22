@@ -445,7 +445,7 @@
       bestEl.textContent = best;
     }
     setTimeout(() => {
-      try { if (window.Leaderboard) Leaderboard.submitScore(finalS); } catch (e) {}
+      try { if (window.Leaderboard) window.Leaderboard && Leaderboard.submitScore(finalS); } catch (e) {}
     }, 700);
     setTimeout(showDead, 420);
   }

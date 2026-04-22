@@ -528,8 +528,8 @@
       localStorage.setItem(STORE_KEY, String(best));
       bestEl.textContent = best;
     }
-    if (typeof Leaderboard !== 'undefined' && Leaderboard.submitScore) {
-      setTimeout(() => Leaderboard.submitScore(state.score), 800);
+    if (typeof Leaderboard !== 'undefined' && window.Leaderboard && Leaderboard.submitScore) {
+      setTimeout(() => window.Leaderboard && Leaderboard.submitScore(state.score), 800);
     }
     state.deadTimer = setTimeout(showDead, 360);
   }

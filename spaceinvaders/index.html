@@ -549,7 +549,7 @@
     hint.textContent = 'Space or tap to restart';
     overlay.classList.remove('hidden');
     updateHUD();
-    setTimeout(() => { try { Leaderboard.submitScore(state.score); } catch {} }, 700);
+    setTimeout(() => { try { window.Leaderboard && Leaderboard.submitScore(state.score); } catch {} }, 700);
   }
   function showPaused() {
     overlayTitle.textContent = 'Paused';

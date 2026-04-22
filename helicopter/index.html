@@ -468,7 +468,7 @@
       localStorage.setItem(STORE_KEY, String(best));
       bestEl.textContent = best;
     }
-    setTimeout(() => { try { Leaderboard.submitScore(finalDistance); } catch (_) {} }, 600);
+    setTimeout(() => { try { window.Leaderboard && Leaderboard.submitScore(finalDistance); } catch (_) {} }, 600);
     state.deadTimer = setTimeout(showDead, 420);
   }
 

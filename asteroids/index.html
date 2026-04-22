@@ -775,7 +775,7 @@ canvas {
 
   function gameOver() {
     state = 'over';
-    setTimeout(function () { if (window.Leaderboard) Leaderboard.submitScore(score); }, 400);
+    setTimeout(function () { if (window.Leaderboard) window.Leaderboard && Leaderboard.submitScore(score); }, 400);
     overlayTitle.textContent = 'Game over';
     overlayText.textContent =
       'You scored ' + score + (newBest && score > 0 ? '. A new best.' : '.') +

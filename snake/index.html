@@ -286,7 +286,7 @@ canvas {
 
   <div class="board-wrap" id="board-wrap">
     <div class="board" id="board">
-      <div style="text-align:center"><button class="rules-toggle" onclick="this.nextElementSibling.classList.toggle('open')">How to Play ▾</button><div class="rules-panel"><ul><li>Use arrow keys or swipe to control the snake</li><li>Eat the red apple to grow longer and score points</li><li>Don't hit the walls or your own tail</li><li>The snake speeds up as you grow</li><li>Try to beat your high score!</li></ul></div></div>
+      
 <canvas id="canvas"></canvas>
       <div class="overlay visible" id="overlay">
         <h2 id="overlay-title">Snake</h2>
@@ -408,7 +408,7 @@ canvas {
   function gameOver() {
     clearInterval(timer);
     state = 'over';
-        setTimeout(() => Leaderboard.submitScore(score), 500);
+        setTimeout(() => window.Leaderboard && Leaderboard.submitScore(score), 500);
     overlayTitle.textContent = 'Game over';
     overlayText.textContent =
       'You scored ' + score + (newBest && score > 0 ? '. A new best.' : '.');

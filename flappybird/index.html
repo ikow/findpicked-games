@@ -385,7 +385,7 @@
     if (state.mode !== 'playing') return;
     state.mode = 'dead';
         if (state.deadTimer) clearTimeout(state.deadTimer);
-        setTimeout(() => Leaderboard.submitScore(state.score), 800);
+        setTimeout(() => window.Leaderboard && Leaderboard.submitScore(state.score), 800);
     state.flashT = 0.18;
     if (state.score > best) {
       best = state.score;

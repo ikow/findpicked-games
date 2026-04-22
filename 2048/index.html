@@ -656,7 +656,7 @@ kbd {
     }
     if (!canMove()) {
       over = true;
-        setTimeout(() => Leaderboard.submitScore(score), 500);
+        setTimeout(() => window.Leaderboard && Leaderboard.submitScore(score), 500);
       showOverlay('Game Over', `Final score: ${score}`, false);
     }
   }

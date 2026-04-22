@@ -384,7 +384,7 @@ canvas {
   const ROWS = MAZE_SRC.length;
   const TUNNEL_ROW = 11;
 
-  const PAC_SPAWN = { x: 9, y: 16 };
+  const PAC_SPAWN = { x: 9, y: 19 };
   const GHOST_HOUSE = { x: 9, y: 11 };
   const GHOST_EXIT = { x: 9, y: 10 };
   const GHOST_SPAWNS = [
@@ -515,7 +515,7 @@ canvas {
     pac = {
       x: PAC_SPAWN.x + 0.5,
       y: PAC_SPAWN.y + 0.5,
-      dir: 'left',
+      dir: 'right',
       queued: null,
       mouth: 0,
       alive: true
@@ -928,7 +928,7 @@ canvas {
 
   function gameOver() {
     state = 'over';
-    setTimeout(() => { if (window.Leaderboard) Leaderboard.submitScore(score); }, 400);
+    setTimeout(() => { if (window.Leaderboard) window.Leaderboard && Leaderboard.submitScore(score); }, 400);
     overlayTitle.textContent = 'Game over';
     overlayText.textContent =
       'You scored ' + score + (newBest && score > 0 ? '. A new best.' : '.');
@@ -938,7 +938,7 @@ canvas {
 
   function win() {
     state = 'won';
-    setTimeout(() => { if (window.Leaderboard) Leaderboard.submitScore(score); }, 400);
+    setTimeout(() => { if (window.Leaderboard) window.Leaderboard && Leaderboard.submitScore(score); }, 400);
     overlayTitle.textContent = 'Maze cleared';
     overlayText.textContent = 'You ate every dot. Final score ' + score + '.';
     actionBtn.textContent = 'Play again';

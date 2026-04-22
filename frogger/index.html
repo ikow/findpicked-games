@@ -428,26 +428,37 @@ canvas { display: block; width: 100%; height: 100%; }
     updateHUD();
   }
 
-  function updateHUD() {
+  // Stable life-dot nodes (avoid rebuilding every frame)
+  const lifeDots = [];
+  for (let i = 0; i < 3; i++) {
+    const d = document.createElement('div');
+    d.className = 'life-dot';
+    livesEl.appendChild(d);
+    lifeDots.push(d);
+  }
+
+  function updateStatsHUD() {
     scoreEl.textContent = score;
     if (score > best) {
       best = score;
       bestEl.textContent = best;
       localStorage.setItem('frogger.best', String(best));
     }
-    // lives dots
-    livesEl.innerHTML = '';
     for (let i = 0; i < 3; i++) {
-      const d = document.createElement('div');
-      d.className = 'life-dot' + (i < lives ? '' : ' spent');
-      livesEl.appendChild(d);
+      lifeDots[i].className = 'life-dot' + (i < lives ? '' : ' spent');
     }
-    // timer bar
+  }
+
+  function updateTimerHUD() {
     const pct = Math.max(0, Math.min(100, (timeLeft / 30) * 100));
     timerFill.style.width = pct + '%';
-    timerFill.classList.toggle('warn', timeLeft < 15 && timeLeft >= 8);
-    timerFill.classList.toggle('danger', timeLeft < 8);
+    const warn = timeLeft < 15 && timeLeft >= 8;
+    const danger = timeLeft < 8;
+    if (warn !== timerFill._warn) { timerFill.classList.toggle('warn', warn); timerFill._warn = warn; }
+    if (danger !== timerFill._danger) { timerFill.classList.toggle('danger', danger); timerFill._danger = danger; }
   }
+
+  function updateHUD() { updateStatsHUD(); updateTimerHUD(); }
 
   function hop(dx, dy) {
     if (state !== 'playing') return;
@@ -582,13 +593,16 @@ canvas { display: block; width: 100%; height: 100%; }
       }
     }
 
-    // Timer
+    // Timer — update timer bar every frame but stats only on change
     timeLeft -= dt;
-    updateHUD();
+    updateTimerHUD();
     if (timeLeft <= 0) {
       die("Time's up!");
       return;
     }
+
+    // Skip collision / home checks mid-hop — a hop is atomic
+    if (frog.hopProgress < 1) return;
 
     // Collision checks on the resolved cell
     const gy = Math.round(frog.y);
@@ -661,7 +675,7 @@ canvas { display: block; width: 100%; height: 100%; }
     actionBtn.textContent = 'Play again';
     overlay.classList.add('visible');
     if (typeof Leaderboard !== 'undefined') {
-      setTimeout(() => Leaderboard.submitScore(score), 500);
+      setTimeout(() => window.Leaderboard && Leaderboard.submitScore(score), 500);
     }
   }
 
