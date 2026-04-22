@@ -221,6 +221,7 @@
     header { margin-top: 48px; }
     h1 { font-size: 24px; }
   }
+.rules-toggle{display:inline-block;margin-top:12px;font-size:13px;color:#0071e3;cursor:pointer;border:none;background:none;font-family:inherit;padding:0}.rules-toggle:hover{text-decoration:underline}.rules-panel{max-height:0;overflow:hidden;transition:max-height 0.3s ease;font-size:13px;color:#6e6e73;line-height:1.6;text-align:left;max-width:480px;margin:8px auto 0}.rules-panel.open{max-height:500px}.rules-panel ul{margin:8px 0 0 16px}.rules-panel li{margin-bottom:4px}
 </style>
 </head>
 <body>
@@ -229,6 +230,7 @@
 
 <header>
   <h1>Flappy Bird</h1>
+<div style="text-align:center"><button class="rules-toggle" onclick="this.nextElementSibling.classList.toggle(&#39;open&#39;)">How to Play ▾</button><div class="rules-panel"><ul><li>Tap, click, or press Space to flap</li><li>Navigate through the gaps between pipes</li><li>Each pipe you pass scores one point</li><li>Do not hit the pipes or the ground</li><li>Medals: Bronze 10+, Silver 20+, Gold 30+, Platinum 50+</li></ul></div></div>
   <p class="subtitle">Tap, click, or press space to fly.</p>
 </header>
 

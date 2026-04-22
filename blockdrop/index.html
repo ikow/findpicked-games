@@ -302,6 +302,7 @@ canvas.board {
   .touchpad { display: none !important; }
 }
 
+.rules-toggle{display:inline-block;margin-top:12px;font-size:13px;color:#0071e3;cursor:pointer;border:none;background:none;font-family:inherit;padding:0}.rules-toggle:hover{text-decoration:underline}.rules-panel{max-height:0;overflow:hidden;transition:max-height 0.3s ease;font-size:13px;color:#6e6e73;line-height:1.6;text-align:left;max-width:480px;margin:8px auto 0}.rules-panel.open{max-height:500px}.rules-panel ul{margin:8px 0 0 16px}.rules-panel li{margin-bottom:4px}
 </style>
 </head>
 <body>
@@ -336,7 +337,8 @@ canvas.board {
       </div>
       <div class="panel preview">
         <div class="label">Next</div>
-        <canvas class="preview-canvas" id="next" width="160" height="120"></canvas>
+        <div style="text-align:center"><button class="rules-toggle" onclick="this.nextElementSibling.classList.toggle('open')">How to Play ▾</button><div class="rules-panel"><ul><li>← → to move, ↑ to rotate, ↓ for soft drop, Space for hard drop</li><li>Complete a full horizontal line to clear it and score points</li><li>Clear multiple lines at once for bonus points</li><li>Speed increases every 10 lines</li><li>Game over when blocks reach the top</li></ul></div></div>
+<canvas class="preview-canvas" id="next" width="160" height="120"></canvas>
       </div>
       <div class="btn-row">
         <button class="btn primary" id="btn-pause">Pause</button>

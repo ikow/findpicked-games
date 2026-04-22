@@ -315,6 +315,7 @@ kbd {
   .grid, .tiles { inset: 10px; gap: 8px; }
   .tile { width: calc((100% - 24px) / 4); height: calc((100% - 24px) / 4); }
 }
+.rules-toggle{display:inline-block;margin-top:12px;font-size:13px;color:#0071e3;cursor:pointer;border:none;background:none;font-family:inherit;padding:0}.rules-toggle:hover{text-decoration:underline}.rules-panel{max-height:0;overflow:hidden;transition:max-height 0.3s ease;font-size:13px;color:#6e6e73;line-height:1.6;text-align:left;max-width:480px;margin:8px auto 0}.rules-panel.open{max-height:500px}.rules-panel ul{margin:8px 0 0 16px}.rules-panel li{margin-bottom:4px}
 </style>
 </head>
 <body>
@@ -338,6 +339,7 @@ kbd {
       </div>
     </div>
   </header>
+<div style="text-align:center"><button class="rules-toggle" onclick="this.nextElementSibling.classList.toggle('open')">How to Play ▾</button><div class="rules-panel"><ul><li>Swipe or use arrow keys to slide all tiles</li><li>When two tiles with the same number touch, they merge into one</li><li>Create the 2048 tile to win — or keep going for a higher score</li><li>Plan ahead: don't let the board fill up!</li></ul></div></div>
 
   <div class="subhead">
     <p>Swipe or use arrow keys. Join the tiles to reach <strong>2048</strong>.</p>

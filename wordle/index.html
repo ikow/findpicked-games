@@ -448,6 +448,7 @@ footer {
   .key { height: 46px; }
   .board { max-width: 290px; }
 }
+.rules-toggle{display:inline-block;margin-top:12px;font-size:13px;color:#0071e3;cursor:pointer;border:none;background:none;font-family:inherit;padding:0}.rules-toggle:hover{text-decoration:underline}.rules-panel{max-height:0;overflow:hidden;transition:max-height 0.3s ease;font-size:13px;color:#6e6e73;line-height:1.6;text-align:left;max-width:480px;margin:8px auto 0}.rules-panel.open{max-height:500px}.rules-panel ul{margin:8px 0 0 16px}.rules-panel li{margin-bottom:4px}
 </style>
 </head>
 <body>
@@ -457,6 +458,7 @@ footer {
 <div class="wrap">
   <header>
     <h1>Word Quest</h1>
+<div style="text-align:center"><button class="rules-toggle" onclick="this.nextElementSibling.classList.toggle('open')">How to Play ▾</button><div class="rules-panel"><ul><li>Guess the hidden 5-letter word in 6 tries</li><li>Green = correct letter in the correct spot</li><li>Yellow = correct letter but wrong spot</li><li>Gray = letter not in the word</li><li>Use the color clues to narrow down the answer</li></ul></div></div>
     <div class="tagline">Six tries. One five-letter word.</div>
     <button class="stats-btn" id="statsBtn" aria-label="Statistics">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="20" x2="6" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="14"/></svg>

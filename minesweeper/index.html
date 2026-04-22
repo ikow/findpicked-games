@@ -337,6 +337,7 @@ header.title p {
 .app > *:nth-child(4) { animation-delay: 0.15s; }
 .app > *:nth-child(5) { animation-delay: 0.2s; }
 .app > *:nth-child(6) { animation-delay: 0.25s; }
+.rules-toggle{display:inline-block;margin-top:12px;font-size:13px;color:#0071e3;cursor:pointer;border:none;background:none;font-family:inherit;padding:0}.rules-toggle:hover{text-decoration:underline}.rules-panel{max-height:0;overflow:hidden;transition:max-height 0.3s ease;font-size:13px;color:#6e6e73;line-height:1.6;text-align:left;max-width:480px;margin:8px auto 0}.rules-panel.open{max-height:500px}.rules-panel ul{margin:8px 0 0 16px}.rules-panel li{margin-bottom:4px}
 </style>
 </head>
 <body>
@@ -347,6 +348,7 @@ header.title p {
 
   <header class="title">
     <h1>Minesweeper</h1>
+<div style="text-align:center"><button class="rules-toggle" onclick="this.nextElementSibling.classList.toggle('open')">How to Play ▾</button><div class="rules-panel"><ul><li>Click to reveal a cell. Numbers show how many mines are adjacent</li><li>Right-click or long-press to place a flag on suspected mines</li><li>First click is always safe</li><li>Clear all non-mine cells to win</li><li>Three difficulty levels: Beginner, Intermediate, Expert</li></ul></div></div>
     <p>Clear the field without stepping on a mine.</p>
   </header>
 
