@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Doodle Jump — FindPicked Games</title>
+<meta name="description" content="Play Doodle Jump free. Tilt, tap, or use arrow keys to climb as high as you can.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ctext x='16' y='22' font-size='18' fill='white' text-anchor='middle' font-family='system-ui'%3ED%3C/text%3E%3C/svg%3E">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #fafafa;
+    --bg-card: #ffffff;
+    --text-primary: #1d1d1f;
+    --text-secondary: #6e6e73;
+    --text-tertiary: #86868b;
+    --accent: #0071e3;
+    --accent-hover: #0077ed;
+    --border: rgba(0,0,0,0.08);
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+    --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+    --sky-top: #f2f7fc;
+    --sky-bottom: #fafafa;
+    --green: #34c759;
+    --orange: #ff9f0a;
+    --gray: #d2d2d7;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px 16px 32px;
+  }
+
+  .back {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 22px;
+    border-radius: 50%;
+    transition: background 0.2s ease, color 0.2s ease;
+    z-index: 10;
+  }
+  .back:hover { background: rgba(0,0,0,0.04); color: var(--text-primary); }
+
+  header {
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+    margin: 56px 0 20px;
+    user-select: none;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+
+  .subtitle {
+    margin-top: 6px;
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  .rules-toggle {
+    display: inline-block;
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--accent);
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-family: inherit;
+    padding: 0;
+  }
+  .rules-toggle:hover { text-decoration: underline; }
+  .rules-panel {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    text-align: left;
+    max-width: 480px;
+    margin: 8px auto 0;
+  }
+  .rules-panel.open { max-height: 500px; }
+  .rules-panel ul { margin: 8px 0 0 16px; }
+  .rules-panel li { margin-bottom: 4px; }
+
+  .scorebar {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .stat {
+    flex: 1;
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 12px 16px;
+    box-shadow: var(--shadow);
+    text-align: center;
+  }
+  .stat .label {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 500;
+  }
+  .stat .value {
+    margin-top: 4px;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stage {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    aspect-ratio: 3 / 4;
+    background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 100%);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    touch-action: none;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    text-align: center;
+    transition: opacity 0.25s ease;
+  }
+  .overlay.hidden { opacity: 0; pointer-events: none; }
+
+  .overlay h2 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+  .overlay p {
+    margin-top: 8px;
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    max-width: 280px;
+  }
+
+  .overlay .result {
+    margin: 20px 0 4px;
+    display: flex;
+    gap: 28px;
+  }
+  .overlay .result .stat {
+    flex: initial;
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+  }
+  .overlay .result .label { color: var(--text-tertiary); }
+  .overlay .result .value { font-size: 32px; }
+
+  .btn {
+    appearance: none;
+    border: none;
+    background: var(--accent);
+    color: #ffffff;
+    height: 44px;
+    padding: 0 24px;
+    border-radius: 22px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: background 0.2s ease, transform 0.15s ease;
+  }
+  .btn:hover { background: var(--accent-hover); }
+  .btn:active { transform: scale(0.97); }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  .hint {
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--text-tertiary);
+  }
+
+  footer {
+    margin-top: 24px;
+    font-size: 13px;
+    color: var(--text-tertiary);
+    text-align: center;
+  }
+
+  @media (max-width: 480px) {
+    header { margin-top: 48px; }
+    h1 { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<a class="back" href="../" aria-label="Back">←</a>
+
+<header>
+  <h1>Doodle Jump</h1>
+  <p class="subtitle">Bounce up, never look down.</p>
+  <div style="text-align:center">
+    <button class="rules-toggle" onclick="this.nextElementSibling.classList.toggle('open')">How to Play ▾</button>
+    <div class="rules-panel">
+      <ul>
+        <li>Use ← → arrow keys, A/D, hold a side of the screen, or tilt your phone to move</li>
+        <li>Your doodle auto-bounces every time it lands on a platform</li>
+        <li>Green platforms are solid — bounce forever</li>
+        <li>Blue platforms glide side to side — aim carefully</li>
+        <li>Gray platforms crumble after one touch — don't linger</li>
+        <li>Springs launch you twice as high — grab them when you can</li>
+        <li>Fly off the left? You wrap around to the right</li>
+        <li>Falling off the bottom ends the run. Score = height climbed</li>
+      </ul>
+    </div>
+  </div>
+</header>
+
+<div class="scorebar">
+  <div class="stat"><div class="label">Score</div><div class="value" id="score">0</div></div>
+  <div class="stat"><div class="label">Best</div><div class="value" id="best">0</div></div>
+</div>
+
+<div class="stage" id="stage" role="button" aria-label="Game area. Tilt or tap a side to move.">
+  <canvas id="game"></canvas>
+  <div class="overlay" id="overlay">
+    <h2 id="overlayTitle">Ready?</h2>
+    <p id="overlayText">Move with ← → or tilt your phone. The doodle auto-bounces.</p>
+    <div class="result" id="overlayResult" style="display:none;">
+      <div class="stat"><div class="label">Score</div><div class="value" id="finalScore">0</div></div>
+      <div class="stat"><div class="label">Best</div><div class="value" id="finalBest">0</div></div>
+    </div>
+    <button class="btn" id="startBtn" type="button">Start</button>
+    <div class="hint" id="hint">← → to move · space to start</div>
+  </div>
+</div>
+
+<footer>game.findpicked.com</footer>
+
+<script>
+(() => {
+  const stage = document.getElementById('stage');
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('score');
+  const bestEl = document.getElementById('best');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlayTitle');
+  const overlayText = document.getElementById('overlayText');
+  const overlayResult = document.getElementById('overlayResult');
+  const finalScore = document.getElementById('finalScore');
+  const finalBest = document.getElementById('finalBest');
+  const startBtn = document.getElementById('startBtn');
+  const hint = document.getElementById('hint');
+
+  const STORE_KEY = 'doodlejump.best';
+  let best = parseInt(localStorage.getItem(STORE_KEY) || '0', 10) || 0;
+  bestEl.textContent = best;
+
+  // Virtual world size — everything is drawn in these units, then scaled.
+  const W = 320, H = 480;
+
+  const GRAVITY = 1500;
+  const JUMP_V = -780;
+  const SPRING_V = -1500;
+  const MOVE_ACCEL = 1800;
+  const MAX_SPEED = 320;
+  const FRICTION = 1100;
+  const PLAYER_W = 34, PLAYER_H = 38;
+  const PLAT_W = 60, PLAT_H = 12;
+
+  let dpr = 1;
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const rect = stage.getBoundingClientRect();
+    canvas.width = Math.round(rect.width * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    const sx = canvas.width / W;
+    const sy = canvas.height / H;
+    ctx.setTransform(sx, 0, 0, sy, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+
+  const state = {
+    mode: 'ready',
+    player: { x: W / 2, y: H - 60 - PLAYER_H, vx: 0, vy: 0, facing: 1, squash: 0 },
+    platforms: [],
+    particles: [],
+    camera: 0,        // pixels climbed (also the score)
+    topY: 0,          // world-y of highest-spawned platform (smaller = higher)
+    input: { tilt: 0, pointerX: null },
+    t: 0,
+  };
+
+  function reset() {
+    state.player.x = W / 2;
+    state.player.y = H - 60 - PLAYER_H;
+    state.player.vx = 0;
+    state.player.vy = 0;
+    state.player.facing = 1;
+    state.player.squash = 0;
+    state.platforms = [];
+    state.particles = [];
+    state.camera = 0;
+    state.t = 0;
+    scoreEl.textContent = '0';
+
+    // Starting platform — guaranteed under the player.
+    state.platforms.push({
+      x: W / 2 - PLAT_W / 2, y: H - 60, w: PLAT_W, h: PLAT_H,
+      type: 'normal', broken: false, spring: false, mdir: 1, mspeed: 0,
+    });
+    state.topY = H - 60;
+    // Pre-fill the screen with platforms going up.
+    while (state.topY > -40) spawnPlatform();
+  }
+
+  function spawnPlatform() {
+    // Vertical gap grows slightly with score so the game gets harder.
+    const gap = 52 + Math.random() * 38 + Math.min(40, state.camera * 0.008);
+    const y = state.topY - gap;
+    const x = 10 + Math.random() * (W - PLAT_W - 20);
+
+    // Type mix depends on progress.
+    const s = state.camera;
+    const r = Math.random();
+    let type = 'normal';
+    if (s > 1200) {
+      if (r < 0.16) type = 'breaking';
+      else if (r < 0.40) type = 'moving';
+    } else if (s > 500) {
+      if (r < 0.10) type = 'breaking';
+      else if (r < 0.30) type = 'moving';
+    } else if (s > 150) {
+      if (r < 0.18) type = 'moving';
+    }
+
+    const p = {
+      x, y, w: PLAT_W, h: PLAT_H,
+      type, broken: false, spring: false,
+      mdir: Math.random() < 0.5 ? -1 : 1,
+      mspeed: 70 + Math.random() * 50,
+    };
+    // Springs on ~8% of normal platforms, only after the first stretch.
+    if (type === 'normal' && s > 80 && Math.random() < 0.08) p.spring = true;
+
+    state.platforms.push(p);
+    state.topY = y;
+  }
+
+  function showReady() {
+    overlayTitle.textContent = 'Ready?';
+    overlayText.textContent = 'Move with ← → or tilt your phone. The doodle auto-bounces.';
+    overlayResult.style.display = 'none';
+    startBtn.textContent = 'Start';
+    hint.textContent = '← → to move · space to start';
+    overlay.classList.remove('hidden');
+  }
+
+  function showDead() {
+    overlayTitle.textContent = 'Game Over';
+    overlayText.textContent = 'Gravity wins this round.';
+    overlayResult.style.display = 'flex';
+    finalScore.textContent = state.score();
+    finalBest.textContent = best;
+    startBtn.textContent = 'Play Again';
+    hint.textContent = 'Space to restart';
+    overlay.classList.remove('hidden');
+  }
+
+  // Expose score as a function so the scorebar + overlay always match.
+  state.score = () => Math.floor(state.camera);
+
+  function start() {
+    reset();
+    state.mode = 'playing';
+    state.player.vy = JUMP_V;  // give an initial pop
+    overlay.classList.add('hidden');
+    startBtn.blur();
+  }
+
+  function die() {
+    if (state.mode !== 'playing') return;
+    state.mode = 'dead';
+    const finalS = state.score();
+    if (finalS > best) {
+      best = finalS;
+      localStorage.setItem(STORE_KEY, String(best));
+      bestEl.textContent = best;
+    }
+    setTimeout(() => {
+      try { if (window.Leaderboard) Leaderboard.submitScore(finalS); } catch (e) {}
+    }, 700);
+    setTimeout(showDead, 420);
+  }
+
+  // ---- Input ----
+  const keys = new Set();
+  window.addEventListener('keydown', (e) => {
+    const k = e.key;
+    if (k === 'ArrowLeft' || k === 'a' || k === 'A') { keys.add('left'); e.preventDefault(); }
+    else if (k === 'ArrowRight' || k === 'd' || k === 'D') { keys.add('right'); e.preventDefault(); }
+    else if (e.code === 'Space') {
+      if (state.mode !== 'playing') start();
+      e.preventDefault();
+    }
+  });
+  window.addEventListener('keyup', (e) => {
+    const k = e.key;
+    if (k === 'ArrowLeft' || k === 'a' || k === 'A') keys.delete('left');
+    else if (k === 'ArrowRight' || k === 'd' || k === 'D') keys.delete('right');
+  });
+
+  function inputDir() {
+    let d = 0;
+    if (keys.has('left')) d -= 1;
+    if (keys.has('right')) d += 1;
+    if (state.input.pointerX != null) d += state.input.pointerX;
+    if (state.input.tilt) d += state.input.tilt;
+    return Math.max(-1, Math.min(1, d));
+  }
+
+  // Touch / mouse: press a side of the stage to tilt that direction.
+  stage.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('button')) return;
+    e.preventDefault();
+    const rect = stage.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    state.input.pointerX = Math.max(-1, Math.min(1, (x - 0.5) * 2));
+    try { stage.setPointerCapture(e.pointerId); } catch (err) {}
+    if (state.mode !== 'playing') { enableTilt(); start(); }
+  });
+  stage.addEventListener('pointermove', (e) => {
+    if (state.input.pointerX == null) return;
+    const rect = stage.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    state.input.pointerX = Math.max(-1, Math.min(1, (x - 0.5) * 2));
+  });
+  const releasePointer = () => { state.input.pointerX = null; };
+  stage.addEventListener('pointerup', releasePointer);
+  stage.addEventListener('pointercancel', releasePointer);
+  stage.addEventListener('pointerleave', releasePointer);
+
+  // Device tilt. iOS requires explicit permission.
+  let tiltEnabled = false;
+  function onOrientation(e) {
+    if (e.gamma == null) return;
+    const g = Math.max(-45, Math.min(45, e.gamma));
+    state.input.tilt = g / 25; // ~-1.8..1.8, clamped in inputDir
+  }
+  function enableTilt() {
+    if (tiltEnabled) return;
+    tiltEnabled = true;
+    if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      DeviceOrientationEvent.requestPermission().then((r) => {
+        if (r === 'granted') window.addEventListener('deviceorientation', onOrientation);
+      }).catch(() => {});
+    } else if (window.DeviceOrientationEvent) {
+      window.addEventListener('deviceorientation', onOrientation);
+    }
+  }
+
+  startBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+  startBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    enableTilt();
+    start();
+  });
+
+  // ---- Update ----
+  function update(dt) {
+    state.t += dt;
+
+    if (state.mode !== 'playing') {
+      // Gentle idle bobbing on the ready screen.
+      if (state.mode === 'ready') {
+        state.player.y = H - 60 - PLAYER_H + Math.sin(state.t * 2.5) * 3;
+      }
+      return;
+    }
+
+    const p = state.player;
+
+    // Horizontal movement.
+    const dir = inputDir();
+    if (dir !== 0) {
+      p.vx += dir * MOVE_ACCEL * dt;
+      if (Math.abs(dir) > 0.1) p.facing = dir > 0 ? 1 : -1;
+    } else {
+      const s = Math.sign(p.vx);
+      p.vx -= s * Math.min(Math.abs(p.vx), FRICTION * dt);
+    }
+    if (p.vx > MAX_SPEED) p.vx = MAX_SPEED;
+    if (p.vx < -MAX_SPEED) p.vx = -MAX_SPEED;
+
+    // Gravity.
+    p.vy += GRAVITY * dt;
+    const prevY = p.y;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+
+    // Horizontal wrap.
+    if (p.x < -PLAYER_W / 2) p.x = W + PLAYER_W / 2;
+    else if (p.x > W + PLAYER_W / 2) p.x = -PLAYER_W / 2;
+
+    // Platform collision — only when falling, only crossing the top edge.
+    if (p.vy > 0) {
+      const prevBottom = prevY + PLAYER_H;
+      const curBottom = p.y + PLAYER_H;
+      for (const pl of state.platforms) {
+        if (pl.broken) continue;
+        if (prevBottom > pl.y + 2) continue;        // was already below the top
+        if (curBottom < pl.y) continue;             // didn't reach it
+        // Use a slightly narrower hitbox so edge-misses feel fair.
+        if (p.x + PLAYER_W / 2 - 4 < pl.x) continue;
+        if (p.x - PLAYER_W / 2 + 4 > pl.x + pl.w) continue;
+
+        // Landed.
+        p.y = pl.y - PLAYER_H;
+        if (pl.spring) {
+          p.vy = SPRING_V;
+          p.squash = 1;
+          spawnParticles(p.x, pl.y, '#ffcc00', 8);
+        } else if (pl.type === 'breaking') {
+          pl.broken = true;
+          pl.fallVY = 80;
+          spawnParticles(p.x, pl.y, '#d2d2d7', 6);
+          // No bounce — player keeps falling.
+        } else {
+          p.vy = JUMP_V;
+          p.squash = 1;
+          spawnParticles(p.x, pl.y, '#ffffff', 4);
+        }
+        break;
+      }
+    }
+
+    // Squash/stretch decay.
+    if (p.squash > 0) p.squash = Math.max(0, p.squash - dt * 5);
+
+    // Move moving platforms.
+    for (const pl of state.platforms) {
+      if (pl.broken) {
+        // Broken platforms tumble away.
+        pl.fallVY = (pl.fallVY || 80) + GRAVITY * dt;
+        pl.y += pl.fallVY * dt;
+        continue;
+      }
+      if (pl.type === 'moving') {
+        pl.x += pl.mdir * pl.mspeed * dt;
+        if (pl.x < 8) { pl.x = 8; pl.mdir = 1; }
+        else if (pl.x + pl.w > W - 8) { pl.x = W - 8 - pl.w; pl.mdir = -1; }
+      }
+    }
+
+    // Camera follow: keep the player pinned to the upper 40% of the view
+    // by shifting the world downward when they rise above it.
+    const threshold = H * 0.4;
+    if (p.y < threshold) {
+      const shift = threshold - p.y;
+      state.camera += shift;
+      p.y = threshold;
+      for (const pl of state.platforms) pl.y += shift;
+      for (const pt of state.particles) pt.y += shift;
+      state.topY += shift;
+      scoreEl.textContent = state.score();
+    }
+
+    // Maintain the platform pool above the view.
+    while (state.topY > -40) spawnPlatform();
+
+    // Remove off-screen platforms and finished particles.
+    for (let i = state.platforms.length - 1; i >= 0; i--) {
+      if (state.platforms[i].y > H + 40) state.platforms.splice(i, 1);
+    }
+    for (let i = state.particles.length - 1; i >= 0; i--) {
+      const pt = state.particles[i];
+      pt.life -= dt;
+      if (pt.life <= 0) { state.particles.splice(i, 1); continue; }
+      pt.x += pt.vx * dt;
+      pt.y += pt.vy * dt;
+      pt.vy += 500 * dt;
+    }
+
+    // Fell off the bottom.
+    if (p.y > H + PLAYER_H) die();
+  }
+
+  function spawnParticles(x, y, color, n) {
+    for (let i = 0; i < n; i++) {
+      state.particles.push({
+        x, y, color,
+        vx: (Math.random() - 0.5) * 140,
+        vy: -30 - Math.random() * 70,
+        life: 0.35 + Math.random() * 0.2,
+        maxLife: 0.55,
+        r: 1.5 + Math.random() * 2,
+      });
+    }
+  }
+
+  // ---- Draw ----
+  function draw() {
+    // Background gradient is provided by CSS, so just clear the canvas.
+    ctx.clearRect(0, 0, W, H);
+
+    drawBackgroundLines();
+
+    for (const pl of state.platforms) drawPlatform(pl);
+
+    for (const pt of state.particles) {
+      const a = Math.max(0, pt.life / pt.maxLife);
+      ctx.globalAlpha = a;
+      ctx.fillStyle = pt.color;
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, pt.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    drawPlayer(state.player);
+
+    if (state.mode === 'playing') {
+      ctx.save();
+      ctx.font = '700 30px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillStyle = 'rgba(29,29,31,0.9)';
+      ctx.fillText(String(state.score()), 16, 14);
+    }
+  }
+
+  function drawBackgroundLines() {
+    // Faint horizontal lines that drift with the camera — gives a sense of motion.
+    ctx.save();
+    ctx.strokeStyle = 'rgba(0,113,227,0.06)';
+    ctx.lineWidth = 1;
+    const spacing = 48;
+    const offset = state.camera % spacing;
+    for (let y = offset - spacing; y < H + spacing; y += spacing) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(W, y);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawPlatform(pl) {
+    const { x, y, w, h, type } = pl;
+    let body, tint;
+    if (type === 'moving') { body = '#0071e3'; tint = 'rgba(0,113,227,0.22)'; }
+    else if (type === 'breaking') { body = pl.broken ? '#b9b9be' : '#d2d2d7'; tint = 'rgba(0,0,0,0.08)'; }
+    else { body = '#34c759'; tint = 'rgba(52,199,89,0.22)'; }
+
+    // Soft drop shadow.
+    ctx.fillStyle = tint;
+    roundRect(x, y + 3, w, h, h / 2);
+    ctx.fill();
+
+    ctx.fillStyle = body;
+    roundRect(x, y, w, h, h / 2);
+    ctx.fill();
+
+    // Top highlight.
+    ctx.fillStyle = 'rgba(255,255,255,0.32)';
+    roundRect(x + 5, y + 2, w - 10, 3, 1.5);
+    ctx.fill();
+
+    // Crack marks for breaking (visible only before it breaks).
+    if (type === 'breaking' && !pl.broken) {
+      ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x + w * 0.3, y + 3);
+      ctx.lineTo(x + w * 0.4, y + h - 3);
+      ctx.moveTo(x + w * 0.6, y + 2);
+      ctx.lineTo(x + w * 0.55, y + h - 2);
+      ctx.stroke();
+    }
+
+    if (pl.spring && !pl.broken) drawSpring(x + w / 2, y);
+  }
+
+  function drawSpring(cx, topY) {
+    // Base plate.
+    ctx.fillStyle = '#6e6e73';
+    roundRect(cx - 7, topY - 4, 14, 3, 1);
+    ctx.fill();
+    // Coil — simple zig-zag.
+    ctx.strokeStyle = '#86868b';
+    ctx.lineWidth = 1.4;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(cx - 5, topY - 4);
+    ctx.lineTo(cx - 2, topY - 7);
+    ctx.lineTo(cx + 2, topY - 5);
+    ctx.lineTo(cx - 2, topY - 9);
+    ctx.lineTo(cx + 2, topY - 7);
+    ctx.lineTo(cx + 5, topY - 10);
+    ctx.stroke();
+    // Top cap.
+    ctx.fillStyle = '#1d1d1f';
+    roundRect(cx - 6, topY - 12, 12, 3, 1);
+    ctx.fill();
+  }
+
+  function drawPlayer(p) {
+    const cx = p.x;
+    // Squash/stretch: when we bounced, go short + wide, then back.
+    const sq = p.squash;
+    const scaleY = 1 - sq * 0.18;
+    const scaleX = 1 + sq * 0.14;
+    const w = PLAYER_W * scaleX;
+    const h = PLAYER_H * scaleY;
+    const x = cx - w / 2;
+    const y = p.y + (PLAYER_H - h);
+
+    // Ground shadow (only when near a platform — fakes with constant for simplicity).
+    ctx.fillStyle = 'rgba(0,0,0,0.08)';
+    ctx.beginPath();
+    ctx.ellipse(cx, y + h + 2, w / 2, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Body.
+    ctx.fillStyle = '#0071e3';
+    roundRect(x, y, w, h, 11);
+    ctx.fill();
+
+    // Subtle top sheen.
+    ctx.fillStyle = 'rgba(255,255,255,0.22)';
+    roundRect(x + 3, y + 3, w - 6, h * 0.35, 8);
+    ctx.fill();
+
+    // Little feet nubs.
+    ctx.fillStyle = '#005bb5';
+    ctx.beginPath();
+    ctx.ellipse(cx - w * 0.22, y + h - 1, 3.5, 2.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(cx + w * 0.22, y + h - 1, 3.5, 2.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Eyes — look in the direction of travel.
+    const eyeY = y + h * 0.4;
+    const eyeDx = p.facing * 1.8;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath(); ctx.arc(cx - 7, eyeY, 4.2, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 7, eyeY, 4.2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#1d1d1f';
+    ctx.beginPath(); ctx.arc(cx - 7 + eyeDx, eyeY, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 7 + eyeDx, eyeY, 2, 0, Math.PI * 2); ctx.fill();
+
+    // Smile.
+    ctx.strokeStyle = '#1d1d1f';
+    ctx.lineWidth = 1.5;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(cx, y + h * 0.62, 4.5, 0.2, Math.PI - 0.2);
+    ctx.stroke();
+  }
+
+  function roundRect(x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.arcTo(x + w, y, x + w, y + r, r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+    ctx.lineTo(x + r, y + h);
+    ctx.arcTo(x, y + h, x, y + h - r, r);
+    ctx.lineTo(x, y + r);
+    ctx.arcTo(x, y, x + r, y, r);
+    ctx.closePath();
+  }
+
+  // ---- Loop ----
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.033, (now - last) / 1000);
+    last = now;
+    update(dt);
+    draw();
+    requestAnimationFrame(frame);
+  }
+
+  resize();
+  reset();
+  showReady();
+  requestAnimationFrame(frame);
+
+  const ro = new ResizeObserver(resize);
+  ro.observe(stage);
+})();
+</script>
+
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

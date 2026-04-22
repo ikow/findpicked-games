@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Helicopter — FindPicked Games</title>
+<meta name="description" content="Play Helicopter free. Hold to fly up, release to fall. Navigate the cave.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ctext x='16' y='22' font-size='18' fill='white' text-anchor='middle' font-family='system-ui'%3EH%3C/text%3E%3C/svg%3E">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #fafafa;
+    --bg-card: #ffffff;
+    --text-primary: #1d1d1f;
+    --text-secondary: #6e6e73;
+    --text-tertiary: #86868b;
+    --accent: #0071e3;
+    --accent-hover: #0077ed;
+    --border: rgba(0,0,0,0.08);
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+    --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+    --cave-bg-top: #eef2f6;
+    --cave-bg-bottom: #f6f8fa;
+    --cave-wall: #2a2f36;
+    --cave-wall-edge: #1a1f26;
+    --obstacle: #c23b3b;
+    --obstacle-edge: #8f2424;
+    --copter: #0071e3;
+    --copter-dark: #0058b3;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px 16px 32px;
+  }
+
+  .back {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 22px;
+    border-radius: 50%;
+    transition: background 0.2s ease, color 0.2s ease;
+    z-index: 10;
+  }
+  .back:hover { background: rgba(0,0,0,0.04); color: var(--text-primary); }
+
+  header {
+    width: 100%;
+    max-width: 480px;
+    text-align: center;
+    margin: 56px 0 20px;
+    user-select: none;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+
+  .subtitle {
+    margin-top: 6px;
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  .rules-toggle {
+    display: inline-block;
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--accent);
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-family: inherit;
+    padding: 0;
+  }
+  .rules-toggle:hover { text-decoration: underline; }
+  .rules-panel {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    text-align: left;
+    max-width: 480px;
+    margin: 8px auto 0;
+  }
+  .rules-panel.open { max-height: 500px; }
+  .rules-panel ul { margin: 8px 0 0 18px; }
+  .rules-panel li { margin-bottom: 4px; }
+
+  .scorebar {
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .stat {
+    flex: 1;
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 12px 16px;
+    box-shadow: var(--shadow);
+    text-align: center;
+  }
+  .stat .label {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 500;
+  }
+  .stat .value {
+    margin-top: 4px;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stage {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    aspect-ratio: 3 / 2;
+    background: linear-gradient(180deg, var(--cave-bg-top) 0%, var(--cave-bg-bottom) 100%);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    touch-action: none;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    text-align: center;
+    transition: opacity 0.25s ease;
+  }
+  .overlay.hidden { opacity: 0; pointer-events: none; }
+
+  .overlay h2 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+  .overlay p {
+    margin-top: 8px;
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    max-width: 320px;
+  }
+
+  .overlay .result {
+    margin: 20px 0 4px;
+    display: flex;
+    gap: 28px;
+  }
+  .overlay .result .stat {
+    flex: initial;
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+  }
+  .overlay .result .label { color: var(--text-tertiary); }
+  .overlay .result .value { font-size: 32px; }
+
+  .btn {
+    appearance: none;
+    border: none;
+    background: var(--accent);
+    color: #ffffff;
+    height: 44px;
+    padding: 0 24px;
+    border-radius: 22px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: background 0.2s ease, transform 0.15s ease;
+  }
+  .btn:hover { background: var(--accent-hover); }
+  .btn:active { transform: scale(0.97); }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  .hint {
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--text-tertiary);
+  }
+
+  footer {
+    margin-top: 24px;
+    font-size: 13px;
+    color: var(--text-tertiary);
+    text-align: center;
+  }
+
+  @media (max-width: 480px) {
+    header { margin-top: 48px; }
+    h1 { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<a class="back" href="../" aria-label="Back">←</a>
+
+<header>
+  <h1>Helicopter</h1>
+  <p class="subtitle">Hold to fly up. Release to fall.</p>
+  <div style="text-align:center">
+    <button class="rules-toggle" onclick="this.nextElementSibling.classList.toggle('open')">How to Play ▾</button>
+    <div class="rules-panel">
+      <ul>
+        <li>Hold click, tap, or Space to lift the helicopter</li>
+        <li>Release to let gravity pull it down</li>
+        <li>Navigate through the cave without hitting the walls</li>
+        <li>Avoid the red obstacles floating in the passage</li>
+        <li>The cave narrows and speed grows the farther you fly</li>
+        <li>Score is distance traveled — chase your best</li>
+      </ul>
+    </div>
+  </div>
+</header>
+
+<div class="scorebar">
+  <div class="stat"><div class="label">Distance</div><div class="value" id="score">0</div></div>
+  <div class="stat"><div class="label">Best</div><div class="value" id="best">0</div></div>
+</div>
+
+<div class="stage" id="stage" role="button" aria-label="Game area. Hold to fly.">
+  <canvas id="game"></canvas>
+  <div class="overlay" id="overlay">
+    <h2 id="overlayTitle">Ready?</h2>
+    <p id="overlayText">Hold the screen, mouse, or Space to lift off. Release to drop.</p>
+    <div class="result" id="overlayResult" style="display:none;">
+      <div class="stat"><div class="label">Distance</div><div class="value" id="finalScore">0</div></div>
+      <div class="stat"><div class="label">Best</div><div class="value" id="finalBest">0</div></div>
+    </div>
+    <button class="btn" id="startBtn" type="button">Start</button>
+    <div class="hint" id="hint">Hold Space to fly</div>
+  </div>
+</div>
+
+<footer>game.findpicked.com</footer>
+
+<script>
+(() => {
+  const stage = document.getElementById('stage');
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('score');
+  const bestEl = document.getElementById('best');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlayTitle');
+  const overlayText = document.getElementById('overlayText');
+  const overlayResult = document.getElementById('overlayResult');
+  const finalScore = document.getElementById('finalScore');
+  const finalBest = document.getElementById('finalBest');
+  const startBtn = document.getElementById('startBtn');
+  const hint = document.getElementById('hint');
+
+  const STORE_KEY = 'helicopter.best';
+  let best = parseInt(localStorage.getItem(STORE_KEY) || '0', 10) || 0;
+  bestEl.textContent = best;
+
+  // World units — everything is drawn in this virtual space then scaled.
+  const W = 600;
+  const H = 400;
+
+  const GRAVITY = 1100;           // downward accel in px/s^2 when not holding
+  const THRUST = -1300;           // upward accel while holding
+  const MAX_V = 520;              // terminal velocity magnitude
+  const COPTER_X = 120;
+  const COPTER_W = 44;
+  const COPTER_H = 18;
+
+  const SCROLL_BASE = 200;        // starting horizontal scroll speed (world units/s)
+  const SCROLL_MAX = 420;         // cap
+  const SCROLL_RAMP = 6;          // added per second of play
+
+  // Cave terrain: sampled at CHUNK_W intervals.
+  const CHUNK_W = 30;
+  const SAMPLE_COUNT = Math.ceil(W / CHUNK_W) + 4;
+
+  let dpr = 1;
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const rect = stage.getBoundingClientRect();
+    canvas.width = Math.round(rect.width * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    const sx = canvas.width / W;
+    const sy = canvas.height / H;
+    ctx.setTransform(sx, 0, 0, sy, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  const state = {
+    mode: 'ready',
+    copter: { y: H / 2, v: 0 },
+    holding: false,
+    // Terrain samples. Each entry: { xOff, top, bot } where xOff is pixels from
+    // the current world origin (decreases as scroll advances).
+    samples: [],
+    // Target cave parameters (change over time).
+    caveCenter: H / 2,
+    caveHeight: 260,
+    // Random walk state for procedural gen.
+    genCenter: H / 2,
+    genHeight: 260,
+    genVel: 0,
+    obstacles: [],
+    nextObstacleX: 0,    // world x at which to spawn the next obstacle
+    worldX: 0,           // total horizontal distance scrolled in world units
+    playTime: 0,
+    flashT: 0,
+    particles: [],       // rotor/exhaust particles
+    rotorPhase: 0,
+    deadTimer: null,
+  };
+
+  function reset() {
+    state.copter.y = H / 2;
+    state.copter.v = 0;
+    state.holding = false;
+    state.samples = [];
+    state.caveCenter = H / 2;
+    state.caveHeight = 260;
+    state.genCenter = H / 2;
+    state.genHeight = 260;
+    state.genVel = 0;
+    state.obstacles = [];
+    state.nextObstacleX = 500;
+    state.worldX = 0;
+    state.playTime = 0;
+    state.flashT = 0;
+    state.particles = [];
+    state.rotorPhase = 0;
+    // Seed samples from left edge to right edge plus buffer.
+    for (let i = 0; i < SAMPLE_COUNT; i++) {
+      const xOff = i * CHUNK_W;
+      state.samples.push({ xOff, top: centerToTop(H / 2, 260), bot: centerToBot(H / 2, 260) });
+    }
+    scoreEl.textContent = '0';
+  }
+
+  function centerToTop(c, h) { return Math.max(10, c - h / 2); }
+  function centerToBot(c, h) { return Math.min(H - 10, c + h / 2); }
+
+  function currentScroll() {
+    return Math.min(SCROLL_MAX, SCROLL_BASE + state.playTime * SCROLL_RAMP);
+  }
+
+  // Advance the procedural generator by one chunk.
+  function advanceGen() {
+    // Narrow the cave over distance.
+    const minHeight = 110;
+    const targetHeight = Math.max(minHeight, 260 - state.worldX * 0.008);
+    state.genHeight += (targetHeight - state.genHeight) * 0.08;
+
+    // Random-walk the center with momentum; steer back toward middle when near edges.
+    const margin = state.genHeight / 2 + 18;
+    const upperLimit = margin;
+    const lowerLimit = H - margin;
+    // Bias toward middle when close to boundary.
+    let bias = 0;
+    if (state.genCenter < upperLimit + 30) bias = 0.6;
+    else if (state.genCenter > lowerLimit - 30) bias = -0.6;
+    state.genVel += (Math.random() - 0.5) * 2.6 + bias;
+    state.genVel *= 0.92;
+    state.genVel = Math.max(-4.5, Math.min(4.5, state.genVel));
+    state.genCenter += state.genVel;
+    if (state.genCenter < upperLimit) { state.genCenter = upperLimit; state.genVel = Math.abs(state.genVel) * 0.5; }
+    if (state.genCenter > lowerLimit) { state.genCenter = lowerLimit; state.genVel = -Math.abs(state.genVel) * 0.5; }
+
+    return {
+      top: centerToTop(state.genCenter, state.genHeight),
+      bot: centerToBot(state.genCenter, state.genHeight),
+    };
+  }
+
+  function showReady() {
+    overlayTitle.textContent = 'Ready?';
+    overlayText.textContent = 'Hold the screen, mouse, or Space to lift off. Release to drop.';
+    overlayResult.style.display = 'none';
+    startBtn.textContent = 'Start';
+    hint.textContent = 'Hold Space to fly';
+    overlay.classList.remove('hidden');
+  }
+
+  function showDead() {
+    overlayTitle.textContent = 'Game Over';
+    overlayText.textContent = 'Nice flight. Go again?';
+    overlayResult.style.display = 'flex';
+    finalScore.textContent = Math.floor(state.worldX);
+    finalBest.textContent = best;
+    startBtn.textContent = 'Play Again';
+    hint.textContent = 'Space to restart';
+    overlay.classList.remove('hidden');
+  }
+
+  function start() {
+    if (state.deadTimer) { clearTimeout(state.deadTimer); state.deadTimer = null; }
+    reset();
+    state.mode = 'playing';
+    overlay.classList.add('hidden');
+    startBtn.blur();
+  }
+
+  function die() {
+    if (state.mode !== 'playing') return;
+    state.mode = 'dead';
+    state.flashT = 0.22;
+    const finalDistance = Math.floor(state.worldX);
+    if (finalDistance > best) {
+      best = finalDistance;
+      localStorage.setItem(STORE_KEY, String(best));
+      bestEl.textContent = best;
+    }
+    setTimeout(() => { try { Leaderboard.submitScore(finalDistance); } catch (_) {} }, 600);
+    state.deadTimer = setTimeout(showDead, 420);
+  }
+
+  // Input — press-and-hold model. A first press in ready/dead state also starts
+  // the round, and the hold state persists into play so there's no dead frame.
+  function setHold(on) {
+    if (on && state.mode !== 'playing') start();
+    state.holding = on;
+  }
+
+  stage.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('button')) return;
+    e.preventDefault();
+    setHold(true);
+  });
+  window.addEventListener('pointerup', (e) => { setHold(false); });
+  window.addEventListener('pointercancel', () => setHold(false));
+  stage.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' || e.code === 'ArrowUp' || e.key === ' ') {
+      if (e.repeat) { e.preventDefault(); return; }
+      e.preventDefault();
+      setHold(true);
+    }
+  });
+  window.addEventListener('keyup', (e) => {
+    if (e.code === 'Space' || e.code === 'ArrowUp' || e.key === ' ') {
+      e.preventDefault();
+      setHold(false);
+    }
+  });
+  window.addEventListener('blur', () => setHold(false));
+
+  startBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+  startBtn.addEventListener('click', (e) => { e.stopPropagation(); start(); });
+
+  // Physics + world update.
+  function update(dt) {
+    if (state.mode === 'ready') {
+      state.rotorPhase += dt * 22;
+      state.copter.y = H / 2 + Math.sin(state.playTime * 2.2) * 6;
+      state.playTime += dt;
+      return;
+    }
+    if (state.mode !== 'playing') {
+      // Dead state: let copter fall until it settles, rotor slows.
+      state.copter.v = Math.min(MAX_V, state.copter.v + GRAVITY * dt);
+      state.copter.y += state.copter.v * dt;
+      state.rotorPhase += dt * 6;
+      updateParticles(dt);
+      return;
+    }
+
+    state.playTime += dt;
+    state.rotorPhase += dt * 40;
+
+    // Copter physics.
+    const accel = state.holding ? THRUST : GRAVITY;
+    state.copter.v += accel * dt;
+    state.copter.v = Math.max(-MAX_V, Math.min(MAX_V, state.copter.v));
+    state.copter.y += state.copter.v * dt;
+
+    // Scroll the world.
+    const scroll = currentScroll();
+    const dx = scroll * dt;
+    state.worldX += dx;
+    for (const s of state.samples) s.xOff -= dx;
+    for (const o of state.obstacles) o.x -= dx;
+
+    // Recycle samples off the left edge, generating new terrain on the right.
+    while (state.samples.length && state.samples[0].xOff < -CHUNK_W * 2) {
+      state.samples.shift();
+      const lastX = state.samples[state.samples.length - 1].xOff;
+      const gen = advanceGen();
+      state.samples.push({ xOff: lastX + CHUNK_W, top: gen.top, bot: gen.bot });
+    }
+
+    // Spawn obstacles periodically in world-space.
+    if (state.worldX > state.nextObstacleX) {
+      spawnObstacle();
+      // Obstacles get closer together as distance grows.
+      const gap = Math.max(180, 340 - state.worldX * 0.04);
+      state.nextObstacleX += gap + Math.random() * 80;
+    }
+
+    // Cull obstacles that scrolled past.
+    state.obstacles = state.obstacles.filter(o => o.x + o.w > -20);
+
+    // Score display = distance in world units.
+    scoreEl.textContent = String(Math.floor(state.worldX));
+
+    // Rotor exhaust particles.
+    emitExhaust(dt);
+    updateParticles(dt);
+
+    // Collisions.
+    checkCollisions();
+  }
+
+  function spawnObstacle() {
+    // Place an obstacle somewhere inside the current cave gap at the right edge.
+    // Sample the terrain at the far right to pick a safe y range.
+    const far = state.samples[state.samples.length - 1] || { top: 60, bot: H - 60 };
+    const top = far.top;
+    const bot = far.bot;
+    const gap = bot - top;
+    if (gap < 90) return; // too tight, skip
+
+    const obW = 18 + Math.random() * 12;
+    const obH = 24 + Math.random() * 60;
+    // Keep at least 40px of passage on one side of the obstacle.
+    const minY = top + 20;
+    const maxY = bot - obH - 20;
+    if (maxY <= minY) return;
+    const y = minY + Math.random() * (maxY - minY);
+    // Spawn just past the right edge in world coords (map via last sample's xOff).
+    const spawnX = far.xOff + CHUNK_W;
+    state.obstacles.push({ x: spawnX, y, w: obW, h: obH });
+  }
+
+  function emitExhaust(dt) {
+    // Behind the copter; a few small particles per frame.
+    const rate = 60; // particles/sec
+    const n = Math.random() < rate * dt ? 1 : 0;
+    for (let i = 0; i < n; i++) {
+      state.particles.push({
+        x: COPTER_X - COPTER_W / 2 + 2,
+        y: state.copter.y + (Math.random() - 0.5) * 4,
+        vx: -60 - Math.random() * 60,
+        vy: (Math.random() - 0.5) * 20,
+        life: 0.35 + Math.random() * 0.2,
+        age: 0,
+        r: 2 + Math.random() * 2,
+      });
+    }
+  }
+
+  function updateParticles(dt) {
+    for (const p of state.particles) {
+      p.age += dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vx *= 0.96;
+    }
+    state.particles = state.particles.filter(p => p.age < p.life);
+  }
+
+  function checkCollisions() {
+    // Copter bounding box (axis-aligned, centered at COPTER_X, copter.y).
+    const cx1 = COPTER_X - COPTER_W / 2 + 2;
+    const cy1 = state.copter.y - COPTER_H / 2 + 1;
+    const cx2 = COPTER_X + COPTER_W / 2 - 2;
+    const cy2 = state.copter.y + COPTER_H / 2 - 1;
+
+    // Walls: find samples that overlap copter x range.
+    for (let i = 0; i < state.samples.length - 1; i++) {
+      const a = state.samples[i];
+      const b = state.samples[i + 1];
+      const segL = a.xOff;
+      const segR = b.xOff;
+      if (segR < cx1) continue;
+      if (segL > cx2) break;
+      // Max top / min bot across the segment approximate the polygon edge.
+      const topY = Math.max(a.top, b.top);
+      const botY = Math.min(a.bot, b.bot);
+      if (cy1 < topY) { die(); return; }
+      if (cy2 > botY) { die(); return; }
+    }
+
+    // Obstacles.
+    for (const o of state.obstacles) {
+      if (o.x > cx2) continue;
+      if (o.x + o.w < cx1) continue;
+      if (o.y > cy2) continue;
+      if (o.y + o.h < cy1) continue;
+      die();
+      return;
+    }
+
+    // Hard bounds.
+    if (state.copter.y < 0 || state.copter.y > H) die();
+  }
+
+  // Rendering.
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    drawBackground();
+    drawCave();
+    drawObstacles();
+    drawParticles();
+    drawCopter();
+    drawHud();
+
+    if (state.flashT > 0) {
+      ctx.fillStyle = `rgba(255,255,255,${Math.min(0.55, state.flashT * 3)})`;
+      ctx.fillRect(0, 0, W, H);
+    }
+  }
+
+  function drawBackground() {
+    // Subtle parallax dots to convey motion.
+    ctx.save();
+    const drift = -(state.worldX * 0.25) % 40;
+    ctx.fillStyle = 'rgba(29,29,31,0.05)';
+    for (let y = 20; y < H; y += 40) {
+      for (let x = drift; x < W; x += 40) {
+        ctx.beginPath();
+        ctx.arc(x, y + ((x + y) % 80 === 0 ? 6 : 0), 1.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+
+  function drawCave() {
+    // Top wall polygon.
+    ctx.fillStyle = 'rgba(42,47,54,1)';
+    ctx.beginPath();
+    ctx.moveTo(-CHUNK_W, -10);
+    for (const s of state.samples) ctx.lineTo(s.xOff, s.top);
+    ctx.lineTo(W + CHUNK_W, -10);
+    ctx.closePath();
+    ctx.fill();
+
+    // Top wall rim (slight lighter edge for depth).
+    ctx.strokeStyle = 'rgba(90,100,112,0.8)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    let first = true;
+    for (const s of state.samples) {
+      if (first) { ctx.moveTo(s.xOff, s.top); first = false; }
+      else ctx.lineTo(s.xOff, s.top);
+    }
+    ctx.stroke();
+
+    // Bottom wall polygon.
+    ctx.fillStyle = 'rgba(42,47,54,1)';
+    ctx.beginPath();
+    ctx.moveTo(-CHUNK_W, H + 10);
+    for (const s of state.samples) ctx.lineTo(s.xOff, s.bot);
+    ctx.lineTo(W + CHUNK_W, H + 10);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(90,100,112,0.8)';
+    ctx.beginPath();
+    first = true;
+    for (const s of state.samples) {
+      if (first) { ctx.moveTo(s.xOff, s.bot); first = false; }
+      else ctx.lineTo(s.xOff, s.bot);
+    }
+    ctx.stroke();
+  }
+
+  function drawObstacles() {
+    for (const o of state.obstacles) {
+      // Red block with darker edge.
+      ctx.fillStyle = '#c23b3b';
+      roundRect(o.x, o.y, o.w, o.h, 3);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(143,36,36,0.9)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      // Inner highlight.
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
+      ctx.fillRect(o.x + 2, o.y + 2, Math.max(1, o.w - 4), 2);
+    }
+  }
+
+  function drawParticles() {
+    for (const p of state.particles) {
+      const a = 1 - p.age / p.life;
+      ctx.fillStyle = `rgba(29,29,31,${a * 0.35})`;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r * (0.6 + a * 0.6), 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function drawCopter() {
+    const x = COPTER_X;
+    const y = state.copter.y;
+    // Tilt based on velocity.
+    const tilt = Math.max(-0.35, Math.min(0.45, state.copter.v / 900));
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(tilt);
+
+    // Shadow.
+    ctx.fillStyle = 'rgba(0,0,0,0.12)';
+    ctx.beginPath();
+    ctx.ellipse(2, 3, COPTER_W / 2, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Tail boom.
+    ctx.fillStyle = '#0058b3';
+    roundRect(-COPTER_W / 2 - 12, -2, 14, 4, 2);
+    ctx.fill();
+
+    // Body (rounded).
+    const bodyGrad = ctx.createLinearGradient(0, -COPTER_H / 2, 0, COPTER_H / 2);
+    bodyGrad.addColorStop(0, '#2a8cf0');
+    bodyGrad.addColorStop(0.5, '#0071e3');
+    bodyGrad.addColorStop(1, '#005ab8');
+    ctx.fillStyle = bodyGrad;
+    roundRect(-COPTER_W / 2, -COPTER_H / 2, COPTER_W, COPTER_H, 7);
+    ctx.fill();
+
+    // Cockpit window.
+    ctx.fillStyle = 'rgba(220,240,255,0.9)';
+    ctx.beginPath();
+    ctx.ellipse(COPTER_W / 2 - 10, -2, 7, 4.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,50,100,0.4)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Skids.
+    ctx.strokeStyle = '#1d1d1f';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(-COPTER_W / 2 + 6, COPTER_H / 2 + 4);
+    ctx.lineTo(COPTER_W / 2 - 6, COPTER_H / 2 + 4);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-8, COPTER_H / 2);
+    ctx.lineTo(-8, COPTER_H / 2 + 4);
+    ctx.moveTo(8, COPTER_H / 2);
+    ctx.lineTo(8, COPTER_H / 2 + 4);
+    ctx.stroke();
+
+    // Main rotor — spinning motion blur.
+    const rotorLen = 30;
+    const phase = state.rotorPhase;
+    const span = 0.5 + Math.abs(Math.sin(phase)) * 0.5; // oscillates 0.5..1
+    ctx.strokeStyle = 'rgba(29,29,31,0.55)';
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.moveTo(-rotorLen * span, -COPTER_H / 2 - 4);
+    ctx.lineTo(rotorLen * span, -COPTER_H / 2 - 4);
+    ctx.stroke();
+    // Rotor mast.
+    ctx.fillStyle = '#1d1d1f';
+    ctx.fillRect(-1.5, -COPTER_H / 2 - 5, 3, 4);
+
+    // Tail rotor (small).
+    ctx.strokeStyle = 'rgba(29,29,31,0.55)';
+    ctx.lineWidth = 1.5;
+    const tspan = 0.5 + Math.abs(Math.cos(phase * 1.3)) * 0.5;
+    ctx.beginPath();
+    ctx.moveTo(-COPTER_W / 2 - 12, -5 * tspan);
+    ctx.lineTo(-COPTER_W / 2 - 12, 5 * tspan);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function drawHud() {
+    if (state.mode !== 'playing') return;
+    ctx.save();
+    ctx.font = '700 34px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.fillText(String(Math.floor(state.worldX)), W / 2, 18);
+    ctx.font = '600 11px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.fillText('DISTANCE', W / 2, 54);
+    ctx.restore();
+  }
+
+  function roundRect(x, y, w, h, r) {
+    const rr = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + rr, y);
+    ctx.lineTo(x + w - rr, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
+    ctx.lineTo(x + w, y + h - rr);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+    ctx.lineTo(x + rr, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - rr);
+    ctx.lineTo(x, y + rr);
+    ctx.quadraticCurveTo(x, y, x + rr, y);
+    ctx.closePath();
+  }
+
+  // Main loop — fixed-timestep physics to stay smooth at 60fps.
+  let last = performance.now();
+  let accumulator = 0;
+  const STEP = 1 / 120;
+
+  function loop(now) {
+    let frame = (now - last) / 1000;
+    if (frame > 0.1) frame = 0.1; // clamp on tab resume
+    last = now;
+    accumulator += frame;
+    while (accumulator >= STEP) {
+      update(STEP);
+      if (state.flashT > 0) state.flashT = Math.max(0, state.flashT - STEP);
+      accumulator -= STEP;
+    }
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  reset();
+  showReady();
+  requestAnimationFrame(loop);
+})();
+</script>
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>
