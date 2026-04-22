@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Ball Sort Puzzle — FindPicked Games</title>
+<meta name="description" content="Play Ball Sort Puzzle free — pour colored balls between tubes to sort them. No downloads, no sign-ups.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ccircle cx='10' cy='12' r='4' fill='%23e74c3c'/%3E%3Ccircle cx='22' cy='12' r='4' fill='%23f1c40f'/%3E%3Ccircle cx='10' cy='22' r='4' fill='%2327ae60'/%3E%3Ccircle cx='22' cy='22' r='4' fill='%239b59b6'/%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --border: rgba(0,0,0,0.08);
+  --tube-border: #d2d2d7;
+  --tube-bg: rgba(255, 255, 255, 0.55);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+  --radius: 16px;
+
+  --ball-size: 40px;
+  --tube-pad: 4px;
+  --tube-w: 52px;
+  --tube-h: 184px;
+  --lift: 18px;
+}
+
+html, body {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px 20px 40px;
+  touch-action: manipulation;
+}
+
+.back {
+  align-self: flex-start;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 400;
+  padding: 8px 4px;
+  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.back:hover { color: var(--text-primary); }
+.back .arrow { font-size: 18px; line-height: 1; }
+
+.wrap {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+h1 {
+  font-size: clamp(32px, 7vw, 44px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.scores {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.score-box {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 8px 14px;
+  min-width: 70px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.score-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  margin-bottom: 2px;
+}
+
+.score-value {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  transition: transform 0.2s ease;
+}
+.score-value.bump { transform: scale(1.12); }
+
+.subhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.subhead p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  flex: 1;
+  min-width: 180px;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  height: 44px;
+  min-width: 44px;
+  padding: 0 18px;
+  border-radius: 22px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease, opacity 0.2s ease;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn:active { transform: scale(0.97); }
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: var(--accent);
+}
+
+.btn.secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
+}
+.btn.secondary:hover { background: rgba(0, 113, 227, 0.06); }
+.btn.secondary:disabled {
+  color: var(--text-tertiary);
+  border-color: var(--border);
+  background: transparent;
+  opacity: 1;
+}
+
+.board {
+  position: relative;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 20px 12px;
+  box-shadow: var(--shadow);
+  min-height: 240px;
+  overflow: hidden;
+}
+
+.tubes-area {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 10px 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.tube {
+  width: var(--tube-w);
+  height: var(--tube-h);
+  border: 2px solid var(--tube-border);
+  border-top: none;
+  border-radius: 0 0 26px 26px;
+  background: var(--tube-bg);
+  cursor: pointer;
+  position: relative;
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tube::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: -2px;
+  right: -2px;
+  height: 6px;
+  border-left: 2px solid var(--tube-border);
+  border-right: 2px solid var(--tube-border);
+  border-radius: 2px 2px 0 0;
+  transition: border-color 0.2s ease;
+}
+
+.tube.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
+}
+.tube.selected::before { border-color: var(--accent); }
+
+.tube.complete {
+  border-color: #34c759;
+  box-shadow: 0 0 0 3px rgba(52, 199, 89, 0.18);
+}
+.tube.complete::before { border-color: #34c759; }
+
+.tube.target-hint {
+  border-color: var(--accent);
+  background: rgba(0, 113, 227, 0.04);
+}
+
+.balls-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.ball {
+  position: absolute;
+  width: var(--ball-size);
+  height: var(--ball-size);
+  border-radius: 50%;
+  top: 0;
+  left: 0;
+  will-change: transform;
+  transform: translate(0, 0);
+  box-shadow:
+    inset -3px -4px 6px rgba(0, 0, 0, 0.22),
+    inset 4px 5px 6px rgba(255, 255, 255, 0.35),
+    0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.ball::after {
+  content: "";
+  position: absolute;
+  top: 18%;
+  left: 22%;
+  width: 28%;
+  height: 22%;
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 50%;
+  filter: blur(1.5px);
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.86);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 20px;
+  z-index: 100;
+}
+.overlay.show { opacity: 1; pointer-events: auto; }
+
+.overlay h2 {
+  font-size: clamp(32px, 8vw, 44px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  text-align: center;
+}
+
+.overlay .badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  background: rgba(0, 113, 227, 0.1);
+  padding: 4px 12px;
+  border-radius: 12px;
+  margin-bottom: -4px;
+}
+
+.overlay p {
+  font-size: 15px;
+  color: var(--text-secondary);
+  text-align: center;
+  max-width: 320px;
+  line-height: 1.5;
+}
+
+.overlay .stats {
+  display: flex;
+  gap: 24px;
+  margin: 4px 0 8px;
+}
+.overlay .stat {
+  text-align: center;
+}
+.overlay .stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  margin-bottom: 2px;
+}
+.overlay .stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.overlay .row {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+footer {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  text-align: center;
+  margin-top: 8px;
+  line-height: 1.6;
+}
+
+.rules-toggle {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--accent);
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+  padding: 0;
+}
+.rules-toggle:hover { text-decoration: underline; }
+.rules-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  text-align: left;
+  max-width: 520px;
+  margin: 6px auto 0;
+}
+.rules-panel.open { max-height: 600px; }
+.rules-panel ul { margin: 8px 0 0 18px; }
+.rules-panel li { margin-bottom: 4px; }
+
+@media (max-width: 560px) {
+  :root {
+    --ball-size: 34px;
+    --tube-w: 44px;
+    --tube-h: 156px;
+    --lift: 14px;
+  }
+  body { padding: 16px 12px 28px; }
+  .wrap { gap: 16px; }
+  .board { padding: 16px 8px; }
+  .tubes-area { gap: 8px 8px; }
+  header { gap: 10px; align-items: center; }
+  h1 { font-size: clamp(28px, 8vw, 36px); }
+  .score-box { min-width: 56px; padding: 6px 10px; }
+  .score-value { font-size: 16px; }
+  .score-label { font-size: 9px; }
+}
+
+@media (max-width: 360px) {
+  :root {
+    --ball-size: 30px;
+    --tube-w: 40px;
+    --tube-h: 140px;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="back" href="../" aria-label="Back to games">
+    <span class="arrow">←</span>
+    <span>Games</span>
+  </a>
+
+  <header>
+    <h1>Ball Sort</h1>
+    <div class="scores">
+      <div class="score-box">
+        <div class="score-label">Level</div>
+        <div class="score-value" id="level">1</div>
+      </div>
+      <div class="score-box">
+        <div class="score-label">Moves</div>
+        <div class="score-value" id="moves">0</div>
+      </div>
+      <div class="score-box">
+        <div class="score-label">Best</div>
+        <div class="score-value" id="best">0</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="subhead">
+    <p>Tap a tube to pick up its top color, then tap another tube to pour.</p>
+    <div class="controls">
+      <button class="btn secondary" id="undoBtn" aria-label="Undo last move">Undo</button>
+      <button class="btn secondary" id="restartBtn" aria-label="Restart current level">Restart</button>
+    </div>
+  </div>
+
+  <div class="board" id="board">
+    <div class="tubes-area" id="tubesArea"></div>
+    <div class="balls-overlay" id="ballsOverlay"></div>
+  </div>
+
+  <div style="text-align:center">
+    <button class="rules-toggle" onclick="this.nextElementSibling.classList.toggle('open')">How to Play ▾</button>
+    <div class="rules-panel">
+      <ul>
+        <li>Each tube holds up to 4 balls. Sort every color into its own tube.</li>
+        <li>Tap a tube to pick up its top ball, then tap another tube to pour.</li>
+        <li>You can only pour onto an empty tube or onto a matching color.</li>
+        <li>Same-color balls on top pour together — useful for fast clears.</li>
+        <li>Use <strong>Undo</strong> if you get stuck. <strong>Restart</strong> resets the current level.</li>
+        <li>Each level adds another color. Solve as many as you can!</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>Total score: <span id="totalScore">0</span></footer>
+</div>
+
+<div class="overlay" id="overlay">
+  <span class="badge" id="overlayBadge">Level 1</span>
+  <h2 id="overlayTitle">Solved!</h2>
+  <p id="overlayText">Nicely sorted. Ready for the next one?</p>
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-label">Moves</div>
+      <div class="stat-value" id="overlayMoves">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Score</div>
+      <div class="stat-value" id="overlayScore">0</div>
+    </div>
+  </div>
+  <div class="row">
+    <button class="btn" id="overlayPrimary">Next Level</button>
+    <button class="btn secondary" id="overlayReset">New Game</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  const COLORS = [
+    '#e74c3c', // red
+    '#f39c12', // orange
+    '#f1c40f', // yellow
+    '#27ae60', // green
+    '#16a085', // teal
+    '#3498db', // blue
+    '#9b59b6', // purple
+    '#e91e63', // pink
+    '#795548', // brown
+    '#607d8b', // slate
+    '#cddc39', // lime
+    '#ff5722'  // deep orange
+  ];
+
+  const TUBE_CAPACITY = 4;
+  const STORAGE_KEY = 'ballsort.best.v1';
+
+  const elTubesArea = document.getElementById('tubesArea');
+  const elBallsOverlay = document.getElementById('ballsOverlay');
+  const elBoard = document.getElementById('board');
+  const elLevel = document.getElementById('level');
+  const elMoves = document.getElementById('moves');
+  const elBest = document.getElementById('best');
+  const elTotalScore = document.getElementById('totalScore');
+  const elUndo = document.getElementById('undoBtn');
+  const elRestart = document.getElementById('restartBtn');
+  const elOverlay = document.getElementById('overlay');
+  const elOverlayBadge = document.getElementById('overlayBadge');
+  const elOverlayTitle = document.getElementById('overlayTitle');
+  const elOverlayText = document.getElementById('overlayText');
+  const elOverlayMoves = document.getElementById('overlayMoves');
+  const elOverlayScore = document.getElementById('overlayScore');
+  const elOverlayPrimary = document.getElementById('overlayPrimary');
+  const elOverlayReset = document.getElementById('overlayReset');
+
+  let level = 1;
+  let totalScore = 0;
+  let bestScore = parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10) || 0;
+
+  let tubes = [];          // tubes[i] = [ballId, ...] bottom to top
+  let ballData = [];       // [{ id, color, el }]
+  let tubeEls = [];        // DOM elements for each tube
+  let initialState = null; // for restart
+  let history = [];        // undo stack
+  let selected = null;     // selected tube index
+  let busy = false;        // animation lock
+  let moves = 0;
+
+  function bumpScore(el) {
+    el.classList.remove('bump');
+    void el.offsetWidth;
+    el.classList.add('bump');
+  }
+
+  function levelConfig(n) {
+    // numColors grows with level, capped
+    const numColors = Math.min(3 + (n - 1), COLORS.length);
+    const numEmpty = numColors >= 7 ? 2 : 2;
+    return { numColors, numEmpty };
+  }
+
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function generatePuzzle(numColors, numEmpty) {
+    let attempt = 0;
+    while (attempt++ < 50) {
+      const all = [];
+      for (let c = 0; c < numColors; c++) {
+        for (let i = 0; i < TUBE_CAPACITY; i++) all.push(c);
+      }
+      shuffle(all);
+      const colorTubes = [];
+      for (let t = 0; t < numColors; t++) {
+        colorTubes.push(all.slice(t * TUBE_CAPACITY, (t + 1) * TUBE_CAPACITY));
+      }
+      // reject trivial: any tube already monochrome
+      let trivial = colorTubes.some(t =>
+        t.length === TUBE_CAPACITY && t.every(c => c === t[0])
+      );
+      if (!trivial) {
+        const result = [];
+        for (const t of colorTubes) result.push(t.slice());
+        for (let e = 0; e < numEmpty; e++) result.push([]);
+        return result;
+      }
+    }
+    // fallback (shouldn't really hit)
+    const all = [];
+    for (let c = 0; c < numColors; c++) {
+      for (let i = 0; i < TUBE_CAPACITY; i++) all.push(c);
+    }
+    shuffle(all);
+    const result = [];
+    for (let t = 0; t < numColors; t++) {
+      result.push(all.slice(t * TUBE_CAPACITY, (t + 1) * TUBE_CAPACITY));
+    }
+    for (let e = 0; e < numEmpty; e++) result.push([]);
+    return result;
+  }
+
+  function buildLevel(n, presetState) {
+    // Clean up DOM
+    elTubesArea.innerHTML = '';
+    elBallsOverlay.innerHTML = '';
+    tubeEls = [];
+    ballData = [];
+    history = [];
+    selected = null;
+    moves = 0;
+    busy = false;
+
+    let colorTubes;
+    if (presetState) {
+      colorTubes = presetState.map(t => t.slice());
+    } else {
+      const cfg = levelConfig(n);
+      colorTubes = generatePuzzle(cfg.numColors, cfg.numEmpty);
+      initialState = colorTubes.map(t => t.slice());
+    }
+
+    // Create tubes
+    tubes = [];
+    for (let t = 0; t < colorTubes.length; t++) {
+      const tube = document.createElement('div');
+      tube.className = 'tube';
+      tube.setAttribute('role', 'button');
+      tube.setAttribute('tabindex', '0');
+      tube.setAttribute('aria-label', `Tube ${t + 1}`);
+      tube.dataset.tube = String(t);
+      tube.addEventListener('click', () => onTubeClick(t));
+      tube.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onTubeClick(t);
+        }
+      });
+      elTubesArea.appendChild(tube);
+      tubeEls.push(tube);
+      tubes.push([]);
+    }
+
+    // Create balls and fill tubes
+    let id = 0;
+    for (let t = 0; t < colorTubes.length; t++) {
+      for (let s = 0; s < colorTubes[t].length; s++) {
+        const color = colorTubes[t][s];
+        const el = document.createElement('div');
+        el.className = 'ball';
+        el.style.background = COLORS[color];
+        elBallsOverlay.appendChild(el);
+        ballData.push({ id, color, el });
+        tubes[t].push(id);
+        id++;
+      }
+    }
+
+    // Position after layout
+    requestAnimationFrame(() => {
+      positionAllBalls(false);
+      updateTubeStates();
+    });
+
+    elLevel.textContent = String(n);
+    elMoves.textContent = '0';
+    elBest.textContent = String(bestScore);
+    elTotalScore.textContent = String(totalScore);
+    updateUndoButton();
+  }
+
+  function ballPositionFor(tubeIndex, slot) {
+    const tube = tubeEls[tubeIndex];
+    const overlayRect = elBallsOverlay.getBoundingClientRect();
+    const tubeRect = tube.getBoundingClientRect();
+    const ballSize = ballData[0]
+      ? ballData[0].el.getBoundingClientRect().width
+      : 40;
+    const innerPad = 4;
+    const x = tubeRect.left - overlayRect.left + (tubeRect.width - ballSize) / 2;
+    const y = tubeRect.bottom - overlayRect.top - innerPad - ballSize * (slot + 1);
+    return { x, y, ballSize };
+  }
+
+  function liftPositionFor(tubeIndex) {
+    const tube = tubeEls[tubeIndex];
+    const overlayRect = elBallsOverlay.getBoundingClientRect();
+    const tubeRect = tube.getBoundingClientRect();
+    const ballSize = ballData[0]
+      ? ballData[0].el.getBoundingClientRect().width
+      : 40;
+    const lift = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--lift')) || 18;
+    const x = tubeRect.left - overlayRect.left + (tubeRect.width - ballSize) / 2;
+    const y = tubeRect.top - overlayRect.top - ballSize - lift;
+    return { x, y };
+  }
+
+  function positionAllBalls(animate) {
+    for (let t = 0; t < tubes.length; t++) {
+      for (let s = 0; s < tubes[t].length; s++) {
+        const ballId = tubes[t][s];
+        const { x, y } = ballPositionFor(t, s);
+        const ball = ballData[ballId].el;
+        if (!animate) {
+          ball.style.transition = 'none';
+          ball.style.transform = `translate(${x}px, ${y}px)`;
+          // force reflow then restore transition
+          void ball.offsetWidth;
+          ball.style.transition = '';
+        } else {
+          ball.style.transform = `translate(${x}px, ${y}px)`;
+        }
+      }
+    }
+  }
+
+  function updateTubeStates() {
+    for (let t = 0; t < tubes.length; t++) {
+      const tubeEl = tubeEls[t];
+      tubeEl.classList.remove('selected', 'complete', 'target-hint');
+      if (selected === t) {
+        tubeEl.classList.add('selected');
+      }
+      // Mark complete tubes
+      const arr = tubes[t];
+      if (arr.length === TUBE_CAPACITY) {
+        const firstColor = ballData[arr[0]].color;
+        if (arr.every(id => ballData[id].color === firstColor)) {
+          tubeEl.classList.add('complete');
+        }
+      }
+    }
+  }
+
+  function liftSelectedBall() {
+    if (selected === null) return;
+    const arr = tubes[selected];
+    if (arr.length === 0) return;
+    const topBallId = arr[arr.length - 1];
+    const ball = ballData[topBallId].el;
+    const { x, y } = liftPositionFor(selected);
+    ball.style.transition = 'transform 0.2s cubic-bezier(0.2, 0.7, 0.2, 1)';
+    ball.style.transform = `translate(${x}px, ${y}px)`;
+  }
+
+  function settleSelectedBall(tubeIndex) {
+    if (tubeIndex === null) return;
+    const arr = tubes[tubeIndex];
+    if (arr.length === 0) return;
+    const topBallId = arr[arr.length - 1];
+    const ball = ballData[topBallId].el;
+    const { x, y } = ballPositionFor(tubeIndex, arr.length - 1);
+    ball.style.transition = 'transform 0.18s cubic-bezier(0.2, 0.7, 0.2, 1)';
+    ball.style.transform = `translate(${x}px, ${y}px)`;
+  }
+
+  function onTubeClick(t) {
+    if (busy) return;
+    if (selected === null) {
+      if (tubes[t].length === 0) return; // nothing to pick up
+      selected = t;
+      updateTubeStates();
+      liftSelectedBall();
+      return;
+    }
+    if (selected === t) {
+      // Deselect
+      const prev = selected;
+      selected = null;
+      settleSelectedBall(prev);
+      updateTubeStates();
+      return;
+    }
+    // Try pour
+    const from = selected;
+    const to = t;
+    const movable = movableCount(from, to);
+    if (movable === 0) {
+      // invalid: settle then deselect (or switch selection if target has balls)
+      settleSelectedBall(from);
+      selected = null;
+      updateTubeStates();
+      return;
+    }
+    selected = null;
+    pour(from, to, movable);
+  }
+
+  function movableCount(from, to) {
+    if (from === to) return 0;
+    const src = tubes[from];
+    const dst = tubes[to];
+    if (src.length === 0) return 0;
+    if (dst.length >= TUBE_CAPACITY) return 0;
+    const topColor = ballData[src[src.length - 1]].color;
+    if (dst.length > 0 && ballData[dst[dst.length - 1]].color !== topColor) return 0;
+    let count = 0;
+    let i = src.length - 1;
+    const space = TUBE_CAPACITY - dst.length;
+    while (i >= 0 && count < space && ballData[src[i]].color === topColor) {
+      count++;
+      i--;
+    }
+    return count;
+  }
+
+  function pour(from, to, count) {
+    busy = true;
+    const moved = []; // ids in order of move
+    const dstStartLen = tubes[to].length;
+    for (let i = 0; i < count; i++) {
+      const id = tubes[from].pop();
+      tubes[to].push(id);
+      moved.push(id);
+    }
+    history.push({ from, to, count });
+    moves++;
+    elMoves.textContent = String(moves);
+    bumpScore(elMoves);
+    updateUndoButton();
+    updateTubeStates();
+
+    // Animate moved balls one by one with stagger
+    let finished = 0;
+    const onDone = () => {
+      finished++;
+      if (finished === moved.length) {
+        busy = false;
+        updateTubeStates();
+        if (isSolved()) {
+          setTimeout(onWin, 200);
+        }
+      }
+    };
+
+    // The first ball moved is the one that was on top (last popped from src first means
+    // it ends up at the bottom of the new stack at dstStartLen).
+    moved.forEach((id, i) => {
+      const ball = ballData[id].el;
+      const fromTubeRect = tubeEls[from].getBoundingClientRect();
+      const overlayRect = elBallsOverlay.getBoundingClientRect();
+      const ballSize = ball.getBoundingClientRect().width;
+      const lift = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--lift')) || 18;
+
+      const liftedAtSourceX =
+        fromTubeRect.left - overlayRect.left + (fromTubeRect.width - ballSize) / 2;
+      const liftedY = Math.min(
+        fromTubeRect.top - overlayRect.top - ballSize - lift,
+        tubeEls[to].getBoundingClientRect().top - overlayRect.top - ballSize - lift
+      );
+
+      const targetSlot = dstStartLen + i;
+      const finalPos = ballPositionFor(to, targetSlot);
+      const liftedAtDestX = finalPos.x;
+
+      const currentTransform = ball.style.transform || 'translate(0px, 0px)';
+      const startKey = currentTransform;
+
+      const keyframes = [
+        { transform: startKey },
+        { transform: `translate(${liftedAtSourceX}px, ${liftedY}px)` },
+        { transform: `translate(${liftedAtDestX}px, ${liftedY}px)` },
+        { transform: `translate(${finalPos.x}px, ${finalPos.y}px)` }
+      ];
+
+      const delay = i * 90;
+      ball.style.zIndex = String(100 + i);
+      const anim = ball.animate(keyframes, {
+        duration: 420,
+        delay,
+        easing: 'cubic-bezier(0.5, 0, 0.5, 1)',
+        fill: 'forwards'
+      });
+      anim.onfinish = () => {
+        ball.style.transition = 'none';
+        ball.style.transform = `translate(${finalPos.x}px, ${finalPos.y}px)`;
+        // restore transition for future moves
+        void ball.offsetWidth;
+        ball.style.transition = '';
+        ball.style.zIndex = '';
+        onDone();
+      };
+      // Safety fallback if animations are disabled
+      anim.oncancel = onDone;
+    });
+  }
+
+  function undo() {
+    if (busy || history.length === 0) return;
+    const last = history.pop();
+    busy = true;
+    // Reverse the move: move `count` balls from `to` back to `from`
+    const { from, to, count } = last;
+    const moved = [];
+    const fromStartLen = tubes[from].length;
+    for (let i = 0; i < count; i++) {
+      const id = tubes[to].pop();
+      tubes[from].push(id);
+      moved.push(id);
+    }
+    moves = Math.max(0, moves - 1);
+    elMoves.textContent = String(moves);
+    updateUndoButton();
+    updateTubeStates();
+
+    let finished = 0;
+    const onDone = () => {
+      finished++;
+      if (finished === moved.length) {
+        busy = false;
+        updateTubeStates();
+      }
+    };
+
+    moved.forEach((id, i) => {
+      const ball = ballData[id].el;
+      const overlayRect = elBallsOverlay.getBoundingClientRect();
+      const ballSize = ball.getBoundingClientRect().width;
+      const lift = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--lift')) || 18;
+      const fromTubeRect = tubeEls[to].getBoundingClientRect();
+      const toTubeRect = tubeEls[from].getBoundingClientRect();
+
+      const liftedSrcX =
+        fromTubeRect.left - overlayRect.left + (fromTubeRect.width - ballSize) / 2;
+      const liftedY = Math.min(
+        fromTubeRect.top - overlayRect.top - ballSize - lift,
+        toTubeRect.top - overlayRect.top - ballSize - lift
+      );
+      const targetSlot = fromStartLen + i;
+      const finalPos = ballPositionFor(from, targetSlot);
+
+      const currentTransform = ball.style.transform || 'translate(0px, 0px)';
+      const keyframes = [
+        { transform: currentTransform },
+        { transform: `translate(${liftedSrcX}px, ${liftedY}px)` },
+        { transform: `translate(${finalPos.x}px, ${liftedY}px)` },
+        { transform: `translate(${finalPos.x}px, ${finalPos.y}px)` }
+      ];
+      ball.style.zIndex = String(100 + i);
+      const anim = ball.animate(keyframes, {
+        duration: 380,
+        delay: i * 70,
+        easing: 'cubic-bezier(0.5, 0, 0.5, 1)',
+        fill: 'forwards'
+      });
+      anim.onfinish = () => {
+        ball.style.transition = 'none';
+        ball.style.transform = `translate(${finalPos.x}px, ${finalPos.y}px)`;
+        void ball.offsetWidth;
+        ball.style.transition = '';
+        ball.style.zIndex = '';
+        onDone();
+      };
+      anim.oncancel = onDone;
+    });
+  }
+
+  function updateUndoButton() {
+    elUndo.disabled = history.length === 0 || busy;
+  }
+
+  function isSolved() {
+    for (const arr of tubes) {
+      if (arr.length === 0) continue;
+      if (arr.length !== TUBE_CAPACITY) return false;
+      const c = ballData[arr[0]].color;
+      for (let i = 1; i < arr.length; i++) {
+        if (ballData[arr[i]].color !== c) return false;
+      }
+    }
+    return true;
+  }
+
+  function levelScore(n, mv) {
+    const base = 100 * n;
+    // Min possible moves ≈ numColors; reward efficiency
+    const cfg = levelConfig(n);
+    const par = cfg.numColors * 2;
+    const efficiencyBonus = Math.max(0, (par * 3) - mv) * 5;
+    return base + efficiencyBonus;
+  }
+
+  function onWin() {
+    const earned = levelScore(level, moves);
+    totalScore += earned;
+    elTotalScore.textContent = String(totalScore);
+    if (totalScore > bestScore) {
+      bestScore = totalScore;
+      localStorage.setItem(STORAGE_KEY, String(bestScore));
+      elBest.textContent = String(bestScore);
+      bumpScore(elBest);
+    }
+
+    // Submit to leaderboard
+    try {
+      if (window.Leaderboard && Leaderboard.submitScore) {
+        Leaderboard.submitScore(totalScore);
+      }
+    } catch (e) { /* ignore */ }
+
+    elOverlayBadge.textContent = `Level ${level} cleared`;
+    elOverlayTitle.textContent = 'Solved!';
+    elOverlayText.textContent = level >= COLORS.length
+      ? 'You finished the hardest puzzle. Keep going for more score?'
+      : 'Nicely sorted. Ready for the next one?';
+    elOverlayMoves.textContent = String(moves);
+    elOverlayScore.textContent = `+${earned}`;
+    elOverlayPrimary.textContent = level >= COLORS.length ? 'Play Again' : 'Next Level';
+    elOverlay.classList.add('show');
+  }
+
+  elOverlayPrimary.addEventListener('click', () => {
+    elOverlay.classList.remove('show');
+    if (level >= COLORS.length) {
+      // wrap around but keep total score growing
+      level = 1;
+    } else {
+      level++;
+    }
+    buildLevel(level);
+  });
+
+  elOverlayReset.addEventListener('click', () => {
+    elOverlay.classList.remove('show');
+    level = 1;
+    totalScore = 0;
+    elTotalScore.textContent = '0';
+    buildLevel(level);
+  });
+
+  elUndo.addEventListener('click', undo);
+  elRestart.addEventListener('click', () => {
+    if (busy) return;
+    if (initialState) {
+      buildLevel(level, initialState);
+    } else {
+      buildLevel(level);
+    }
+  });
+
+  // Keyboard: Z = undo, R = restart
+  document.addEventListener('keydown', (e) => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    if (e.key === 'z' || e.key === 'Z') { e.preventDefault(); undo(); }
+    else if (e.key === 'r' || e.key === 'R') { e.preventDefault(); elRestart.click(); }
+    else if (e.key === 'Escape') {
+      if (selected !== null && !busy) {
+        const prev = selected;
+        selected = null;
+        settleSelectedBall(prev);
+        updateTubeStates();
+      }
+    }
+  });
+
+  // Reposition on resize
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      positionAllBalls(false);
+      if (selected !== null) liftSelectedBall();
+    }, 100);
+  });
+
+  // Initial build
+  buildLevel(level);
+})();
+</script>
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

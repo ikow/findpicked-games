@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Anagram — FindPicked Games</title>
+<meta name="description" content="Play Anagram free — unscramble jumbled letters to find the hidden word. 500+ words, multiple difficulty levels, and a race against the clock.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ctext x='16' y='22' font-size='14' fill='white' text-anchor='middle' font-family='system-ui' font-weight='700'%3EA%3C/text%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-board: #f5f5f7;
+  --tile-bg: #ffffff;
+  --slot-bg: #eef0f3;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --accent-soft: rgba(0, 113, 227, 0.12);
+  --accent-strong: rgba(0, 113, 227, 0.30);
+  --good: #34c759;
+  --good-soft: rgba(52, 199, 89, 0.18);
+  --bad: #ff3b30;
+  --bad-soft: rgba(255, 59, 48, 0.14);
+  --hint: #ff9500;
+  --hint-soft: rgba(255, 149, 0, 0.16);
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+  --radius: 16px;
+}
+
+html, body {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px 20px 40px;
+  touch-action: manipulation;
+}
+
+.back {
+  align-self: flex-start;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 400;
+  padding: 8px 4px;
+  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+}
+.back:hover { color: var(--text-primary); }
+.back .arrow { font-size: 18px; line-height: 1; }
+
+.wrap {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 4px;
+}
+
+h1 {
+  font-size: clamp(32px, 8vw, 44px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.stats {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.stat-box {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 8px 12px;
+  min-width: 58px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.stat-label {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  margin-bottom: 2px;
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.diffs {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.diff-pill {
+  flex: 1;
+  max-width: 140px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 22px;
+  border: 1.5px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.diff-pill:hover { color: var(--text-primary); }
+.diff-pill.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.board {
+  background: var(--bg-board);
+  border-radius: var(--radius);
+  padding: 24px 18px 20px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-height: 320px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.prompt {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--text-tertiary);
+}
+
+.slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  min-height: 56px;
+  align-items: center;
+}
+
+.slot {
+  width: 46px;
+  height: 56px;
+  border-radius: 10px;
+  background: var(--slot-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.12s ease, color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  font-variant-numeric: tabular-nums;
+  position: relative;
+}
+.slot.filled {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 113, 227, 0.25);
+}
+.slot.filled:active { transform: scale(0.94); }
+.slot.locked-hint {
+  background: var(--hint);
+  color: #fff;
+  cursor: default;
+  box-shadow: 0 2px 8px rgba(255, 149, 0, 0.25);
+}
+.slot.correct {
+  background: var(--good);
+  color: #fff;
+  animation: pop 0.4s ease-out;
+}
+.slot.wrong {
+  animation: shake 0.45s ease-in-out;
+}
+
+@keyframes pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+.tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  min-height: 60px;
+  align-items: center;
+}
+
+.tile {
+  width: 48px;
+  height: 56px;
+  border-radius: 10px;
+  background: var(--tile-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  cursor: pointer;
+  border: 1.5px solid var(--border);
+  transition: transform 0.15s ease, background 0.15s ease, opacity 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.tile:hover { background: #f5f5f7; }
+.tile:active { transform: scale(0.92); }
+.tile.used {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.6);
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 22px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.12s ease, opacity 0.2s ease;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  flex: 1;
+  min-width: 96px;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.45; cursor: default; }
+.btn:disabled:active { transform: none; }
+
+.btn.secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
+}
+.btn.secondary:hover { background: var(--accent-soft); }
+
+.btn.warm {
+  background: var(--hint);
+}
+.btn.warm:hover { background: #ffa726; }
+
+.btn.ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1.5px solid var(--border);
+}
+.btn.ghost:hover { color: var(--text-primary); border-color: var(--text-tertiary); }
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 36px;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(29, 29, 31, 0.92);
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 22px;
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  z-index: 200;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 100;
+}
+.overlay.show { opacity: 1; pointer-events: auto; }
+
+.overlay-card {
+  background: var(--bg-card);
+  border-radius: 20px;
+  padding: 32px 28px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  transform: translateY(10px);
+  transition: transform 0.3s ease;
+}
+.overlay.show .overlay-card { transform: translateY(0); }
+
+.overlay-card h2 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+}
+.overlay-card .sub {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+.overlay-card .score-big {
+  font-size: 44px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+  margin: 8px 0 6px;
+  font-variant-numeric: tabular-nums;
+}
+.overlay-card .meta {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin-bottom: 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.overlay-card .meta b {
+  display: block;
+  color: var(--text-primary);
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+.overlay-card .row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+footer {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  text-align: center;
+  line-height: 1.6;
+}
+
+.rules-toggle {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--accent);
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+  padding: 8px 4px;
+  min-height: 44px;
+}
+.rules-toggle:hover { text-decoration: underline; }
+.rules-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  text-align: left;
+  margin: 0 auto;
+  max-width: 460px;
+}
+.rules-panel.open { max-height: 600px; }
+.rules-panel ul { margin: 8px 0 0 18px; }
+.rules-panel li { margin-bottom: 6px; }
+.rules-panel b { color: var(--text-primary); }
+
+@media (max-width: 420px) {
+  body { padding: 16px 12px 32px; }
+  .wrap { gap: 14px; max-width: 100%; }
+  header { flex-wrap: wrap; }
+  .stat-box { min-width: 50px; padding: 6px 10px; }
+  .stat-value { font-size: 16px; }
+  .board { padding: 18px 14px 16px; gap: 18px; }
+  .slot { width: 38px; height: 48px; font-size: 18px; }
+  .tile { width: 42px; height: 50px; font-size: 19px; }
+  .btn { font-size: 13px; padding: 0 14px; min-width: 80px; }
+}
+
+@media (max-width: 340px) {
+  .slot { width: 32px; height: 44px; font-size: 16px; }
+  .tile { width: 36px; height: 46px; font-size: 17px; }
+}
+</style>
+</head>
+<body>
+
+<a href="../" class="back"><span class="arrow">←</span> All Games</a>
+
+<div class="wrap">
+  <header>
+    <h1>Anagram</h1>
+    <div class="stats">
+      <div class="stat-box">
+        <div class="stat-label">Score</div>
+        <div class="stat-value" id="scoreEl">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Word</div>
+        <div class="stat-value" id="roundEl">1/10</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Time</div>
+        <div class="stat-value" id="timeEl">0:30</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Best</div>
+        <div class="stat-value" id="bestEl">0</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="diffs" id="diffs">
+    <button class="diff-pill active" data-diff="easy">Easy</button>
+    <button class="diff-pill" data-diff="medium">Medium</button>
+    <button class="diff-pill" data-diff="hard">Hard</button>
+  </div>
+
+  <div class="board">
+    <div class="prompt" id="promptEl">Tap the letters to unscramble the word</div>
+    <div class="slots" id="slotsEl"></div>
+    <div class="tiles" id="tilesEl"></div>
+    <div class="controls">
+      <button class="btn secondary" id="shuffleBtn">Shuffle</button>
+      <button class="btn warm" id="hintBtn">Hint <span id="hintsLeft">(3)</span></button>
+      <button class="btn ghost" id="skipBtn">Skip</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn" id="newBtn">New Game</button>
+  </div>
+
+  <footer>
+    Race the clock — solve as many anagrams as you can.
+    <br>
+    <button class="rules-toggle" id="rulesToggle">How to Play</button>
+    <div class="rules-panel" id="rulesPanel">
+      <ul>
+        <li><b>Goal:</b> Unscramble the jumbled letters to spell a real English word.</li>
+        <li><b>Play:</b> Tap a letter tile to drop it into the next empty slot. Tap a filled slot to send the letter back.</li>
+        <li><b>Auto-check:</b> When all slots are filled, your guess is checked instantly. Wrong answers shake — fix and try again.</li>
+        <li><b>Timer:</b> Each word has a countdown (longer for harder words). Solve it before time runs out.</li>
+        <li><b>Score:</b> Base points scale with difficulty. Faster solves earn a speed bonus.</li>
+        <li><b>Hint:</b> Reveals one correct letter in place. You get <b>3 hints</b> per game — using one halves that word's score.</li>
+        <li><b>Shuffle:</b> Re-arrange the remaining tiles if you're stuck.</li>
+        <li><b>Skip:</b> Move on to the next word for zero points.</li>
+        <li><b>Difficulty:</b> Easy = 4–5 letters, Medium = 6–7 letters, Hard = 8+ letters. Choose before tapping <b>New Game</b>.</li>
+        <li><b>Game:</b> 10 words per round. Beat your best!</li>
+      </ul>
+    </div>
+  </footer>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-card">
+    <h2 id="overTitle">Round Complete!</h2>
+    <div class="sub" id="overSub">Nice work unscrambling all the words.</div>
+    <div class="score-big" id="overScore">0</div>
+    <div class="meta">
+      <div>Solved<b id="overSolved">0</b></div>
+      <div>Skipped<b id="overSkipped">0</b></div>
+      <div>Hints<b id="overHints">0</b></div>
+    </div>
+    <div class="row">
+      <button class="btn" id="overAgain">Play Again</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function() {
+  // --- Word lists by length ---
+  // Easy: 4–5 letters
+  const EASY = [
+    'apple','beach','bread','chair','cloud','dance','earth','flame','grape','heart',
+    'igloo','jolly','knife','lemon','music','noble','ocean','peach','queen','river',
+    'snake','table','unity','voice','water','xenon','yacht','zebra','angel','baker',
+    'candy','dream','eagle','fairy','glove','honey','image','juice','kayak','light',
+    'metal','night','olive','pearl','quiet','radio','smile','tiger','umbra','value',
+    'wagon','youth','zesty','arrow','bench','cabin','daisy','elbow','flock','globe',
+    'horse','ivory','jazzy','koala','linen','marsh','nymph','onion','plant','quilt',
+    'roast','spoon','train','urban','vapor','whale','yield','album','badge','clamp',
+    'drift','eight','flute','green','happy','inbox','jewel','kraft','laser','mango',
+    'novel','opera','piano','quirk','royal','steam','torch','undue','viola','witty',
+    'amber','blank','crisp','depot','envoy','flair','gloss','haste','ideal','joker',
+    'plaza','rebel','shrub','tonic','udder','vivid','wager','yodel','zoned','frost',
+    'glide','haven','irate','klutz','locus','manor','niche','oasis','prism','rover',
+    'spice','trove','usher','venue','wrist','blade','carve','drone','empty','fancy',
+    'gleam','huddle','iris','jolt','kneel','lunar','mirth','nadir','orbit','prize',
+    'quack','realm','solar','tasty','utmost','vowel','wedge','yearn','zonal','chimp',
+    'fjord','glyph','hyena','kitty','lobby','nurse','plumb','quark','rifle','swirl',
+    'thumb','urge','vivid','wharf','yummy','flex','hops','keen','muse','perk',
+    'aged','calm','done','easy','firm','glow','holy','idle','keep','lamp',
+    'mild','near','open','park','quiz','rare','soft','tidy','vast','wise',
+    'yarn','zest','ache','barn','clip','dove','epic','fern','golf','hush',
+    'icon','jade','kelp','loft','moss','nest','ours','pace','quay','rage',
+    'sage','tone','urge','vain','warp','yolk','arc','bay','cog','dim','elf',
+    'fan','gum','hop','ice','jog','lag','mug','nub','oat','pod','rim','sob',
+    'tab','urn','vow','wax','yet','zip','zoo'
+  ];
+
+  // Medium: 6–7 letters
+  const MEDIUM = [
+    'animal','breeze','candle','desert','engine','flower','garden','harbor','island','jungle',
+    'kitten','ladder','marble','needle','orange','pencil','quartz','rabbit','silver','turtle',
+    'umpire','velvet','wonder','yellow','zenith','autumn','basket','castle','dragon','escape',
+    'fabric','gentle','hammer','indigo','jacket','knight','lantern','meadow','nature','oxygen',
+    'planet','quaint','rocket','spirit','timber','urgent','voyage','wisdom','yogurt','zombie',
+    'absorb','beacon','cement','deputy','effort','famous','galaxy','heroic','impact','jovial',
+    'kernel','liquid','mirror','novice','option','parade','quench','recall','spring','tunnel',
+    'unlock','victor','window','breath','clever','divide','empire','fellow','golden','hollow',
+    'invite','jumper','kindly','lessen','manage','nobody','oblige','permit','quiver','reform',
+    'simple','tablet','unique','valley','wallet','aspire','battle','craft','direct','enroll',
+    'fierce','gravity','helmet','iceberg','journey','kingdom','library','machine','nuclear','octopus',
+    'package','quality','rainbow','scatter','tropic','utility','village','warrior','airport','bedroom',
+    'capable','dolphin','elegant','fortune','genuine','holiday','impulse','jealous','justice','kindred',
+    'lecture','mineral','natural','observe','perfect','quickly','reflect','student','typical','utterly',
+    'vehicle','whisper','younger','zealous','ancient','believe','caution','distant','envelop','foreign',
+    'glamour','harvest','insight','journal','kerchief','lottery','manager','network','outfit','popular',
+    'quarrel','release','science','triumph','umbrella','vibrant','weather','yearbook','address','bargain',
+    'capture','default','engaged','fashion','gallery','horizon','instant','justify','kitchen','liberty',
+    'mention','nervous','organic','painter','quietly','realize','satisfy','theater','uniform','venture',
+    'westerly','younger','arrange','balance','climate','darling','eternal','fantasy','genius','hostile',
+    'imagine','jasmine','keyhole','leather','musical','nominate','obscure','passage','quintet','reading',
+    'sunrise','tornado','utopian','vampire','warlock','younger','airline','blossom','crystal','dispose',
+    'enchant','fragile','grocery','holiday','insider','jumping','knowing','lasting','minimal','novelty',
+    'outdoor','painted','quibble','remote','sample','tactic','useful','vacant','wedding'
+  ];
+
+  // Hard: 8+ letters
+  const HARD = [
+    'abundant','beautiful','calendar','daughter','elephant','favorite','generous','hospital','industry','jealousy',
+    'keyboard','language','medicine','northern','obstacle','pleasant','question','required','solution','triangle',
+    'umbrella','vacation','wonderful','yesterday','adjacent','backbone','colorful','daylight','eccentric','forecast',
+    'graceful','headache','instinct','juvenile','knockout','lavender','mountain','negative','occupant','platinum',
+    'quietude','reliable','superior','telegram','universe','volcanic','watchful','zucchini','aluminum','baseball',
+    'champion','distance','envelope','familiar','grateful','heritage','illusion','jubilant','knapsack','laughter',
+    'magnetic','navigate','obedient','periodic','quaintly','romantic','sandwich','treasury','unbiased','vagabond',
+    'whistle','accurate','behavior','complete','democracy','employee','furniture','grandson','homemade','identity',
+    'judgment','keepsake','linchpin','magazine','novelist','outrider','peaceful','quotient','recovery','strategy',
+    'thorough','unspoken','vehicles','willowy','accident','blanket','category','document','exercise','festival',
+    'growing','handsome','interest','journey','keystone','library','memorial','northeast','organize','peculiar',
+    'quantity','remember','schedule','tangible','utopia','validate','workshop','yardstick','academic','blessing',
+    'capacity','daffodil','envision','frighten','generate','headlamp','inferno','journals','kerchief','liberate',
+    'momentum','northbound','occupied','platform','question','rationale','simulate','transfer','underneath','volcano',
+    'workplace','yielding','accessory','breakfast','conscious','democratic','enthusiast','forgotten','generation',
+    'household','imaginary','jurisdiction','lighthouse','mainstream','negotiate','offensive','passenger','quarantine',
+    'reasonable','satellite','technology','underline','vegetation','wholesome','accommodate','beneficial','contagious',
+    'demolition','elaborate','fascinate','gratitude','horseback','illuminate','journalism','knowledge','laboratory',
+    'manuscript','navigator','obviously','passenger','quarterly','rendezvous','spectacle','therapeutic','undertaking',
+    'volunteer','weakness','yesterday','applauded','breakdown','classical','dangerous','extension','fortunate',
+    'gathering','herbalist','important','justified','kerosene','landscape','mechanism','necessity','operation',
+    'persuade','quizzical','reminder','sunshine','telescope','utterance','vibration','warehouse','yesteryear'
+  ];
+
+  // Deduplicate & sanity filter (alpha only, length-correct)
+  function clean(list, minLen, maxLen) {
+    const set = new Set();
+    for (const w of list) {
+      const ww = w.toLowerCase().replace(/[^a-z]/g, '');
+      if (!ww) continue;
+      if (ww.length < minLen || ww.length > maxLen) continue;
+      // require at least 2 distinct letters
+      if (new Set(ww).size < 2) continue;
+      set.add(ww);
+    }
+    return Array.from(set);
+  }
+
+  const WORDS = {
+    easy:   clean(EASY, 3, 5),
+    medium: clean(MEDIUM, 6, 7),
+    hard:   clean(HARD, 8, 14)
+  };
+
+  // --- Game config per difficulty ---
+  const CFG = {
+    easy:   { base: 100, time: 30, label: 'Easy' },
+    medium: { base: 200, time: 45, label: 'Medium' },
+    hard:   { base: 320, time: 60, label: 'Hard' }
+  };
+  const ROUNDS_PER_GAME = 10;
+  const HINTS_PER_GAME = 3;
+
+  // --- DOM ---
+  const scoreEl = document.getElementById('scoreEl');
+  const roundEl = document.getElementById('roundEl');
+  const timeEl = document.getElementById('timeEl');
+  const bestEl = document.getElementById('bestEl');
+  const slotsEl = document.getElementById('slotsEl');
+  const tilesEl = document.getElementById('tilesEl');
+  const promptEl = document.getElementById('promptEl');
+  const shuffleBtn = document.getElementById('shuffleBtn');
+  const hintBtn = document.getElementById('hintBtn');
+  const skipBtn = document.getElementById('skipBtn');
+  const newBtn = document.getElementById('newBtn');
+  const hintsLeftEl = document.getElementById('hintsLeft');
+  const diffsEl = document.getElementById('diffs');
+  const toastEl = document.getElementById('toast');
+  const overlayEl = document.getElementById('overlay');
+  const overTitle = document.getElementById('overTitle');
+  const overSub = document.getElementById('overSub');
+  const overScore = document.getElementById('overScore');
+  const overSolved = document.getElementById('overSolved');
+  const overSkipped = document.getElementById('overSkipped');
+  const overHints = document.getElementById('overHints');
+  const overAgain = document.getElementById('overAgain');
+  const rulesToggle = document.getElementById('rulesToggle');
+  const rulesPanel = document.getElementById('rulesPanel');
+
+  // --- State ---
+  let difficulty = 'easy';
+  let roundIdx = 0;       // 0..ROUNDS_PER_GAME-1
+  let totalScore = 0;
+  let solvedCount = 0;
+  let skippedCount = 0;
+  let hintsUsedTotal = 0;
+  let hintsLeft = HINTS_PER_GAME;
+  let gameOver = false;
+  let usedThisGame = new Set(); // avoid repeats within one game
+
+  // Per-word state
+  let currentWord = '';
+  let tiles = [];   // [{id, letter, used}]
+  let slots = [];   // [{tileId|null, locked: bool (hint-locked, can't remove)}]
+  let wordStartTime = 0;
+  let wordTimeLimit = 30;
+  let wordTimerId = null;
+  let hintsUsedThisWord = 0;
+  let resolving = false; // brief lock during animation between rounds
+
+  const STORE_BEST = 'anagram-best';
+  const STORE_DIFF = 'anagram-difficulty';
+
+  // --- Utilities ---
+  function shuffleArr(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function pickWord() {
+    const pool = WORDS[difficulty];
+    let attempts = 0;
+    while (attempts < 50) {
+      const w = pool[Math.floor(Math.random() * pool.length)];
+      if (!usedThisGame.has(w)) {
+        usedThisGame.add(w);
+        return w;
+      }
+      attempts++;
+    }
+    // pool exhausted — reset used set
+    usedThisGame.clear();
+    const w = pool[Math.floor(Math.random() * pool.length)];
+    usedThisGame.add(w);
+    return w;
+  }
+
+  function scrambleLetters(word) {
+    // Ensure scramble is not equal to the original
+    const letters = word.split('');
+    let order;
+    let attempts = 0;
+    do {
+      order = shuffleArr(letters);
+      attempts++;
+    } while (order.join('') === word && attempts < 12);
+    return order;
+  }
+
+  function showToast(msg, ms) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    if (showToast._t) clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => toastEl.classList.remove('show'), ms || 1400);
+  }
+
+  // --- Rendering ---
+  function renderSlots() {
+    slotsEl.innerHTML = '';
+    slots.forEach((s, i) => {
+      const el = document.createElement('div');
+      el.className = 'slot';
+      el.dataset.idx = i;
+      if (s.tileId !== null) {
+        const tile = tiles[s.tileId];
+        el.classList.add('filled');
+        if (s.locked) el.classList.add('locked-hint');
+        el.textContent = tile.letter;
+      } else {
+        el.textContent = '';
+      }
+      el.addEventListener('click', () => onSlotClick(i));
+      slotsEl.appendChild(el);
+    });
+  }
+
+  function renderTiles() {
+    tilesEl.innerHTML = '';
+    tiles.forEach((t, idx) => {
+      const el = document.createElement('div');
+      el.className = 'tile';
+      if (t.used) el.classList.add('used');
+      el.dataset.id = idx;
+      el.textContent = t.letter;
+      el.addEventListener('click', () => onTileClick(idx));
+      tilesEl.appendChild(el);
+    });
+  }
+
+  function flashSlot(idx, klass) {
+    const el = slotsEl.children[idx];
+    if (!el) return;
+    el.classList.add(klass);
+    setTimeout(() => el.classList.remove(klass), 450);
+  }
+  function flashAllSlots(klass) {
+    for (let i = 0; i < slots.length; i++) flashSlot(i, klass);
+  }
+
+  // --- Interactions ---
+  function onTileClick(tileId) {
+    if (gameOver || resolving) return;
+    if (tiles[tileId].used) return;
+    // Find first empty, non-locked slot
+    const slotIdx = slots.findIndex(s => s.tileId === null);
+    if (slotIdx < 0) return;
+    slots[slotIdx].tileId = tileId;
+    slots[slotIdx].locked = false;
+    tiles[tileId].used = true;
+    renderSlots();
+    renderTiles();
+    maybeCheckSolution();
+  }
+
+  function onSlotClick(slotIdx) {
+    if (gameOver || resolving) return;
+    const s = slots[slotIdx];
+    if (s.tileId === null) return;
+    if (s.locked) return; // can't remove a hint
+    const tileId = s.tileId;
+    s.tileId = null;
+    tiles[tileId].used = false;
+    renderSlots();
+    renderTiles();
+  }
+
+  function maybeCheckSolution() {
+    // Auto-check when every slot is filled
+    if (slots.every(s => s.tileId !== null)) {
+      const guess = slots.map(s => tiles[s.tileId].letter).join('');
+      if (guess === currentWord) {
+        onCorrect();
+      } else {
+        onWrong();
+      }
+    }
+  }
+
+  function onCorrect() {
+    if (resolving) return;
+    resolving = true;
+    flashAllSlots('correct');
+
+    const elapsed = (Date.now() - wordStartTime) / 1000;
+    const remaining = Math.max(0, wordTimeLimit - elapsed);
+    // Speed bonus: up to 50% of base, scaling linearly with remaining time
+    const speedBonus = Math.round(CFG[difficulty].base * 0.5 * (remaining / wordTimeLimit));
+    let earned = CFG[difficulty].base + speedBonus;
+    if (hintsUsedThisWord > 0) earned = Math.round(earned * 0.5); // hint penalty
+    totalScore += earned;
+    solvedCount++;
+
+    scoreEl.textContent = totalScore;
+    showToast(`+${earned} points`, 1100);
+    stopWordTimer();
+
+    setTimeout(() => {
+      resolving = false;
+      nextRound();
+    }, 700);
+  }
+
+  function onWrong() {
+    if (resolving) return;
+    resolving = true;
+    flashAllSlots('wrong');
+    setTimeout(() => {
+      // Send back any non-locked tiles
+      for (let i = 0; i < slots.length; i++) {
+        if (slots[i].locked) continue;
+        if (slots[i].tileId !== null) {
+          tiles[slots[i].tileId].used = false;
+          slots[i].tileId = null;
+        }
+      }
+      renderSlots();
+      renderTiles();
+      resolving = false;
+    }, 480);
+  }
+
+  function useHint() {
+    if (gameOver || resolving) return;
+    if (hintsLeft <= 0) {
+      showToast('No hints left', 1200);
+      return;
+    }
+    // Find first slot that is empty OR contains the wrong letter
+    let target = -1;
+    for (let i = 0; i < slots.length; i++) {
+      const s = slots[i];
+      const correctLetter = currentWord[i];
+      if (s.tileId === null) { target = i; break; }
+      if (tiles[s.tileId].letter !== correctLetter && !s.locked) { target = i; break; }
+    }
+    if (target < 0) return;
+
+    const correctLetter = currentWord[target];
+
+    // If slot is currently filled with a wrong letter, eject that tile
+    if (slots[target].tileId !== null) {
+      const tid = slots[target].tileId;
+      tiles[tid].used = false;
+      slots[target].tileId = null;
+    }
+
+    // Find an unused tile that has the correct letter; if it's currently
+    // used in another (non-locked) slot, steal it from there.
+    let tileId = tiles.findIndex(t => !t.used && t.letter === correctLetter);
+    if (tileId < 0) {
+      for (let j = 0; j < slots.length; j++) {
+        if (j === target) continue;
+        if (slots[j].locked) continue;
+        const t = slots[j].tileId;
+        if (t !== null && tiles[t].letter === correctLetter) {
+          tiles[t].used = false;
+          slots[j].tileId = null;
+          tileId = t;
+          break;
+        }
+      }
+    }
+    if (tileId < 0) return; // shouldn't happen
+
+    slots[target].tileId = tileId;
+    slots[target].locked = true;
+    tiles[tileId].used = true;
+    hintsLeft--;
+    hintsUsedThisWord++;
+    hintsUsedTotal++;
+    hintsLeftEl.textContent = `(${hintsLeft})`;
+    if (hintsLeft <= 0) hintBtn.disabled = true;
+
+    renderSlots();
+    renderTiles();
+    flashSlot(target, 'correct');
+    maybeCheckSolution();
+  }
+
+  function shuffleRemaining() {
+    if (gameOver || resolving) return;
+    // Reorder unused tiles by shuffling their position in the tiles array.
+    // To preserve slot references, we shuffle visual order by rebuilding
+    // tiles array but re-mapping ids.
+    const unusedIds = tiles.map((t, i) => t.used ? -1 : i).filter(i => i >= 0);
+    if (unusedIds.length < 2) return;
+    const shuffled = shuffleArr(unusedIds);
+    // Build new tile ordering: keep used in place visually but skip them, place shuffled in order
+    const newOrderIds = [];
+    let pos = 0;
+    for (let i = 0; i < tiles.length; i++) {
+      if (tiles[i].used) {
+        newOrderIds.push(i);
+      } else {
+        newOrderIds.push(shuffled[pos++]);
+      }
+    }
+    // Remap: new tile array with new ids
+    const oldToNew = new Map();
+    const newTiles = newOrderIds.map((oldId, newId) => {
+      oldToNew.set(oldId, newId);
+      return { id: newId, letter: tiles[oldId].letter, used: tiles[oldId].used };
+    });
+    // Update slots to use new ids
+    slots = slots.map(s => ({
+      ...s,
+      tileId: s.tileId === null ? null : oldToNew.get(s.tileId)
+    }));
+    tiles = newTiles;
+    renderTiles();
+    renderSlots();
+  }
+
+  function skipWord() {
+    if (gameOver || resolving) return;
+    skippedCount++;
+    showToast(`Skipped — was "${currentWord.toUpperCase()}"`, 1500);
+    stopWordTimer();
+    resolving = true;
+    setTimeout(() => { resolving = false; nextRound(); }, 600);
+  }
+
+  // --- Rounds & game flow ---
+  function nextRound() {
+    roundIdx++;
+    if (roundIdx >= ROUNDS_PER_GAME) {
+      endGame();
+      return;
+    }
+    setupRound();
+  }
+
+  function setupRound() {
+    currentWord = pickWord();
+    const scrambled = scrambleLetters(currentWord);
+    tiles = scrambled.map((letter, i) => ({ id: i, letter, used: false }));
+    slots = currentWord.split('').map(() => ({ tileId: null, locked: false }));
+    hintsUsedThisWord = 0;
+    wordTimeLimit = CFG[difficulty].time;
+    wordStartTime = Date.now();
+    updateHud();
+    renderSlots();
+    renderTiles();
+    startWordTimer();
+  }
+
+  function updateHud() {
+    scoreEl.textContent = totalScore;
+    roundEl.textContent = `${Math.min(roundIdx + 1, ROUNDS_PER_GAME)}/${ROUNDS_PER_GAME}`;
+    timeEl.textContent = formatTime(wordTimeLimit);
+    bestEl.textContent = parseInt(localStorage.getItem(STORE_BEST) || '0', 10);
+    hintsLeftEl.textContent = `(${hintsLeft})`;
+    hintBtn.disabled = hintsLeft <= 0;
+  }
+
+  function startWordTimer() {
+    stopWordTimer();
+    const total = wordTimeLimit;
+    wordTimerId = setInterval(() => {
+      if (gameOver) return;
+      const elapsed = (Date.now() - wordStartTime) / 1000;
+      const remaining = Math.max(0, Math.ceil(total - elapsed));
+      timeEl.textContent = formatTime(remaining);
+      if (remaining <= 0) {
+        // Time's up for this word — count as skipped
+        stopWordTimer();
+        if (!resolving) {
+          skippedCount++;
+          showToast(`Time! Was "${currentWord.toUpperCase()}"`, 1600);
+          resolving = true;
+          setTimeout(() => { resolving = false; nextRound(); }, 800);
+        }
+      }
+    }, 200);
+  }
+
+  function stopWordTimer() {
+    if (wordTimerId) { clearInterval(wordTimerId); wordTimerId = null; }
+  }
+
+  function formatTime(s) {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${sec.toString().padStart(2, '0')}`;
+  }
+
+  function startGame() {
+    hideOverlay();
+    stopWordTimer();
+    gameOver = false;
+    resolving = false;
+    roundIdx = 0;
+    totalScore = 0;
+    solvedCount = 0;
+    skippedCount = 0;
+    hintsUsedTotal = 0;
+    hintsLeft = HINTS_PER_GAME;
+    usedThisGame = new Set();
+    hintBtn.disabled = false;
+    setupRound();
+  }
+
+  function endGame() {
+    gameOver = true;
+    stopWordTimer();
+
+    const best = parseInt(localStorage.getItem(STORE_BEST) || '0', 10);
+    const isBest = totalScore > best;
+    if (isBest) localStorage.setItem(STORE_BEST, totalScore);
+    bestEl.textContent = Math.max(best, totalScore);
+
+    overTitle.textContent = isBest && totalScore > 0 ? 'New Best!' : 'Round Complete!';
+    overSub.textContent = solvedCount === ROUNDS_PER_GAME
+      ? 'Perfect — every word unscrambled!'
+      : `You solved ${solvedCount} of ${ROUNDS_PER_GAME} words on ${CFG[difficulty].label}.`;
+    overScore.textContent = totalScore;
+    overSolved.textContent = solvedCount;
+    overSkipped.textContent = skippedCount;
+    overHints.textContent = hintsUsedTotal;
+
+    setTimeout(() => overlayEl.classList.add('show'), 250);
+
+    setTimeout(() => {
+      if (window.Leaderboard && Leaderboard.submitScore) {
+        Leaderboard.submitScore(totalScore);
+      }
+    }, 600);
+  }
+
+  function hideOverlay() {
+    overlayEl.classList.remove('show');
+  }
+
+  // --- Difficulty selection ---
+  diffsEl.addEventListener('click', (e) => {
+    const btn = e.target.closest('.diff-pill');
+    if (!btn) return;
+    const d = btn.dataset.diff;
+    if (!CFG[d]) return;
+    if (d === difficulty) return;
+    difficulty = d;
+    try { localStorage.setItem(STORE_DIFF, d); } catch {}
+    diffsEl.querySelectorAll('.diff-pill').forEach(p => {
+      p.classList.toggle('active', p.dataset.diff === d);
+    });
+    startGame();
+  });
+
+  // --- Buttons ---
+  shuffleBtn.addEventListener('click', shuffleRemaining);
+  hintBtn.addEventListener('click', useHint);
+  skipBtn.addEventListener('click', skipWord);
+  newBtn.addEventListener('click', startGame);
+  overAgain.addEventListener('click', startGame);
+
+  rulesToggle.addEventListener('click', () => {
+    rulesPanel.classList.toggle('open');
+  });
+
+  // Keyboard support: type the answer
+  document.addEventListener('keydown', (e) => {
+    if (gameOver || resolving) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const key = e.key;
+    if (key === 'Backspace') {
+      // Remove last filled (non-locked) slot
+      for (let i = slots.length - 1; i >= 0; i--) {
+        if (slots[i].tileId !== null && !slots[i].locked) {
+          tiles[slots[i].tileId].used = false;
+          slots[i].tileId = null;
+          renderSlots(); renderTiles();
+          e.preventDefault();
+          return;
+        }
+      }
+      return;
+    }
+    if (key === 'Enter') return;
+    if (key.length !== 1) return;
+    const letter = key.toLowerCase();
+    if (!/^[a-z]$/.test(letter)) return;
+    // Find an unused tile with that letter
+    const tid = tiles.findIndex(t => !t.used && t.letter === letter);
+    if (tid >= 0) {
+      e.preventDefault();
+      onTileClick(tid);
+    }
+  });
+
+  // --- Init ---
+  try {
+    const savedDiff = localStorage.getItem(STORE_DIFF);
+    if (savedDiff && CFG[savedDiff]) {
+      difficulty = savedDiff;
+      diffsEl.querySelectorAll('.diff-pill').forEach(p => {
+        p.classList.toggle('active', p.dataset.diff === difficulty);
+      });
+    }
+  } catch {}
+  bestEl.textContent = parseInt(localStorage.getItem(STORE_BEST) || '0', 10);
+  startGame();
+})();
+</script>
+
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

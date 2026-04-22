@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Match 3 — FindPicked Games</title>
+<meta name="description" content="Play Match 3 free — swap adjacent gems to match three or more. Chain cascading combos for big scores. No downloads, no sign-ups.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ccircle cx='10' cy='10' r='3.5' fill='%23ff3b30'/%3E%3Crect x='18' y='6.5' width='7' height='7' rx='1.5' fill='%23ff9500'/%3E%3Cpolygon points='10,18 14,25 6,25' fill='%23ffcc00'/%3E%3Cpolygon points='21.5,18 25,21.5 21.5,25 18,21.5' fill='%2334c759'/%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-board: #f2f2f4;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+  --radius: 16px;
+
+  --c0: #ff3b30;
+  --c1: #ff9500;
+  --c2: #ffcc00;
+  --c3: #34c759;
+  --c4: #0071e3;
+  --c5: #af52de;
+}
+
+html, body {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px 20px 40px;
+  touch-action: manipulation;
+}
+
+.back {
+  align-self: flex-start;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 400;
+  padding: 8px 4px;
+  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.back:hover { color: var(--text-primary); }
+.back .arrow { font-size: 18px; line-height: 1; }
+
+.wrap {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+h1 {
+  font-size: clamp(36px, 9vw, 48px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.scores {
+  display: flex;
+  gap: 8px;
+}
+
+.score-box {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 10px 14px;
+  min-width: 78px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.score-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  margin-bottom: 2px;
+}
+
+.score-value {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  transition: transform 0.2s ease;
+}
+.score-value.bump { transform: scale(1.12); }
+.score-value.warn { color: #ff9500; }
+.score-value.danger { color: #ff3b30; }
+
+.subhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.subhead p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  flex: 1 1 180px;
+}
+
+.combo-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ff9500, #ff3b30);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.combo-badge.show { opacity: 1; transform: scale(1); }
+
+.btn {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  height: 44px;
+  padding: 0 22px;
+  border-radius: 22px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn:active { transform: scale(0.97); }
+
+.btn.secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
+}
+.btn.secondary:hover { background: rgba(0, 113, 227, 0.06); }
+
+.board {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: var(--bg-board);
+  border-radius: var(--radius);
+  padding: 8px;
+  box-shadow: var(--shadow);
+  user-select: none;
+  -webkit-user-select: none;
+  overflow: hidden;
+}
+
+.grid {
+  position: absolute;
+  inset: 8px;
+  overflow: hidden;
+  border-radius: 10px;
+  touch-action: none;
+}
+
+.gem {
+  position: absolute;
+  width: 12.5%;
+  height: 12.5%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4%;
+  transition: top 0.28s cubic-bezier(0.4, 0.0, 0.2, 1),
+              left 0.22s cubic-bezier(0.4, 0.0, 0.2, 1),
+              transform 0.2s ease,
+              opacity 0.25s ease;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  will-change: top, left, transform;
+}
+
+.gem svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.12));
+  transition: filter 0.2s ease;
+}
+
+.gem.selected svg {
+  filter: drop-shadow(0 0 0 3px rgba(29, 29, 31, 0.75))
+          drop-shadow(0 2px 6px rgba(0,0,0,0.2));
+  transform: scale(1.06);
+}
+.gem.selected { z-index: 3; }
+
+.gem.clearing {
+  transform: scale(0.2) rotate(20deg);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.gem.shake {
+  animation: shake 0.32s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+@keyframes shake {
+  10%, 90% { transform: translate(-6%, 0); }
+  20%, 80% { transform: translate(6%, 0); }
+  30%, 50%, 70% { transform: translate(-10%, 0); }
+  40%, 60% { transform: translate(10%, 0); }
+}
+
+.pop-text {
+  position: absolute;
+  pointer-events: none;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  background: rgba(255,255,255,0.95);
+  padding: 4px 10px;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  transform: translate(-50%, -50%);
+  animation: popRise 0.9s ease-out forwards;
+  z-index: 4;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+}
+@keyframes popRise {
+  0% { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
+  20% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+  100% { transform: translate(-50%, -160%) scale(1); opacity: 0; }
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.94);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10;
+}
+.overlay.show { opacity: 1; pointer-events: auto; }
+
+.overlay h2 {
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.overlay .final-score {
+  font-size: 56px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.overlay p {
+  font-size: 15px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  max-width: 320px;
+}
+.overlay .row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+footer {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  text-align: center;
+  margin-top: 8px;
+  line-height: 1.6;
+}
+
+.rules-toggle {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--accent);
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+  padding: 4px 8px;
+}
+.rules-toggle:hover { text-decoration: underline; }
+
+.rules-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  text-align: left;
+}
+.rules-panel.open { max-height: 520px; }
+.rules-panel ul { margin: 8px 0 0 18px; }
+.rules-panel li { margin-bottom: 4px; }
+
+@media (max-width: 420px) {
+  body { padding: 16px 14px 32px; }
+  .wrap { gap: 16px; }
+  .score-box { min-width: 68px; padding: 8px 10px; }
+  .score-value { font-size: 18px; }
+  .board { padding: 6px; }
+  .grid { inset: 6px; }
+  .overlay h2 { font-size: 28px; }
+  .overlay .final-score { font-size: 44px; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="back" href="../" aria-label="Back to games">
+    <span class="arrow">←</span>
+    <span>Games</span>
+  </a>
+
+  <header>
+    <h1>Match 3</h1>
+    <div class="scores">
+      <div class="score-box">
+        <div class="score-label">Score</div>
+        <div class="score-value" id="score">0</div>
+      </div>
+      <div class="score-box">
+        <div class="score-label">Moves</div>
+        <div class="score-value" id="moves">30</div>
+      </div>
+      <div class="score-box">
+        <div class="score-label">Best</div>
+        <div class="score-value" id="best">—</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="subhead">
+    <p>Swap adjacent gems to match three or more. Chain cascades for combo multipliers.</p>
+    <span class="combo-badge" id="combo" aria-live="polite"></span>
+  </div>
+
+  <div class="board" id="board">
+    <div class="grid" id="grid"></div>
+    <div class="overlay" id="overlay">
+      <h2 id="overlay-title">Game Over</h2>
+      <div class="final-score" id="final-score">0</div>
+      <p id="overlay-text">Out of moves.</p>
+      <div class="row">
+        <button class="btn" id="overlay-new">Play Again</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="subhead">
+    <button class="btn secondary" id="newgame">New Game</button>
+    <span style="font-size:13px;color:var(--text-tertiary)">Tap a gem, then a neighbor — or swipe.</span>
+  </div>
+
+  <div style="text-align:center">
+    <button class="rules-toggle" onclick="this.nextElementSibling.classList.toggle('open')">How to Play ▾</button>
+    <div class="rules-panel">
+      <ul>
+        <li>The board is an 8×8 grid of six colored gems. You have <strong>30 moves</strong> per game.</li>
+        <li>Tap a gem to select it, then tap an adjacent gem (up, down, left, right) to swap. You can also swipe a gem to swap it with its neighbor.</li>
+        <li>A swap only counts if it creates a line of <strong>three or more</strong> matching gems. Otherwise the swap reverts and no move is spent.</li>
+        <li>Matched gems disappear and gems above fall to fill the gap. New gems drop in from the top.</li>
+        <li>If falling gems form new matches, they chain as a <strong>cascade</strong> — each cascade level multiplies your points (×2, ×3, ×4…).</li>
+        <li>Bigger matches score more: 3-match = 30 pts, 4-match = 60 pts, 5-match = 100 pts (before multiplier).</li>
+        <li>Keyboard: arrow keys move the selection, Space/Enter selects or swaps, R resets.</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>
+    Match 3 · cascade combos · beat your best score
+  </footer>
+</div>
+
+<script>
+(() => {
+  const SIZE = 8;
+  const COLORS = 6;
+  const MOVE_LIMIT = 30;
+  const STORE_BEST = 'findpicked:match3:best';
+
+  // Animation timings (ms) — keep in sync with CSS transitions
+  const T_SWAP = 240;
+  const T_CLEAR = 280;
+  const T_FALL = 320;
+  const T_SHAKE = 340;
+
+  const SHAPES = [
+    // red circle
+    '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="var(--c0)"/><circle cx="9" cy="9" r="2.5" fill="rgba(255,255,255,0.45)"/></svg>',
+    // orange rounded square
+    '<svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="4" fill="var(--c1)"/><rect x="6" y="6" width="5" height="5" rx="1.5" fill="rgba(255,255,255,0.4)"/></svg>',
+    // yellow triangle
+    '<svg viewBox="0 0 24 24"><polygon points="12,3.2 21.5,20 2.5,20" fill="var(--c2)" stroke-linejoin="round" stroke="var(--c2)" stroke-width="1.5"/><polygon points="12,7 8,15 16,15" fill="rgba(255,255,255,0.35)"/></svg>',
+    // green diamond
+    '<svg viewBox="0 0 24 24"><polygon points="12,2.5 21.5,12 12,21.5 2.5,12" fill="var(--c3)"/><polygon points="12,6 15,12 12,18 9,12" fill="rgba(255,255,255,0.35)"/></svg>',
+    // blue hexagon
+    '<svg viewBox="0 0 24 24"><polygon points="12,2.5 21,7.5 21,16.5 12,21.5 3,16.5 3,7.5" fill="var(--c4)"/><polygon points="12,6 17,9 17,15 12,18 7,15 7,9" fill="rgba(255,255,255,0.35)"/></svg>',
+    // purple star
+    '<svg viewBox="0 0 24 24"><polygon points="12,2.5 14.7,9.3 22,9.9 16.4,14.7 18.2,21.8 12,17.8 5.8,21.8 7.6,14.7 2,9.9 9.3,9.3" fill="var(--c5)"/><circle cx="10" cy="11" r="2" fill="rgba(255,255,255,0.4)"/></svg>'
+  ];
+
+  const gridEl = document.getElementById('grid');
+  const boardEl = document.getElementById('board');
+  const scoreEl = document.getElementById('score');
+  const movesEl = document.getElementById('moves');
+  const bestEl = document.getElementById('best');
+  const comboEl = document.getElementById('combo');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlay-title');
+  const overlayText = document.getElementById('overlay-text');
+  const finalScoreEl = document.getElementById('final-score');
+  const overlayNew = document.getElementById('overlay-new');
+  const newBtn = document.getElementById('newgame');
+
+  /** @type {Array<Array<{id:number,color:number}|null>>} */
+  let board;
+  let gemEls;        // Map<id, HTMLElement>
+  let nextId;
+  let selected;      // {r, c} | null
+  let cursor;        // {r, c} — keyboard cursor
+  let moves;
+  let score;
+  let best = parseInt(localStorage.getItem(STORE_BEST) || '0', 10);
+  let busy;
+  let over;
+  let submitted;
+
+  bestEl.textContent = best > 0 ? best : '—';
+
+  // --- helpers -----------------------------------------------------------
+
+  function wait(ms) { return new Promise(res => setTimeout(res, ms)); }
+
+  function pct(n) { return (n * 100 / SIZE) + '%'; }
+
+  function bump(el) {
+    el.classList.remove('bump');
+    void el.offsetWidth;
+    el.classList.add('bump');
+  }
+
+  // --- board setup -------------------------------------------------------
+
+  function newGem(color) { return { id: ++nextId, color }; }
+
+  function placeGemEl(gem, r, c) {
+    const el = document.createElement('div');
+    el.className = 'gem c' + gem.color;
+    el.dataset.id = gem.id;
+    el.innerHTML = SHAPES[gem.color];
+    el.style.left = pct(c);
+    el.style.top = pct(r);
+    el.setAttribute('aria-label', 'Gem color ' + (gem.color + 1));
+    gridEl.appendChild(el);
+    gemEls.set(gem.id, el);
+    return el;
+  }
+
+  function movGemEl(id, r, c) {
+    const el = gemEls.get(id);
+    if (!el) return;
+    el.style.left = pct(c);
+    el.style.top = pct(r);
+  }
+
+  function spawnGemAbove(gem, targetR, c, startR) {
+    const el = placeGemEl(gem, startR, c);
+    // Force the browser to commit the initial position so the transition fires
+    el.getBoundingClientRect();
+    el.style.top = pct(targetR);
+  }
+
+  function removeGemEl(id) {
+    const el = gemEls.get(id);
+    if (!el) return;
+    gemEls.delete(id);
+    el.classList.add('clearing');
+    setTimeout(() => el.remove(), T_CLEAR + 50);
+  }
+
+  function hasInitialMatch(r, c, color) {
+    if (c >= 2 && board[r][c-1] && board[r][c-1].color === color && board[r][c-2] && board[r][c-2].color === color) return true;
+    if (r >= 2 && board[r-1][c] && board[r-1][c].color === color && board[r-2][c] && board[r-2][c].color === color) return true;
+    return false;
+  }
+
+  function setupGame() {
+    // Clear DOM
+    while (gridEl.firstChild) gridEl.removeChild(gridEl.firstChild);
+    gemEls = new Map();
+    nextId = 0;
+    selected = null;
+    cursor = { r: 0, c: 0 };
+    moves = MOVE_LIMIT;
+    score = 0;
+    busy = false;
+    over = false;
+    submitted = false;
+
+    board = Array.from({ length: SIZE }, () => Array(SIZE).fill(null));
+    for (let r = 0; r < SIZE; r++) {
+      for (let c = 0; c < SIZE; c++) {
+        let color;
+        let attempt = 0;
+        do {
+          color = Math.floor(Math.random() * COLORS);
+          attempt++;
+        } while (hasInitialMatch(r, c, color) && attempt < 40);
+        const gem = newGem(color);
+        board[r][c] = gem;
+        placeGemEl(gem, r, c);
+      }
+    }
+
+    updateScore(0);
+    updateMoves();
+    hideCombo();
+    hideOverlay();
+
+    // Ensure the initial board has at least one legal move
+    if (!hasAnyValidMove()) reshuffle();
+  }
+
+  function reshuffle() {
+    const colors = [];
+    for (let r = 0; r < SIZE; r++)
+      for (let c = 0; c < SIZE; c++) colors.push(board[r][c].color);
+    for (let attempt = 0; attempt < 30; attempt++) {
+      for (let i = colors.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [colors[i], colors[j]] = [colors[j], colors[i]];
+      }
+      let k = 0;
+      for (let r = 0; r < SIZE; r++)
+        for (let c = 0; c < SIZE; c++)
+          board[r][c].color = colors[k++];
+      if (findMatches().length === 0 && hasAnyValidMove()) break;
+    }
+    for (let r = 0; r < SIZE; r++) {
+      for (let c = 0; c < SIZE; c++) {
+        const el = gemEls.get(board[r][c].id);
+        el.className = 'gem c' + board[r][c].color;
+        el.innerHTML = SHAPES[board[r][c].color];
+      }
+    }
+  }
+
+  // --- match detection ---------------------------------------------------
+
+  function findMatches() {
+    const hit = Array.from({ length: SIZE }, () => Array(SIZE).fill(false));
+    // Horizontal runs
+    for (let r = 0; r < SIZE; r++) {
+      let runStart = 0;
+      for (let c = 1; c <= SIZE; c++) {
+        const sameAsPrev = c < SIZE
+          && board[r][c] && board[r][c-1]
+          && board[r][c].color === board[r][c-1].color;
+        if (!sameAsPrev) {
+          const runLen = c - runStart;
+          if (runLen >= 3) {
+            for (let k = runStart; k < c; k++) hit[r][k] = true;
+          }
+          runStart = c;
+        }
+      }
+    }
+    // Vertical runs
+    for (let c = 0; c < SIZE; c++) {
+      let runStart = 0;
+      for (let r = 1; r <= SIZE; r++) {
+        const sameAsPrev = r < SIZE
+          && board[r][c] && board[r-1][c]
+          && board[r][c].color === board[r-1][c].color;
+        if (!sameAsPrev) {
+          const runLen = r - runStart;
+          if (runLen >= 3) {
+            for (let k = runStart; k < r; k++) hit[k][c] = true;
+          }
+          runStart = r;
+        }
+      }
+    }
+    const coords = [];
+    for (let r = 0; r < SIZE; r++)
+      for (let c = 0; c < SIZE; c++)
+        if (hit[r][c]) coords.push([r, c]);
+    return coords;
+  }
+
+  // Group contiguous matched cells to compute per-group point bonuses.
+  function groupMatches(coords) {
+    const inSet = new Set(coords.map(([r,c]) => r*SIZE + c));
+    const visited = new Set();
+    const groups = [];
+    for (const key of inSet) {
+      if (visited.has(key)) continue;
+      const group = [];
+      const stack = [key];
+      while (stack.length) {
+        const k = stack.pop();
+        if (visited.has(k) || !inSet.has(k)) continue;
+        visited.add(k);
+        const r = Math.floor(k / SIZE), c = k % SIZE;
+        group.push([r, c]);
+        stack.push((r+1)*SIZE + c, (r-1)*SIZE + c, r*SIZE + (c+1), r*SIZE + (c-1));
+      }
+      groups.push(group);
+    }
+    return groups;
+  }
+
+  function wouldMatchAfterSwap(r1, c1, r2, c2) {
+    const a = board[r1][c1], b = board[r2][c2];
+    if (!a || !b) return false;
+    board[r1][c1] = b; board[r2][c2] = a;
+    const any = findMatches().length > 0;
+    board[r1][c1] = a; board[r2][c2] = b;
+    return any;
+  }
+
+  function hasAnyValidMove() {
+    for (let r = 0; r < SIZE; r++) {
+      for (let c = 0; c < SIZE; c++) {
+        if (c + 1 < SIZE && wouldMatchAfterSwap(r, c, r, c+1)) return true;
+        if (r + 1 < SIZE && wouldMatchAfterSwap(r, c, r+1, c)) return true;
+      }
+    }
+    return false;
+  }
+
+  // --- score / UI --------------------------------------------------------
+
+  function updateScore(delta) {
+    score += delta;
+    scoreEl.textContent = score;
+    if (delta > 0) bump(scoreEl);
+  }
+
+  function updateMoves() {
+    movesEl.textContent = moves;
+    movesEl.classList.remove('warn', 'danger');
+    if (moves <= 3) movesEl.classList.add('danger');
+    else if (moves <= 8) movesEl.classList.add('warn');
+    bump(movesEl);
+  }
+
+  function showCombo(n) {
+    comboEl.textContent = 'Combo ×' + n;
+    comboEl.classList.add('show');
+  }
+  function hideCombo() {
+    comboEl.classList.remove('show');
+  }
+
+  function floatPoints(r, c, text) {
+    const rect = gridEl.getBoundingClientRect();
+    const boardRect = boardEl.getBoundingClientRect();
+    const x = rect.left - boardRect.left + (c + 0.5) * (rect.width / SIZE);
+    const y = rect.top - boardRect.top + (r + 0.5) * (rect.height / SIZE);
+    const pop = document.createElement('div');
+    pop.className = 'pop-text';
+    pop.textContent = text;
+    pop.style.left = x + 'px';
+    pop.style.top = y + 'px';
+    boardEl.appendChild(pop);
+    setTimeout(() => pop.remove(), 950);
+  }
+
+  function hideOverlay() { overlay.classList.remove('show'); }
+
+  function endGame() {
+    over = true;
+    clearSelection();
+    finalScoreEl.textContent = score;
+    if (score > best) {
+      best = score;
+      localStorage.setItem(STORE_BEST, best);
+      bestEl.textContent = best;
+      overlayTitle.textContent = 'New Best!';
+      overlayText.textContent = 'You beat your previous high score.';
+    } else {
+      overlayTitle.textContent = 'Nice Run';
+      overlayText.textContent = best > 0
+        ? 'Your best is ' + best + '. Try again?'
+        : 'Play again to set a best score.';
+    }
+    if (!submitted && window.Leaderboard && Leaderboard.submitScore) {
+      submitted = true;
+      Leaderboard.submitScore(score);
+    }
+    setTimeout(() => overlay.classList.add('show'), 260);
+  }
+
+  // --- selection ---------------------------------------------------------
+
+  function clearSelection() {
+    if (!selected) return;
+    const el = gemEls.get(board[selected.r][selected.c].id);
+    if (el) el.classList.remove('selected');
+    selected = null;
+  }
+
+  function setSelection(r, c) {
+    clearSelection();
+    selected = { r, c };
+    cursor = { r, c };
+    const el = gemEls.get(board[r][c].id);
+    if (el) el.classList.add('selected');
+  }
+
+  function isAdjacent(a, b) {
+    return (a.r === b.r && Math.abs(a.c - b.c) === 1)
+        || (a.c === b.c && Math.abs(a.r - b.r) === 1);
+  }
+
+  // --- swap + resolve ----------------------------------------------------
+
+  async function performSwap(r1, c1, r2, c2, visualOnly) {
+    const a = board[r1][c1], b = board[r2][c2];
+    board[r1][c1] = b;
+    board[r2][c2] = a;
+    movGemEl(a.id, r2, c2);
+    movGemEl(b.id, r1, c1);
+    await wait(T_SWAP);
+  }
+
+  async function trySwap(r1, c1, r2, c2) {
+    if (busy || over) return;
+    if (r2 < 0 || r2 >= SIZE || c2 < 0 || c2 >= SIZE) return;
+    busy = true;
+    clearSelection();
+    await performSwap(r1, c1, r2, c2);
+
+    const matches = findMatches();
+    if (matches.length === 0) {
+      // Invalid — swap back with a shake
+      const elA = gemEls.get(board[r2][c2].id);
+      const elB = gemEls.get(board[r1][c1].id);
+      if (elA) elA.classList.add('shake');
+      if (elB) elB.classList.add('shake');
+      await wait(T_SHAKE);
+      if (elA) elA.classList.remove('shake');
+      if (elB) elB.classList.remove('shake');
+      await performSwap(r1, c1, r2, c2);
+      busy = false;
+      return;
+    }
+
+    // Valid move — consume a move and resolve matches
+    moves--;
+    updateMoves();
+    await resolveCascades();
+
+    if (!hasAnyValidMove()) {
+      // Shuffle so there's always a move available
+      reshuffle();
+    }
+
+    busy = false;
+    if (moves <= 0) endGame();
+  }
+
+  async function resolveCascades() {
+    let combo = 1;
+    while (true) {
+      const matches = findMatches();
+      if (matches.length === 0) break;
+
+      const groups = groupMatches(matches);
+      let turnPoints = 0;
+      for (const group of groups) {
+        const n = group.length;
+        // Per-group scoring: 3→30, 4→60, 5→100, 6+→100 + (n-5)*30
+        let pts;
+        if (n <= 3) pts = 30;
+        else if (n === 4) pts = 60;
+        else if (n === 5) pts = 100;
+        else pts = 100 + (n - 5) * 30;
+        pts *= combo;
+        turnPoints += pts;
+        // Floating text at group centroid
+        let cr = 0, cc = 0;
+        for (const [r, c] of group) { cr += r; cc += c; }
+        floatPoints(cr / group.length, cc / group.length, '+' + pts);
+      }
+      updateScore(turnPoints);
+
+      if (combo >= 2) showCombo(combo);
+
+      // Remove matched gems
+      for (const [r, c] of matches) {
+        const gem = board[r][c];
+        if (gem) {
+          removeGemEl(gem.id);
+          board[r][c] = null;
+        }
+      }
+      await wait(T_CLEAR);
+
+      // Cascade: drop existing gems in each column
+      for (let c = 0; c < SIZE; c++) {
+        let writeR = SIZE - 1;
+        for (let r = SIZE - 1; r >= 0; r--) {
+          if (board[r][c] !== null) {
+            if (r !== writeR) {
+              board[writeR][c] = board[r][c];
+              board[r][c] = null;
+              movGemEl(board[writeR][c].id, writeR, c);
+            }
+            writeR--;
+          }
+        }
+        // Fill top with new gems falling from above the board
+        let spawnY = -1;
+        for (let r = writeR; r >= 0; r--) {
+          const gem = newGem(Math.floor(Math.random() * COLORS));
+          board[r][c] = gem;
+          spawnGemAbove(gem, r, c, spawnY);
+          spawnY--;
+        }
+      }
+      await wait(T_FALL);
+
+      combo++;
+    }
+
+    // Small delay before hiding combo so it doesn't flash away
+    setTimeout(hideCombo, 600);
+  }
+
+  // --- input -------------------------------------------------------------
+
+  function onCellTap(r, c) {
+    if (busy || over) return;
+    if (!selected) { setSelection(r, c); return; }
+    if (selected.r === r && selected.c === c) { clearSelection(); return; }
+    if (isAdjacent(selected, { r, c })) {
+      trySwap(selected.r, selected.c, r, c);
+    } else {
+      setSelection(r, c);
+    }
+  }
+
+  // Pointer handling on the grid — supports tap + swipe
+  let pointerStart = null;
+  let pointerStartCell = null;
+
+  gridEl.addEventListener('pointerdown', (e) => {
+    if (busy || over) return;
+    const cell = cellFromEvent(e);
+    if (!cell) return;
+    pointerStart = { x: e.clientX, y: e.clientY };
+    pointerStartCell = cell;
+    try { gridEl.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+
+  gridEl.addEventListener('pointermove', (e) => {
+    if (!pointerStart || !pointerStartCell || busy || over) return;
+    const rect = gridEl.getBoundingClientRect();
+    const cellSize = rect.width / SIZE;
+    const dx = e.clientX - pointerStart.x;
+    const dy = e.clientY - pointerStart.y;
+    if (Math.abs(dx) < cellSize * 0.35 && Math.abs(dy) < cellSize * 0.35) return;
+    const { r, c } = pointerStartCell;
+    let dr = 0, dc = 0;
+    if (Math.abs(dx) > Math.abs(dy)) dc = dx > 0 ? 1 : -1;
+    else dr = dy > 0 ? 1 : -1;
+    const nr = r + dr, nc = c + dc;
+    const start = pointerStartCell;
+    pointerStart = null;
+    pointerStartCell = null;
+    if (nr < 0 || nr >= SIZE || nc < 0 || nc >= SIZE) return;
+    trySwap(start.r, start.c, nr, nc);
+  });
+
+  gridEl.addEventListener('pointerup', (e) => {
+    if (!pointerStart || !pointerStartCell) return;
+    const rect = gridEl.getBoundingClientRect();
+    const cellSize = rect.width / SIZE;
+    const dx = e.clientX - pointerStart.x;
+    const dy = e.clientY - pointerStart.y;
+    const { r, c } = pointerStartCell;
+    pointerStart = null;
+    pointerStartCell = null;
+    if (Math.abs(dx) < cellSize * 0.35 && Math.abs(dy) < cellSize * 0.35) {
+      onCellTap(r, c);
+    }
+  });
+
+  gridEl.addEventListener('pointercancel', () => {
+    pointerStart = null;
+    pointerStartCell = null;
+  });
+
+  function cellFromEvent(e) {
+    const rect = gridEl.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    if (x < 0 || y < 0 || x >= rect.width || y >= rect.height) return null;
+    const c = Math.floor(x / (rect.width / SIZE));
+    const r = Math.floor(y / (rect.height / SIZE));
+    if (r < 0 || r >= SIZE || c < 0 || c >= SIZE) return null;
+    return { r, c };
+  }
+
+  // Keyboard
+  window.addEventListener('keydown', (e) => {
+    if (overlay.classList.contains('show')) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setupGame(); }
+      return;
+    }
+    if (busy || over) return;
+    const k = e.key;
+    if (k === 'r' || k === 'R') { e.preventDefault(); setupGame(); return; }
+    if (k === 'Escape') { e.preventDefault(); clearSelection(); return; }
+    let dr = 0, dc = 0;
+    if (k === 'ArrowUp') dr = -1;
+    else if (k === 'ArrowDown') dr = 1;
+    else if (k === 'ArrowLeft') dc = -1;
+    else if (k === 'ArrowRight') dc = 1;
+    else if (k === 'Enter' || k === ' ') {
+      e.preventDefault();
+      onCellTap(cursor.r, cursor.c);
+      return;
+    } else return;
+    e.preventDefault();
+    if (selected) {
+      const nr = selected.r + dr, nc = selected.c + dc;
+      if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE) {
+        trySwap(selected.r, selected.c, nr, nc);
+      }
+    } else {
+      cursor.r = Math.max(0, Math.min(SIZE - 1, cursor.r + dr));
+      cursor.c = Math.max(0, Math.min(SIZE - 1, cursor.c + dc));
+      setSelection(cursor.r, cursor.c);
+    }
+  });
+
+  newBtn.addEventListener('click', () => setupGame());
+  overlayNew.addEventListener('click', () => setupGame());
+
+  setupGame();
+})();
+</script>
+
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

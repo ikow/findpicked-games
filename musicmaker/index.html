@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Music Maker · FindPicked Games</title>
+<meta name="description" content="Build beats with a free 8-instrument step sequencer. Web Audio synth, tempo control, export your pattern.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ctext x='16' y='22' font-size='18' fill='white' text-anchor='middle' font-family='system-ui'%3EM%3C/text%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-hover: #f5f5f7;
+  --bg-cell: #ececee;
+  --bg-cell-accent: #e3e3e6;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --accent-soft: #cfe5fb;
+  --playhead: rgba(0,113,227,0.10);
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+  touch-action: manipulation;
+}
+
+.app {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 12px 16px 24px;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+  flex-shrink: 0;
+}
+.nav-left { display: flex; align-items: center; gap: 12px; }
+
+.back {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: background 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.back:hover, .back:active { background: var(--bg-hover); }
+
+.title {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.icon-btn {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  transition: background 0.2s ease, color 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.icon-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+.scores {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.score-card {
+  background: var(--bg-card);
+  box-shadow: var(--shadow);
+  border-radius: 14px;
+  padding: 12px 18px;
+  flex: 1;
+  text-align: center;
+}
+.score-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+}
+.score-value {
+  font-size: 26px;
+  font-weight: 700;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.transport {
+  margin-top: 16px;
+  background: var(--bg-card);
+  box-shadow: var(--shadow);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.play-btn {
+  height: 44px;
+  width: 44px;
+  border-radius: 22px;
+  border: none;
+  background: var(--accent);
+  color: white;
+  cursor: pointer;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, transform 0.1s ease;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+}
+.play-btn:hover { background: var(--accent-hover); }
+.play-btn:active { transform: scale(0.96); }
+.play-btn svg { width: 18px; height: 18px; fill: currentColor; }
+
+.tempo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 180px;
+}
+.tempo-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+}
+.tempo-value {
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  min-width: 56px;
+  text-align: right;
+}
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  height: 4px;
+  background: var(--bg-cell);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+
+.grid-card {
+  margin-top: 16px;
+  background: var(--bg-card);
+  box-shadow: var(--shadow);
+  border-radius: 14px;
+  padding: 14px 12px;
+  overflow-x: auto;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 64px repeat(16, minmax(0, 1fr));
+  gap: 4px;
+  min-width: 0;
+}
+
+.row-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding-left: 4px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s ease, opacity 0.15s ease;
+}
+.row-label:hover { color: var(--text-primary); }
+.row-label.muted { opacity: 0.35; text-decoration: line-through; }
+
+.cell {
+  aspect-ratio: 1;
+  border-radius: 6px;
+  background: var(--bg-cell);
+  border: none;
+  cursor: pointer;
+  transition: background 0.12s ease, transform 0.08s ease;
+  -webkit-tap-highlight-color: transparent;
+  padding: 0;
+  position: relative;
+}
+.cell.beat-accent { background: var(--bg-cell-accent); }
+.cell.on { background: var(--accent); }
+.cell.on.beat-accent { background: var(--accent); }
+.cell.playing::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 2px var(--accent);
+  pointer-events: none;
+}
+.cell.on.flash { transform: scale(1.15); }
+.cell:hover:not(.on) { background: #dadadd; }
+
+.actions {
+  margin-top: 16px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 22px;
+  border: none;
+  background: var(--accent);
+  color: white;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease, transform 0.1s ease;
+  -webkit-tap-highlight-color: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn:active { transform: scale(0.97); }
+.btn.secondary {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  box-shadow: var(--shadow);
+}
+.btn.secondary:hover { background: var(--bg-hover); }
+
+.rules-toggle {
+  display: inline-block;
+  margin-top: 18px;
+  font-size: 13px;
+  color: var(--accent);
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+  padding: 0;
+  text-align: left;
+}
+.rules-toggle:hover { text-decoration: underline; }
+.rules-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.rules-panel.open { max-height: 600px; margin-top: 8px; }
+.rules-panel ul { margin: 8px 0 0 18px; }
+.rules-panel li { margin-bottom: 4px; }
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  z-index: 10;
+  padding: 24px;
+}
+.overlay.visible { opacity: 1; pointer-events: auto; }
+.overlay-card {
+  background: var(--bg-card);
+  border-radius: 18px;
+  box-shadow: var(--shadow-hover);
+  padding: 28px 24px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+}
+.overlay-card h2 {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+.overlay-card p {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+.overlay-card .btn { margin: 4px; }
+
+.toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(29,29,31,0.92);
+  color: white;
+  padding: 10px 18px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 20;
+  max-width: 90vw;
+  text-align: center;
+}
+.toast.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+@media (max-width: 480px) {
+  .grid { grid-template-columns: 48px repeat(16, minmax(0, 1fr)); gap: 3px; }
+  .row-label { font-size: 11px; padding-left: 2px; }
+  .cell { border-radius: 4px; }
+  .cell.playing::after { box-shadow: inset 0 0 0 1.5px var(--accent); }
+  .grid-card { padding: 12px 10px; }
+  .tempo { min-width: 140px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="nav">
+    <div class="nav-left">
+      <a class="back" href="../" aria-label="Back to games">←</a>
+      <div class="title">Music Maker</div>
+    </div>
+    <button class="icon-btn" id="random-btn" aria-label="Randomize pattern">⚂</button>
+  </nav>
+
+  <div class="scores">
+    <div class="score-card">
+      <div class="score-label">Beats</div>
+      <div class="score-value" id="beats">0</div>
+    </div>
+    <div class="score-card">
+      <div class="score-label">Best</div>
+      <div class="score-value" id="best">0</div>
+    </div>
+  </div>
+
+  <div class="transport">
+    <button class="play-btn" id="play-btn" aria-label="Play">
+      <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+    </button>
+    <div class="tempo">
+      <span class="tempo-label">Tempo</span>
+      <input type="range" id="tempo" min="60" max="180" value="110" aria-label="Tempo">
+      <span class="tempo-value"><span id="tempo-value">110</span> BPM</span>
+    </div>
+  </div>
+
+  <div class="grid-card">
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <div class="actions">
+    <button class="btn" id="save-btn">Save Pattern</button>
+    <button class="btn secondary" id="clear-btn">Play Again</button>
+    <button class="btn secondary" id="export-btn">Export</button>
+  </div>
+
+  <button class="rules-toggle" id="rules-toggle">How to Play ↓</button>
+  <div class="rules-panel" id="rules-panel">
+    <p>Music Maker is a step sequencer. Build a 16-step beat pattern across 8 instruments.</p>
+    <ul>
+      <li>Tap any cell to toggle a note on or off.</li>
+      <li>Press Play to loop the pattern. Adjust Tempo from 60 to 180 BPM.</li>
+      <li>Tap an instrument name on the left to mute or unmute that row.</li>
+      <li>Press Save Pattern to store your beat and submit it to the leaderboard. Higher beat counts score higher.</li>
+      <li>Play Again clears the grid for a fresh pattern.</li>
+      <li>Export copies your pattern as a shareable code to the clipboard.</li>
+      <li>Keyboard: Space to play or stop, R to randomize, C to clear.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-card">
+    <h2 id="overlay-title">Pattern saved</h2>
+    <p id="overlay-text">Nice loop. Keep building.</p>
+    <button class="btn" id="overlay-continue">Keep Editing</button>
+    <button class="btn secondary" id="overlay-new">Play Again</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  const STEPS = 16;
+  const ROWS = 8;
+  const INSTRUMENTS = [
+    { name: 'Kick',    play: kick    },
+    { name: 'Snare',   play: snare   },
+    { name: 'Hi-hat',  play: hihat   },
+    { name: 'Clap',    play: clap    },
+    { name: 'Tom',     play: tom     },
+    { name: 'Cowbell', play: cowbell },
+    { name: 'Cymbal',  play: cymbal  },
+    { name: 'Bass',    play: bass    }
+  ];
+
+  const grid = Array.from({ length: ROWS }, () => new Array(STEPS).fill(false));
+  const muted = new Array(ROWS).fill(false);
+  let bpm = 110;
+  let playing = false;
+  let currentStep = 0;
+  let nextNoteTime = 0;
+  let timerId = null;
+  let audioCtx = null;
+
+  const gridEl = document.getElementById('grid');
+  const playBtn = document.getElementById('play-btn');
+  const tempoEl = document.getElementById('tempo');
+  const tempoValEl = document.getElementById('tempo-value');
+  const beatsEl = document.getElementById('beats');
+  const bestEl = document.getElementById('best');
+  const saveBtn = document.getElementById('save-btn');
+  const clearBtn = document.getElementById('clear-btn');
+  const exportBtn = document.getElementById('export-btn');
+  const randomBtn = document.getElementById('random-btn');
+  const rulesToggle = document.getElementById('rules-toggle');
+  const rulesPanel = document.getElementById('rules-panel');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlay-title');
+  const overlayText = document.getElementById('overlay-text');
+  const overlayContinue = document.getElementById('overlay-continue');
+  const overlayNew = document.getElementById('overlay-new');
+  const toast = document.getElementById('toast');
+
+  const cellRefs = [];
+
+  let best = parseInt(localStorage.getItem('musicmaker.best') || '0', 10);
+  bestEl.textContent = best;
+
+  function buildGrid() {
+    gridEl.innerHTML = '';
+    cellRefs.length = 0;
+    for (let r = 0; r < ROWS; r++) {
+      const label = document.createElement('div');
+      label.className = 'row-label';
+      label.textContent = INSTRUMENTS[r].name;
+      label.setAttribute('role', 'button');
+      label.setAttribute('aria-label', 'Mute ' + INSTRUMENTS[r].name);
+      label.addEventListener('click', () => toggleMute(r));
+      gridEl.appendChild(label);
+
+      const rowRefs = [];
+      for (let s = 0; s < STEPS; s++) {
+        const cell = document.createElement('button');
+        cell.className = 'cell' + (Math.floor(s / 4) % 2 === 1 ? ' beat-accent' : '');
+        cell.setAttribute('aria-label', INSTRUMENTS[r].name + ' step ' + (s + 1));
+        cell.addEventListener('click', () => toggleCell(r, s));
+        gridEl.appendChild(cell);
+        rowRefs.push(cell);
+      }
+      cellRefs.push(rowRefs);
+    }
+  }
+
+  function toggleCell(r, s) {
+    grid[r][s] = !grid[r][s];
+    cellRefs[r][s].classList.toggle('on', grid[r][s]);
+    updateBeats();
+    if (grid[r][s]) {
+      ensureAudio();
+      INSTRUMENTS[r].play(audioCtx.currentTime);
+    }
+  }
+
+  function toggleMute(r) {
+    muted[r] = !muted[r];
+    const labelNodes = gridEl.querySelectorAll('.row-label');
+    labelNodes[r].classList.toggle('muted', muted[r]);
+  }
+
+  function updateBeats() {
+    let count = 0;
+    for (let r = 0; r < ROWS; r++) for (let s = 0; s < STEPS; s++) if (grid[r][s]) count++;
+    beatsEl.textContent = count;
+    return count;
+  }
+
+  function clearGrid() {
+    for (let r = 0; r < ROWS; r++) {
+      for (let s = 0; s < STEPS; s++) {
+        grid[r][s] = false;
+        cellRefs[r][s].classList.remove('on');
+      }
+    }
+    updateBeats();
+  }
+
+  function randomize() {
+    const density = 0.22;
+    for (let r = 0; r < ROWS; r++) {
+      for (let s = 0; s < STEPS; s++) {
+        const on = Math.random() < density + (r === 0 && s % 4 === 0 ? 0.6 : 0);
+        grid[r][s] = on;
+        cellRefs[r][s].classList.toggle('on', on);
+      }
+    }
+    updateBeats();
+  }
+
+  function ensureAudio() {
+    if (!audioCtx) {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new Ctx();
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  }
+
+  // --- Synth voices ---
+  function envGain(time, peak, attack, release) {
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.0001, time);
+    g.gain.exponentialRampToValueAtTime(peak, time + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, time + attack + release);
+    return g;
+  }
+
+  function noiseBuffer(duration) {
+    const len = Math.floor(audioCtx.sampleRate * duration);
+    const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    return buf;
+  }
+
+  function kick(time) {
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.frequency.setValueAtTime(140, time);
+    osc.frequency.exponentialRampToValueAtTime(40, time + 0.18);
+    g.gain.setValueAtTime(0.9, time);
+    g.gain.exponentialRampToValueAtTime(0.001, time + 0.4);
+    osc.connect(g).connect(audioCtx.destination);
+    osc.start(time); osc.stop(time + 0.4);
+  }
+
+  function snare(time) {
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = noiseBuffer(0.2);
+    const hp = audioCtx.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.value = 1000;
+    const ng = envGain(time, 0.5, 0.005, 0.18);
+    noise.connect(hp).connect(ng).connect(audioCtx.destination);
+    noise.start(time); noise.stop(time + 0.2);
+
+    const osc = audioCtx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(200, time);
+    osc.frequency.exponentialRampToValueAtTime(100, time + 0.12);
+    const og = envGain(time, 0.4, 0.005, 0.12);
+    osc.connect(og).connect(audioCtx.destination);
+    osc.start(time); osc.stop(time + 0.15);
+  }
+
+  function hihat(time) {
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = noiseBuffer(0.05);
+    const hp = audioCtx.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.value = 6000;
+    const g = envGain(time, 0.25, 0.002, 0.05);
+    noise.connect(hp).connect(g).connect(audioCtx.destination);
+    noise.start(time); noise.stop(time + 0.06);
+  }
+
+  function clap(time) {
+    for (let i = 0; i < 3; i++) {
+      const t = time + i * 0.012;
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = noiseBuffer(0.05);
+      const bp = audioCtx.createBiquadFilter();
+      bp.type = 'bandpass'; bp.frequency.value = 1500; bp.Q.value = 0.6;
+      const g = envGain(t, 0.35, 0.003, 0.06);
+      noise.connect(bp).connect(g).connect(audioCtx.destination);
+      noise.start(t); noise.stop(t + 0.07);
+    }
+  }
+
+  function tom(time) {
+    const osc = audioCtx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(220, time);
+    osc.frequency.exponentialRampToValueAtTime(80, time + 0.25);
+    const g = envGain(time, 0.55, 0.005, 0.3);
+    osc.connect(g).connect(audioCtx.destination);
+    osc.start(time); osc.stop(time + 0.32);
+  }
+
+  function cowbell(time) {
+    const o1 = audioCtx.createOscillator();
+    const o2 = audioCtx.createOscillator();
+    o1.type = 'square'; o2.type = 'square';
+    o1.frequency.value = 800;
+    o2.frequency.value = 540;
+    const g = envGain(time, 0.18, 0.002, 0.18);
+    o1.connect(g); o2.connect(g);
+    g.connect(audioCtx.destination);
+    o1.start(time); o2.start(time);
+    o1.stop(time + 0.2); o2.stop(time + 0.2);
+  }
+
+  function cymbal(time) {
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = noiseBuffer(0.5);
+    const hp = audioCtx.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.value = 4000;
+    const g = envGain(time, 0.22, 0.005, 0.45);
+    noise.connect(hp).connect(g).connect(audioCtx.destination);
+    noise.start(time); noise.stop(time + 0.5);
+  }
+
+  function bass(time) {
+    const osc = audioCtx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(82, time);
+    osc.frequency.exponentialRampToValueAtTime(55, time + 0.1);
+    const lp = audioCtx.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = 600;
+    const g = envGain(time, 0.4, 0.005, 0.3);
+    osc.connect(lp).connect(g).connect(audioCtx.destination);
+    osc.start(time); osc.stop(time + 0.32);
+  }
+
+  // --- Scheduler ---
+  function scheduler() {
+    while (nextNoteTime < audioCtx.currentTime + 0.1) {
+      scheduleStep(currentStep, nextNoteTime);
+      nextNoteTime += 60.0 / bpm / 4;
+      currentStep = (currentStep + 1) % STEPS;
+    }
+  }
+
+  function scheduleStep(step, time) {
+    for (let r = 0; r < ROWS; r++) {
+      if (grid[r][step] && !muted[r]) {
+        INSTRUMENTS[r].play(time);
+      }
+    }
+    const delay = Math.max(0, (time - audioCtx.currentTime) * 1000);
+    setTimeout(() => highlightStep(step), delay);
+  }
+
+  function highlightStep(step) {
+    const prev = (step - 1 + STEPS) % STEPS;
+    for (let r = 0; r < ROWS; r++) {
+      cellRefs[r][prev].classList.remove('playing');
+      cellRefs[r][step].classList.add('playing');
+    }
+  }
+
+  function clearHighlight() {
+    for (let r = 0; r < ROWS; r++) {
+      for (let s = 0; s < STEPS; s++) {
+        cellRefs[r][s].classList.remove('playing');
+      }
+    }
+  }
+
+  function play() {
+    ensureAudio();
+    playing = true;
+    currentStep = 0;
+    nextNoteTime = audioCtx.currentTime + 0.05;
+    timerId = setInterval(scheduler, 25);
+    setPlayIcon(true);
+  }
+
+  function stop() {
+    playing = false;
+    if (timerId) { clearInterval(timerId); timerId = null; }
+    clearHighlight();
+    setPlayIcon(false);
+  }
+
+  function setPlayIcon(isPlaying) {
+    playBtn.setAttribute('aria-label', isPlaying ? 'Stop' : 'Play');
+    playBtn.innerHTML = isPlaying
+      ? '<svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg>'
+      : '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+  }
+
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add('visible');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => toast.classList.remove('visible'), 1800);
+  }
+
+  function savePattern() {
+    const beats = updateBeats();
+    if (beats === 0) {
+      showToast('Add some beats first');
+      return;
+    }
+    if (beats > best) {
+      best = beats;
+      bestEl.textContent = best;
+      localStorage.setItem('musicmaker.best', String(best));
+    }
+    const saved = JSON.parse(localStorage.getItem('musicmaker.patterns') || '[]');
+    saved.push({ grid, bpm, ts: Date.now() });
+    if (saved.length > 20) saved.shift();
+    localStorage.setItem('musicmaker.patterns', JSON.stringify(saved));
+
+    setTimeout(() => window.Leaderboard && Leaderboard.submitScore(beats), 500);
+
+    overlayTitle.textContent = beats === best ? 'New best pattern' : 'Pattern saved';
+    overlayText.textContent = beats + ' beats across ' + activeRows() + ' instruments at ' + bpm + ' BPM.';
+    overlay.classList.add('visible');
+  }
+
+  function activeRows() {
+    let n = 0;
+    for (let r = 0; r < ROWS; r++) {
+      for (let s = 0; s < STEPS; s++) {
+        if (grid[r][s]) { n++; break; }
+      }
+    }
+    return n;
+  }
+
+  function exportPattern() {
+    const code = encodePattern();
+    const text = 'MUSICMAKER:' + bpm + ':' + code;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(
+        () => showToast('Pattern copied to clipboard'),
+        () => fallbackCopy(text)
+      );
+    } else {
+      fallbackCopy(text);
+    }
+  }
+
+  function encodePattern() {
+    let bits = '';
+    for (let r = 0; r < ROWS; r++) {
+      for (let s = 0; s < STEPS; s++) bits += grid[r][s] ? '1' : '0';
+    }
+    let hex = '';
+    for (let i = 0; i < bits.length; i += 4) {
+      hex += parseInt(bits.substr(i, 4), 2).toString(16);
+    }
+    return hex;
+  }
+
+  function fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); showToast('Pattern copied'); }
+    catch (e) { showToast(text); }
+    document.body.removeChild(ta);
+  }
+
+  // --- Wire up ---
+  buildGrid();
+
+  playBtn.addEventListener('click', () => {
+    if (playing) stop(); else play();
+  });
+
+  tempoEl.addEventListener('input', () => {
+    bpm = parseInt(tempoEl.value, 10);
+    tempoValEl.textContent = bpm;
+  });
+
+  saveBtn.addEventListener('click', savePattern);
+  exportBtn.addEventListener('click', exportPattern);
+  clearBtn.addEventListener('click', () => { stop(); clearGrid(); });
+  randomBtn.addEventListener('click', () => { randomize(); });
+
+  overlayContinue.addEventListener('click', () => overlay.classList.remove('visible'));
+  overlayNew.addEventListener('click', () => {
+    overlay.classList.remove('visible');
+    stop();
+    clearGrid();
+  });
+
+  rulesToggle.addEventListener('click', () => {
+    const open = rulesPanel.classList.toggle('open');
+    rulesToggle.textContent = open ? 'How to Play ↑' : 'How to Play ↓';
+  });
+
+  window.addEventListener('keydown', (e) => {
+    const tag = (e.target && e.target.tagName) || '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if (e.code === 'Space') {
+      e.preventDefault();
+      if (playing) stop(); else play();
+    } else if (e.key === 'r' || e.key === 'R') {
+      randomize();
+    } else if (e.key === 'c' || e.key === 'C') {
+      stop(); clearGrid();
+    }
+  });
+
+  // Seed a starter beat so the grid is inviting
+  function seed() {
+    grid[0][0] = grid[0][4] = grid[0][8] = grid[0][12] = true; // kick on every beat
+    grid[1][4] = grid[1][12] = true; // snare on 2 and 4
+    grid[2][2] = grid[2][6] = grid[2][10] = grid[2][14] = true; // hi-hat off-beats
+    for (let r = 0; r < ROWS; r++) for (let s = 0; s < STEPS; s++) {
+      if (grid[r][s]) cellRefs[r][s].classList.add('on');
+    }
+    updateBeats();
+  }
+  seed();
+})();
+</script>
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

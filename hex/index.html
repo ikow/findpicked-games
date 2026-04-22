@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Hex — FindPicked Games</title>
+<meta name="description" content="Play Hex free online. Connect your color from one side to the other on an 11x11 hex grid. vs AI, with swap rule for fairness.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23fafafa'/%3E%3Cpolygon points='16,4 26,10 26,22 16,28 6,22 6,10' fill='none' stroke='%230071e3' stroke-width='2'/%3E%3Cpolygon points='12,10 18,10 21,16 18,22 12,22 9,16' fill='%230071e3'/%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --blue: #0071e3;
+  --blue-soft: #cfe4fb;
+  --red: #e3344b;
+  --red-soft: #fbd4d9;
+  --cell-bg: #f3f3f5;
+  --cell-hover: #e8e8ec;
+  --cell-stroke: #d6d6da;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-card: 0 4px 14px rgba(0,0,0,0.10);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+  --radius: 16px;
+}
+
+html, body { height: 100%; overscroll-behavior: none; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px 20px 40px;
+  touch-action: manipulation;
+}
+
+.back {
+  align-self: flex-start;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 400;
+  padding: 8px 4px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.2s ease;
+}
+.back:hover { color: var(--text-primary); }
+.back .arrow { font-size: 18px; line-height: 1; }
+
+.wrap {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-bottom: 6px;
+}
+header p {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.scoreboard {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+.score-box {
+  flex: 1;
+  background: var(--bg-card);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: box-shadow 0.2s ease;
+  min-width: 0;
+}
+.score-box.turn { box-shadow: 0 0 0 2px var(--accent), var(--shadow); }
+
+.chip {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: inset 0 -1px 2px rgba(0,0,0,0.15);
+}
+.chip.blue { background: radial-gradient(circle at 35% 30%, #4aa3f0 0%, #0071e3 55%, #0058b3 100%); }
+.chip.red { background: radial-gradient(circle at 35% 30%, #ff6d7f 0%, #e3344b 55%, #a8162b 100%); }
+
+.score-meta { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+.score-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.score-value {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.mode-row {
+  display: flex;
+  gap: 6px;
+  background: var(--bg-card);
+  padding: 5px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+.mode-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  min-height: 40px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.mode-btn.active { background: var(--accent); color: #fff; }
+
+.rules-row { text-align: center; }
+.rules-toggle {
+  display: inline-block;
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--accent);
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+  padding: 6px 8px;
+  min-height: 32px;
+}
+.rules-toggle:hover { text-decoration: underline; }
+.rules-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  text-align: left;
+  margin: 8px auto 0;
+}
+.rules-panel.open { max-height: 800px; }
+.rules-panel ul { margin: 8px 0 0 18px; }
+.rules-panel li { margin-bottom: 4px; }
+
+.status {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  min-height: 20px;
+  transition: color 0.2s ease;
+}
+.status.highlight { color: var(--text-primary); }
+
+.board-wrap {
+  background: var(--bg-card);
+  padding: 10px;
+  border-radius: 14px;
+  box-shadow: var(--shadow-card);
+  width: 100%;
+  position: relative;
+}
+
+.board-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  touch-action: manipulation;
+}
+
+.cell {
+  fill: var(--cell-bg);
+  stroke: var(--cell-stroke);
+  stroke-width: 0.6;
+  cursor: pointer;
+  transition: fill 0.15s ease;
+}
+.cell:hover { fill: var(--cell-hover); }
+.cell.filled { cursor: default; }
+
+.stone {
+  pointer-events: none;
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: pop 0.25s ease;
+}
+@keyframes pop {
+  0% { transform: scale(0); }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+.stone.blue {
+  fill: url(#grad-blue);
+}
+.stone.red {
+  fill: url(#grad-red);
+}
+
+.last-mark {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.6;
+  pointer-events: none;
+}
+
+.edge-blue { fill: var(--blue); opacity: 0.9; pointer-events: none; }
+.edge-red  { fill: var(--red); opacity: 0.9; pointer-events: none; }
+
+.win-stone {
+  filter: drop-shadow(0 0 6px rgba(255,255,255,0.9));
+  animation: winpulse 1.1s ease-in-out infinite;
+}
+@keyframes winpulse {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(255,255,255,0.6)); }
+  50%      { filter: drop-shadow(0 0 10px rgba(255,255,255,1)); }
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.btn {
+  border: none;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 22px;
+  border-radius: 999px;
+  cursor: pointer;
+  min-height: 44px;
+  min-width: 120px;
+  background: var(--accent);
+  color: #fff;
+  transition: background 0.2s ease, transform 0.1s ease;
+  letter-spacing: -0.01em;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn:active { transform: scale(0.98); }
+.btn.secondary {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  box-shadow: var(--shadow);
+}
+.btn.secondary:hover { background: #f1f1f3; }
+.btn.ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  box-shadow: none;
+}
+.btn.ghost:hover { color: var(--text-primary); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.swap-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  background: var(--bg-card);
+  padding: 12px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+.swap-row[hidden] { display: none; }
+.swap-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 100;
+}
+.overlay.show { opacity: 1; pointer-events: auto; }
+.overlay-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 32px 28px;
+  box-shadow: var(--shadow-hover);
+  text-align: center;
+  max-width: 380px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.overlay-card h2 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.overlay-card p {
+  font-size: 15px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.overlay-card .row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+footer {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  text-align: center;
+  margin-top: 4px;
+  line-height: 1.6;
+}
+
+kbd {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+}
+
+@media (max-width: 480px) {
+  body { padding: 16px 14px 32px; }
+  .wrap { gap: 14px; }
+  header h1 { font-size: 26px; }
+  .score-value { font-size: 17px; }
+  .chip { width: 20px; height: 20px; }
+  .board-wrap { padding: 6px; }
+  .btn { min-width: 100px; padding: 11px 18px; font-size: 13px; }
+  .mode-btn { font-size: 12px; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="back" href="../" aria-label="Back to games">
+    <span class="arrow">←</span>
+    <span>Games</span>
+  </a>
+
+  <header>
+    <h1>Hex</h1>
+    <p>Connect your color from one side of the board to the other.</p>
+  </header>
+
+  <div class="scoreboard">
+    <div class="score-box turn" id="sb-blue">
+      <div class="chip blue"></div>
+      <div class="score-meta">
+        <div class="score-label">Blue (You)</div>
+        <div class="score-value" id="score-blue">0</div>
+      </div>
+    </div>
+    <div class="score-box" id="sb-red">
+      <div class="chip red"></div>
+      <div class="score-meta">
+        <div class="score-label">Red (CPU)</div>
+        <div class="score-value" id="score-red">0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rules-row">
+    <button class="rules-toggle" type="button" id="rules-toggle">How to Play ▾</button>
+    <div class="rules-panel" id="rules-panel">
+      <ul>
+        <li><strong>Goal:</strong> Build an unbroken chain of your color connecting your two edges.</li>
+        <li><strong>Blue (you)</strong> wins by connecting the <strong>top</strong> edge to the <strong>bottom</strong> edge.</li>
+        <li><strong>Red (CPU)</strong> wins by connecting the <strong>left</strong> edge to the <strong>right</strong> edge.</li>
+        <li><strong>Each turn,</strong> tap any empty hex to place a stone. Stones never move.</li>
+        <li><strong>Neighbors:</strong> each hex touches 6 others. A chain can weave any path as long as each stone touches the next.</li>
+        <li><strong>Swap rule:</strong> after Blue's first move, Red may "swap" and claim that stone if it looks too strong. This keeps the game fair — Blue should open with a move that isn't too strong and isn't too weak.</li>
+        <li><strong>Draws are impossible</strong> in Hex. Someone always connects.</li>
+        <li><strong>Game over:</strong> first player to connect their two edges wins.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="status" id="status">Blue to move.</div>
+
+  <div class="board-wrap">
+    <svg id="board" class="board-svg" viewBox="0 0 600 360" preserveAspectRatio="xMidYMid meet" aria-label="Hex board">
+      <defs>
+        <radialGradient id="grad-blue" cx="0.35" cy="0.3" r="0.75">
+          <stop offset="0%"  stop-color="#5aaef3"/>
+          <stop offset="55%" stop-color="#0071e3"/>
+          <stop offset="100%" stop-color="#00458c"/>
+        </radialGradient>
+        <radialGradient id="grad-red" cx="0.35" cy="0.3" r="0.75">
+          <stop offset="0%"  stop-color="#ff7a8b"/>
+          <stop offset="55%" stop-color="#e3344b"/>
+          <stop offset="100%" stop-color="#8a0e21"/>
+        </radialGradient>
+      </defs>
+      <g id="edges"></g>
+      <g id="cells"></g>
+      <g id="stones"></g>
+      <g id="marks"></g>
+    </svg>
+  </div>
+
+  <div class="actions">
+    <button class="btn secondary" id="new-game" type="button">New Game</button>
+    <button class="btn ghost" id="undo-btn" type="button">Undo</button>
+  </div>
+
+  <footer>
+    <kbd>N</kbd> new game · <kbd>U</kbd> undo · tap a hex to place
+  </footer>
+</div>
+
+<div class="overlay" id="overlay" aria-hidden="true">
+  <div class="overlay-card">
+    <h2 id="overlay-title">Game Over</h2>
+    <p id="overlay-text">—</p>
+    <div class="row">
+      <button class="btn" id="overlay-again" type="button">Play Again</button>
+      <button class="btn ghost" id="overlay-close" type="button">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const SIZE = 11;
+  const EMPTY = 0, BLUE = 1, RED = 2;
+  const opp = c => c === BLUE ? RED : BLUE;
+
+  const S = 20;
+  const DX = S * Math.sqrt(3);
+  const DY = S * 1.5;
+  const MARGIN = 14;
+  const OFFSET_X = DX / 2 + MARGIN + 8;
+  const OFFSET_Y = S + MARGIN + 6;
+
+  const TOTAL_W = OFFSET_X + (SIZE - 1) * DX + (SIZE - 1) * DX / 2 + DX / 2 + MARGIN + 8;
+  const TOTAL_H = OFFSET_Y + (SIZE - 1) * DY + S + MARGIN + 6;
+
+  const STORE_STATS = 'findpicked:hex:stats';
+  const STORE_BEST  = 'findpicked:hex:wins';
+
+  let board = [];
+  let history = [];
+  let turn = BLUE;
+  let aiColor = RED;
+  let gameOver = false;
+  let busy = false;
+  let moveCount = 0;
+  let pendingSwap = false;
+  let lastMove = null;
+  let stats = { wins: 0, losses: 0, games: 0 };
+  let bestWins = 0;
+
+  const svg = document.getElementById('board');
+  const edgesG = document.getElementById('edges');
+  const cellsG = document.getElementById('cells');
+  const stonesG = document.getElementById('stones');
+  const marksG = document.getElementById('marks');
+  const statusEl = document.getElementById('status');
+  const scoreBlueEl = document.getElementById('score-blue');
+  const scoreRedEl = document.getElementById('score-red');
+  const sbBlue = document.getElementById('sb-blue');
+  const sbRed = document.getElementById('sb-red');
+  const newGameBtn = document.getElementById('new-game');
+  const undoBtn = document.getElementById('undo-btn');
+  const rulesToggle = document.getElementById('rules-toggle');
+  const rulesPanel = document.getElementById('rules-panel');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlay-title');
+  const overlayText = document.getElementById('overlay-text');
+  const overlayAgain = document.getElementById('overlay-again');
+  const overlayClose = document.getElementById('overlay-close');
+
+  svg.setAttribute('viewBox', `0 0 ${TOTAL_W.toFixed(2)} ${TOTAL_H.toFixed(2)}`);
+
+  function center(r, c) {
+    return {
+      x: OFFSET_X + c * DX + r * DX / 2,
+      y: OFFSET_Y + r * DY,
+    };
+  }
+  function hexVertex(cx, cy, i) {
+    const a = -Math.PI / 2 + i * Math.PI / 3;
+    return [cx + S * Math.cos(a), cy + S * Math.sin(a)];
+  }
+  function hexPoints(cx, cy) {
+    const pts = [];
+    for (let i = 0; i < 6; i++) pts.push(hexVertex(cx, cy, i));
+    return pts.map(p => p[0].toFixed(2) + ',' + p[1].toFixed(2)).join(' ');
+  }
+  function inBounds(r, c) { return r >= 0 && c >= 0 && r < SIZE && c < SIZE; }
+  function neighbors(r, c) {
+    const out = [];
+    const n = [[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0]];
+    for (const [dr, dc] of n) {
+      const nr = r + dr, nc = c + dc;
+      if (inBounds(nr, nc)) out.push([nr, nc]);
+    }
+    return out;
+  }
+
+  function newBoard() {
+    const b = [];
+    for (let r = 0; r < SIZE; r++) {
+      const row = new Array(SIZE);
+      for (let c = 0; c < SIZE; c++) row[c] = EMPTY;
+      b.push(row);
+    }
+    return b;
+  }
+
+  function loadPrefs() {
+    try {
+      const s = localStorage.getItem(STORE_STATS);
+      if (s) { const o = JSON.parse(s); if (o && typeof o === 'object') stats = Object.assign(stats, o); }
+      const b = parseInt(localStorage.getItem(STORE_BEST) || '0', 10);
+      if (!isNaN(b)) bestWins = b;
+    } catch (e) {}
+  }
+  function savePrefs() {
+    try {
+      localStorage.setItem(STORE_STATS, JSON.stringify(stats));
+      localStorage.setItem(STORE_BEST, String(bestWins));
+    } catch (e) {}
+  }
+
+  function renderEdges() {
+    edgesG.innerHTML = '';
+
+    // Top (Blue)
+    const topPts = [];
+    for (let c = 0; c < SIZE; c++) {
+      const { x, y } = center(0, c);
+      if (c === 0) topPts.push(hexVertex(x, y, 5));
+      topPts.push(hexVertex(x, y, 0));
+      topPts.push(hexVertex(x, y, 1));
+    }
+    const topCap = topPts[0][1] - 8;
+    const topPoly = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    const tPoints = [...topPts, [topPts[topPts.length-1][0], topCap], [topPts[0][0], topCap]];
+    topPoly.setAttribute('points', tPoints.map(p => p[0].toFixed(2)+','+p[1].toFixed(2)).join(' '));
+    topPoly.setAttribute('class', 'edge-blue');
+    edgesG.appendChild(topPoly);
+
+    // Bottom (Blue)
+    const botPts = [];
+    for (let c = 0; c < SIZE; c++) {
+      const { x, y } = center(SIZE - 1, c);
+      if (c === 0) botPts.push(hexVertex(x, y, 4));
+      botPts.push(hexVertex(x, y, 3));
+      botPts.push(hexVertex(x, y, 2));
+    }
+    const botCap = botPts[0][1] + 8;
+    const botPoly = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    const bPoints = [...botPts, [botPts[botPts.length-1][0], botCap], [botPts[0][0], botCap]];
+    botPoly.setAttribute('points', bPoints.map(p => p[0].toFixed(2)+','+p[1].toFixed(2)).join(' '));
+    botPoly.setAttribute('class', 'edge-blue');
+    edgesG.appendChild(botPoly);
+
+    // Left (Red)
+    const leftPts = [];
+    for (let r = 0; r < SIZE; r++) {
+      const { x, y } = center(r, 0);
+      if (r === 0) leftPts.push(hexVertex(x, y, 5));
+      leftPts.push(hexVertex(x, y, 4));
+      leftPts.push(hexVertex(x, y, 3));
+    }
+    const leftPoly = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    const lCap = leftPts[0][0] - 8;
+    const lPoints = [[lCap, leftPts[0][1]], ...leftPts, [lCap, leftPts[leftPts.length-1][1]]];
+    leftPoly.setAttribute('points', lPoints.map(p => p[0].toFixed(2)+','+p[1].toFixed(2)).join(' '));
+    leftPoly.setAttribute('class', 'edge-red');
+    edgesG.appendChild(leftPoly);
+
+    // Right (Red)
+    const rightPts = [];
+    for (let r = 0; r < SIZE; r++) {
+      const { x, y } = center(r, SIZE - 1);
+      if (r === 0) rightPts.push(hexVertex(x, y, 0));
+      rightPts.push(hexVertex(x, y, 1));
+      rightPts.push(hexVertex(x, y, 2));
+    }
+    const rCap = rightPts[rightPts.length-1][0] + 8;
+    const rPoints = [...rightPts, [rCap, rightPts[rightPts.length-1][1]], [rCap, rightPts[0][1]]];
+    const rightPoly = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    rightPoly.setAttribute('points', rPoints.map(p => p[0].toFixed(2)+','+p[1].toFixed(2)).join(' '));
+    rightPoly.setAttribute('class', 'edge-red');
+    edgesG.appendChild(rightPoly);
+  }
+
+  function renderCells() {
+    cellsG.innerHTML = '';
+    for (let r = 0; r < SIZE; r++) {
+      for (let c = 0; c < SIZE; c++) {
+        const { x, y } = center(r, c);
+        const poly = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+        poly.setAttribute('points', hexPoints(x, y));
+        poly.setAttribute('class', 'cell');
+        poly.dataset.r = r;
+        poly.dataset.c = c;
+        poly.addEventListener('click', onCellClick);
+        cellsG.appendChild(poly);
+      }
+    }
+  }
+
+  function renderStones() {
+    stonesG.innerHTML = '';
+    marksG.innerHTML = '';
+    const cells = cellsG.querySelectorAll('polygon');
+    cells.forEach(cell => {
+      const r = +cell.dataset.r, c = +cell.dataset.c;
+      if (board[r][c] !== EMPTY) cell.classList.add('filled'); else cell.classList.remove('filled');
+    });
+    for (let r = 0; r < SIZE; r++) {
+      for (let c = 0; c < SIZE; c++) {
+        if (board[r][c] === EMPTY) continue;
+        const { x, y } = center(r, c);
+        const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        circle.setAttribute('cx', x.toFixed(2));
+        circle.setAttribute('cy', y.toFixed(2));
+        circle.setAttribute('r', (S * 0.68).toFixed(2));
+        circle.setAttribute('class', 'stone ' + (board[r][c] === BLUE ? 'blue' : 'red'));
+        stonesG.appendChild(circle);
+      }
+    }
+    if (lastMove && !gameOver) {
+      const { x, y } = center(lastMove[0], lastMove[1]);
+      const mark = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      mark.setAttribute('cx', x.toFixed(2));
+      mark.setAttribute('cy', y.toFixed(2));
+      mark.setAttribute('r', (S * 0.30).toFixed(2));
+      mark.setAttribute('class', 'last-mark');
+      marksG.appendChild(mark);
+    }
+  }
+
+  function highlightWinPath(color) {
+    const path = findWinPath(color);
+    if (!path) return;
+    const set = new Set(path.map(([r,c]) => r + ',' + c));
+    stonesG.innerHTML = '';
+    for (let r = 0; r < SIZE; r++) {
+      for (let c = 0; c < SIZE; c++) {
+        if (board[r][c] === EMPTY) continue;
+        const { x, y } = center(r, c);
+        const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        circle.setAttribute('cx', x.toFixed(2));
+        circle.setAttribute('cy', y.toFixed(2));
+        circle.setAttribute('r', (S * 0.68).toFixed(2));
+        const cls = ['stone', board[r][c] === BLUE ? 'blue' : 'red'];
+        if (set.has(r + ',' + c)) cls.push('win-stone');
+        circle.setAttribute('class', cls.join(' '));
+        stonesG.appendChild(circle);
+      }
+    }
+  }
+
+  function findWinPath(color) {
+    const visited = Array.from({length: SIZE}, () => Array(SIZE).fill(null));
+    const queue = [];
+    for (let i = 0; i < SIZE; i++) {
+      const r = color === BLUE ? 0 : i;
+      const c = color === BLUE ? i : 0;
+      if (board[r][c] === color) {
+        queue.push([r, c]);
+        visited[r][c] = [r, c];
+      }
+    }
+    while (queue.length) {
+      const [r, c] = queue.shift();
+      const atEnd = color === BLUE ? r === SIZE - 1 : c === SIZE - 1;
+      if (atEnd) {
+        const path = [];
+        let cur = [r, c];
+        while (cur) {
+          path.push(cur);
+          const prev = visited[cur[0]][cur[1]];
+          if (prev[0] === cur[0] && prev[1] === cur[1]) break;
+          cur = prev;
+        }
+        return path;
+      }
+      for (const [nr, nc] of neighbors(r, c)) {
+        if (!visited[nr][nc] && board[nr][nc] === color) {
+          visited[nr][nc] = [r, c];
+          queue.push([nr, nc]);
+        }
+      }
+    }
+    return null;
+  }
+
+  function hasWon(b, color) {
+    const visited = Array.from({length: SIZE}, () => Array(SIZE).fill(false));
+    const stack = [];
+    for (let i = 0; i < SIZE; i++) {
+      const r = color === BLUE ? 0 : i;
+      const c = color === BLUE ? i : 0;
+      if (b[r][c] === color) { stack.push([r, c]); visited[r][c] = true; }
+    }
+    while (stack.length) {
+      const [r, c] = stack.pop();
+      if (color === BLUE && r === SIZE - 1) return true;
+      if (color === RED && c === SIZE - 1) return true;
+      for (const [nr, nc] of neighbors(r, c)) {
+        if (!visited[nr][nc] && b[nr][nc] === color) {
+          visited[nr][nc] = true;
+          stack.push([nr, nc]);
+        }
+      }
+    }
+    return false;
+  }
+
+  // Simple min-heap priority queue
+  function makeHeap() {
+    const h = [];
+    const swap = (i, j) => { const t = h[i]; h[i] = h[j]; h[j] = t; };
+    return {
+      push(x) {
+        h.push(x);
+        let i = h.length - 1;
+        while (i > 0) {
+          const p = (i - 1) >> 1;
+          if (h[p][0] <= h[i][0]) break;
+          swap(i, p); i = p;
+        }
+      },
+      pop() {
+        if (!h.length) return null;
+        const top = h[0];
+        const last = h.pop();
+        if (h.length) {
+          h[0] = last;
+          let i = 0;
+          while (true) {
+            const l = 2 * i + 1, r = 2 * i + 2;
+            let m = i;
+            if (l < h.length && h[l][0] < h[m][0]) m = l;
+            if (r < h.length && h[r][0] < h[m][0]) m = r;
+            if (m === i) break;
+            swap(i, m); i = m;
+          }
+        }
+        return top;
+      },
+      size() { return h.length; },
+    };
+  }
+
+  function shortestDist(b, color) {
+    const dist = new Array(SIZE * SIZE).fill(Infinity);
+    const heap = makeHeap();
+    const other = opp(color);
+    for (let i = 0; i < SIZE; i++) {
+      const r = color === BLUE ? 0 : i;
+      const c = color === BLUE ? i : 0;
+      if (b[r][c] === other) continue;
+      const cost = b[r][c] === color ? 0 : 1;
+      const idx = r * SIZE + c;
+      if (cost < dist[idx]) {
+        dist[idx] = cost;
+        heap.push([cost, r, c]);
+      }
+    }
+    while (heap.size()) {
+      const [d, r, c] = heap.pop();
+      if (d > dist[r * SIZE + c]) continue;
+      if (color === BLUE && r === SIZE - 1) return d;
+      if (color === RED && c === SIZE - 1) return d;
+      for (const [nr, nc] of neighbors(r, c)) {
+        if (b[nr][nc] === other) continue;
+        const step = b[nr][nc] === color ? 0 : 1;
+        const nd = d + step;
+        const ni = nr * SIZE + nc;
+        if (nd < dist[ni]) {
+          dist[ni] = nd;
+          heap.push([nd, nr, nc]);
+        }
+      }
+    }
+    return Infinity;
+  }
+
+  function candidateMoves(b) {
+    // All empty cells adjacent to any stone, plus center if empty, as candidates.
+    const seen = new Set();
+    const cands = [];
+    let anyStone = false;
+    for (let r = 0; r < SIZE; r++) {
+      for (let c = 0; c < SIZE; c++) {
+        if (b[r][c] !== EMPTY) {
+          anyStone = true;
+          // mark neighbors
+          for (const [nr, nc] of neighbors(r, c)) {
+            if (b[nr][nc] === EMPTY) {
+              const k = nr * SIZE + nc;
+              if (!seen.has(k)) { seen.add(k); cands.push([nr, nc]); }
+            }
+          }
+          // also 2-step bridge cells
+          const bridges = [[-2,1],[-1,2],[1,1],[2,-1],[1,-2],[-1,-1]];
+          for (const [dr, dc] of bridges) {
+            const nr = r + dr, nc = c + dc;
+            if (inBounds(nr, nc) && b[nr][nc] === EMPTY) {
+              const k = nr * SIZE + nc;
+              if (!seen.has(k)) { seen.add(k); cands.push([nr, nc]); }
+            }
+          }
+        }
+      }
+    }
+    if (!anyStone) return [[Math.floor(SIZE/2), Math.floor(SIZE/2)]];
+    // fallback: all empties if too few cands
+    if (cands.length < 6) {
+      for (let r = 0; r < SIZE; r++)
+        for (let c = 0; c < SIZE; c++)
+          if (b[r][c] === EMPTY) {
+            const k = r * SIZE + c;
+            if (!seen.has(k)) { seen.add(k); cands.push([r, c]); }
+          }
+    }
+    return cands;
+  }
+
+  function bestMove(b, color) {
+    const other = opp(color);
+    const cands = candidateMoves(b);
+
+    // 1) immediate winning move
+    for (const [r, c] of cands) {
+      b[r][c] = color;
+      if (hasWon(b, color)) { b[r][c] = EMPTY; return [r, c]; }
+      b[r][c] = EMPTY;
+    }
+    // 2) block immediate opponent winning move
+    for (const [r, c] of cands) {
+      b[r][c] = other;
+      if (hasWon(b, other)) { b[r][c] = EMPTY; return [r, c]; }
+      b[r][c] = EMPTY;
+    }
+
+    // 3) greedy Dijkstra evaluation
+    let bestScore = -Infinity;
+    let best = null;
+    for (const [r, c] of cands) {
+      b[r][c] = color;
+      const my = shortestDist(b, color);
+      const their = shortestDist(b, other);
+      b[r][c] = EMPTY;
+      // lower my dist is better; higher their dist is better
+      let score = their * 1.05 - my * 1.00;
+      // small centrality bonus to break ties
+      const cy = (SIZE - 1) / 2;
+      score -= 0.02 * (Math.abs(r - cy) + Math.abs(c - cy));
+      // tiny random jitter
+      score += Math.random() * 0.03;
+      if (score > bestScore) { bestScore = score; best = [r, c]; }
+    }
+    return best;
+  }
+
+  function onCellClick(e) {
+    if (busy || gameOver || pendingSwap) return;
+    if (turn !== BLUE) return;
+    const r = +e.currentTarget.dataset.r;
+    const c = +e.currentTarget.dataset.c;
+    if (board[r][c] !== EMPTY) return;
+    placeStone(r, c, BLUE);
+  }
+
+  function placeStone(r, c, color) {
+    board[r][c] = color;
+    lastMove = [r, c];
+    moveCount++;
+    history.push({ r, c, color });
+    renderStones();
+
+    if (hasWon(board, color)) {
+      endGame(color);
+      return;
+    }
+
+    // After first move (Blue's opener), offer swap prompt for AI.
+    if (moveCount === 1 && color === BLUE) {
+      pendingSwap = true;
+      busy = true;
+      // Small delay for readability, then auto-decide on AI's behalf.
+      statusEl.textContent = 'Red is considering the swap rule…';
+      statusEl.classList.add('highlight');
+      setTimeout(() => {
+        const doSwap = shouldSwap(r, c);
+        applySwapDecision(doSwap);
+      }, 700);
+      return;
+    }
+
+    turn = opp(color);
+    updateTurnUI();
+    if (turn === aiColor) scheduleAI();
+  }
+
+  function shouldSwap(r, c) {
+    // Strong openings are central. Swap when close to the center.
+    const cy = (SIZE - 1) / 2;
+    const d = Math.max(Math.abs(r - cy), Math.abs(c - cy));
+    // Inner 5x5: definitely swap. 5x5..7x7 ring: sometimes swap.
+    if (d <= 2) return true;
+    if (d === 3) return Math.random() < 0.5;
+    return false;
+  }
+
+  function applySwapDecision(doSwap) {
+    pendingSwap = false;
+    busy = false;
+    if (doSwap) {
+      // Swap sides: the Blue stone becomes a Red stone at the same cell.
+      const [r, c] = lastMove;
+      board[r][c] = RED;
+      history[history.length - 1] = { r, c, color: RED };
+      renderStones();
+      setStatus('Red swapped — your move.', true);
+      turn = BLUE;
+      sbBlue.classList.add('turn');
+      sbRed.classList.remove('turn');
+    } else {
+      setStatus('Red kept the opening.', true);
+      turn = RED;
+      sbRed.classList.add('turn');
+      sbBlue.classList.remove('turn');
+      scheduleAI();
+    }
+  }
+
+  function scheduleAI() {
+    busy = true;
+    setStatus('Red is thinking…', true);
+    setTimeout(() => {
+      if (gameOver) { busy = false; return; }
+      const mv = bestMove(board, RED);
+      busy = false;
+      if (!mv) { updateTurnUI(); return; }
+      placeStone(mv[0], mv[1], RED);
+    }, 250);
+  }
+
+  function updateTurnUI() {
+    if (gameOver) return;
+    if (turn === BLUE) {
+      sbBlue.classList.add('turn');
+      sbRed.classList.remove('turn');
+      setStatus('Your move — Blue connects top ↔ bottom.');
+    } else {
+      sbRed.classList.add('turn');
+      sbBlue.classList.remove('turn');
+      setStatus('Red is thinking…', true);
+    }
+  }
+
+  function setStatus(text, highlight) {
+    statusEl.textContent = text;
+    if (highlight) statusEl.classList.add('highlight'); else statusEl.classList.remove('highlight');
+  }
+
+  function endGame(winner) {
+    gameOver = true;
+    busy = false;
+    sbBlue.classList.remove('turn');
+    sbRed.classList.remove('turn');
+    highlightWinPath(winner);
+    if (winner === BLUE) {
+      stats.wins++;
+      stats.games++;
+      if (stats.wins > bestWins) bestWins = stats.wins;
+      savePrefs();
+      renderScores();
+      setStatus('You won! Blue connects top to bottom.', true);
+      showOverlay('You Win', `Nice chain — Blue connected in ${moveCount} total moves. Total wins: ${stats.wins}.`);
+      if (window.Leaderboard && Leaderboard.submitScore) {
+        try { Leaderboard.submitScore(stats.wins); } catch (e) {}
+      }
+    } else {
+      stats.losses++;
+      stats.games++;
+      savePrefs();
+      renderScores();
+      setStatus('Red connected left to right. Try again.', true);
+      showOverlay('You Lose', `Red linked left to right in ${moveCount} total moves. Keep playing — you learn Hex by feel.`);
+    }
+  }
+
+  function renderScores() {
+    scoreBlueEl.textContent = stats.wins;
+    scoreRedEl.textContent = stats.losses;
+  }
+
+  function showOverlay(title, text) {
+    overlayTitle.textContent = title;
+    overlayText.textContent = text;
+    overlay.classList.add('show');
+    overlay.setAttribute('aria-hidden', 'false');
+  }
+  function hideOverlay() {
+    overlay.classList.remove('show');
+    overlay.setAttribute('aria-hidden', 'true');
+  }
+
+  function newGame() {
+    board = newBoard();
+    history = [];
+    turn = BLUE;
+    gameOver = false;
+    busy = false;
+    moveCount = 0;
+    pendingSwap = false;
+    lastMove = null;
+    hideOverlay();
+    renderStones();
+    updateTurnUI();
+    renderScores();
+  }
+
+  function undo() {
+    if (busy || pendingSwap) return;
+    if (!history.length) return;
+    if (gameOver) {
+      // undo last two (Red, Blue) and resume
+      gameOver = false;
+      hideOverlay();
+    }
+    // Undo pairs so it is human's turn again. If AI moved last, pop that too.
+    if (history.length && history[history.length - 1].color === RED) {
+      const m = history.pop();
+      board[m.r][m.c] = EMPTY;
+      moveCount--;
+    }
+    if (history.length && history[history.length - 1].color === BLUE) {
+      const m = history.pop();
+      board[m.r][m.c] = EMPTY;
+      moveCount--;
+    }
+    lastMove = history.length ? [history[history.length-1].r, history[history.length-1].c] : null;
+    turn = BLUE;
+    renderStones();
+    updateTurnUI();
+  }
+
+  // ---- Events ----
+  newGameBtn.addEventListener('click', () => newGame());
+  undoBtn.addEventListener('click', undo);
+  overlayAgain.addEventListener('click', () => newGame());
+  overlayClose.addEventListener('click', () => hideOverlay());
+
+  rulesToggle.addEventListener('click', () => {
+    rulesPanel.classList.toggle('open');
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    const k = e.key.toLowerCase();
+    if (k === 'n') { e.preventDefault(); newGame(); }
+    else if (k === 'u') { e.preventDefault(); undo(); }
+    else if (k === 'escape') { hideOverlay(); }
+  });
+
+  // ---- Init ----
+  loadPrefs();
+  renderEdges();
+  renderCells();
+  newGame();
+})();
+</script>
+
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

@@ -542,10 +542,8 @@
 
   function handleTap(e) {
     if (e && e.cancelable) e.preventDefault();
-    if (state.mode === 'ready' || state.mode === 'dead' || state.mode === 'won') {
-      startBtn.click();
-      return;
-    }
+    // Overlay (when visible) has its own start button and captures taps.
+    if (!overlay.classList.contains('hidden')) return;
     tryThrow();
   }
 
@@ -553,13 +551,13 @@
   window.addEventListener('keydown', (e) => {
     if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'Enter') {
       e.preventDefault();
-      if (state.mode === 'ready' || state.mode === 'dead' || state.mode === 'won') startBtn.click();
+      if (!overlay.classList.contains('hidden')) startBtn.click();
       else tryThrow();
     }
   });
-  startBtn.addEventListener('click', () => {
-    if (state.mode === 'ready' || state.mode === 'dead') startGame();
-    else if (state.mode === 'won') advanceStage();
+  startBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (state.mode === 'won') advanceStage();
     else startGame();
   });
 

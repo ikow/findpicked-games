@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Piano Tiles — Tap the Black Tiles</title>
+<meta name="description" content="Play Piano Tiles free online. Tap black tiles as they rise. Let one pass the top and it's over. Four speeds, best score saved locally.">
+<style>
+  :root {
+    --bg: #fafafa;
+    --text: #1d1d1f;
+    --text-2: #6e6e73;
+    --text-3: #86868b;
+    --accent: #0071e3;
+    --accent-hover: #0077ed;
+    --tile-white: #ffffff;
+    --tile-black: #1d1d1f;
+    --tile-border: #e8e8ea;
+    --danger: #ff3b30;
+    --shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    overscroll-behavior: none;
+  }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 56px 20px 40px;
+  }
+
+  .back {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    color: var(--text-2);
+    text-decoration: none;
+    font-size: 15px;
+    z-index: 9999;
+    padding: 6px 10px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .back:hover { color: var(--text); }
+
+  .title {
+    font-size: 38px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 0 0 4px;
+    text-align: center;
+  }
+
+  .subtitle {
+    font-size: 15px;
+    color: var(--text-2);
+    margin: 0 0 22px;
+    text-align: center;
+  }
+
+  .controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+    width: 100%;
+    max-width: 560px;
+  }
+
+  .pill-group {
+    display: inline-flex;
+    background: #ececec;
+    border-radius: 999px;
+    padding: 3px;
+    gap: 2px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .pill {
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 10px 20px;
+    min-height: 44px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+  .pill.active {
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+  .pill:not(.active):hover { color: var(--text-2); }
+
+  .stats {
+    display: flex;
+    gap: 28px;
+    justify-content: center;
+    font-size: 14px;
+    color: var(--text-2);
+    margin-bottom: 14px;
+  }
+  .stat { display: flex; flex-direction: column; align-items: center; }
+  .stat-value {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-label {
+    font-size: 11px;
+    color: var(--text-3);
+    margin-top: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .board-wrap {
+    position: relative;
+    width: min(92vw, 360px);
+    height: min(68vh, 560px);
+    background: var(--tile-white);
+    border: 1px solid var(--tile-border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    touch-action: manipulation;
+    user-select: none;
+    cursor: pointer;
+  }
+
+  .top-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(to bottom, rgba(0,113,227,0.18), rgba(0,113,227,0));
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  .columns-bg {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .col-line { border-right: 1px solid var(--tile-border); }
+  .col-line:last-child { border-right: none; }
+
+  .tiles {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .tile {
+    position: absolute;
+    width: 25%;
+    background: var(--tile-black);
+    border-radius: 2px;
+    will-change: transform;
+    transition: background 0.1s, opacity 0.15s;
+  }
+  .tile.tapped { background: var(--accent); opacity: 0; }
+  .tile.missed {
+    background: var(--danger);
+    animation: shake 0.35s ease-out;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateY(var(--ty, 0)) translateX(0); }
+    25% { transform: translateY(var(--ty, 0)) translateX(-6px); }
+    75% { transform: translateY(var(--ty, 0)) translateX(6px); }
+  }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(250, 250, 250, 0.96);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    gap: 8px;
+    padding: 24px;
+    text-align: center;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+  .overlay.hidden { display: none; }
+  .overlay-title {
+    font-size: 26px;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.02em;
+  }
+  .overlay-sub {
+    font-size: 14px;
+    color: var(--text-2);
+    margin: 0 0 2px;
+    max-width: 260px;
+    line-height: 1.5;
+  }
+  .overlay-score {
+    font-size: 54px;
+    font-weight: 700;
+    color: var(--accent);
+    margin: 4px 0 0;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+  }
+  .new-best {
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 2px 0 0;
+  }
+  .new-best.hidden { display: none; }
+  .best-line {
+    font-size: 13px;
+    color: var(--text-3);
+    margin: 2px 0 6px;
+  }
+
+  .btn {
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 500;
+    border-radius: 999px;
+    padding: 12px 30px;
+    min-height: 44px;
+    font-size: 15px;
+    transition: background 0.2s, transform 0.1s;
+    margin-top: 6px;
+  }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-primary:active { transform: scale(0.97); }
+
+  .rules-toggle {
+    margin-top: 24px;
+    background: none;
+    border: none;
+    color: var(--text-2);
+    font-size: 14px;
+    cursor: pointer;
+    font-family: inherit;
+    padding: 8px 12px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .rules-toggle:hover { color: var(--text); }
+  .rules-toggle .arrow { transition: transform 0.2s; }
+  .rules-toggle.open .arrow { transform: rotate(180deg); }
+
+  .rules {
+    max-width: 520px;
+    font-size: 14px;
+    color: var(--text-2);
+    line-height: 1.6;
+    display: none;
+    padding: 6px 16px 20px;
+    text-align: center;
+  }
+  .rules.open { display: block; }
+  .rules p { margin: 6px 0; }
+  .rules strong { color: var(--text); font-weight: 600; }
+
+  @media (max-width: 480px) {
+    body { padding-top: 50px; }
+    .title { font-size: 28px; }
+    .subtitle { font-size: 13px; margin-bottom: 14px; }
+    .pill { padding: 10px 14px; font-size: 13px; }
+    .stats { gap: 22px; }
+    .stat-value { font-size: 21px; }
+    .overlay-score { font-size: 46px; }
+  }
+</style>
+</head>
+<body>
+
+<a class="back" href="../">← Back</a>
+
+<h1 class="title">Piano Tiles</h1>
+<p class="subtitle">Tap every black tile before it scrolls off the top.</p>
+
+<div class="controls">
+  <div class="pill-group" id="speedGroup" role="tablist" aria-label="Speed">
+    <button class="pill" data-speed="easy">Easy</button>
+    <button class="pill active" data-speed="normal">Normal</button>
+    <button class="pill" data-speed="hard">Hard</button>
+    <button class="pill" data-speed="extreme">Extreme</button>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat">
+    <span class="stat-value" id="scoreEl">0</span>
+    <span class="stat-label">Score</span>
+  </div>
+  <div class="stat">
+    <span class="stat-value" id="bestEl">0</span>
+    <span class="stat-label">Best</span>
+  </div>
+  <div class="stat">
+    <span class="stat-value" id="speedDispEl">1.0×</span>
+    <span class="stat-label">Speed</span>
+  </div>
+</div>
+
+<div class="board-wrap" id="board">
+  <div class="columns-bg">
+    <div class="col-line"></div>
+    <div class="col-line"></div>
+    <div class="col-line"></div>
+    <div class="col-line"></div>
+  </div>
+  <div class="top-line"></div>
+  <div class="tiles" id="tiles"></div>
+
+  <div class="overlay" id="startOverlay">
+    <h2 class="overlay-title">Ready?</h2>
+    <p class="overlay-sub">Tiles rise from the bottom. Tap each black tile before it slips off the top.</p>
+    <button class="btn btn-primary" id="startBtn">Start</button>
+  </div>
+
+  <div class="overlay hidden" id="overOverlay">
+    <h2 class="overlay-title">Game Over</h2>
+    <p class="overlay-sub" id="overSub">You missed a tile.</p>
+    <div class="overlay-score" id="finalScore">0</div>
+    <p class="new-best hidden" id="newBest">New Best!</p>
+    <p class="best-line" id="bestLine">Best: 0</p>
+    <button class="btn btn-primary" id="playAgainBtn">Play Again</button>
+  </div>
+</div>
+
+<button class="rules-toggle" id="rulesToggle" aria-expanded="false">
+  How to Play <span class="arrow">▾</span>
+</button>
+<div class="rules" id="rules">
+  <p><strong>Goal:</strong> Tap every black tile before it scrolls past the top of the board.</p>
+  <p>Tiles rise up through four columns. Tap anywhere inside a tile's column — the topmost un-tapped tile in that column clears with a musical note.</p>
+  <p><strong>Game over:</strong> let a tile reach the top without being tapped, or tap a column that has no tile.</p>
+  <p>Speed climbs every 10 taps. Four modes set the starting tempo — Easy, Normal, Hard, Extreme. Best score is saved per mode on this device.</p>
+</div>
+
+<script>
+(function() {
+  const COLS = 4;
+  const BEST_KEY = 'pianotiles-best-v1';
+  const PREF_KEY = 'pianotiles-pref-v1';
+
+  const boardEl = document.getElementById('board');
+  const tilesEl = document.getElementById('tiles');
+  const scoreEl = document.getElementById('scoreEl');
+  const bestEl = document.getElementById('bestEl');
+  const speedDispEl = document.getElementById('speedDispEl');
+  const startOverlay = document.getElementById('startOverlay');
+  const overOverlay = document.getElementById('overOverlay');
+  const startBtn = document.getElementById('startBtn');
+  const playAgainBtn = document.getElementById('playAgainBtn');
+  const finalScore = document.getElementById('finalScore');
+  const overSub = document.getElementById('overSub');
+  const bestLine = document.getElementById('bestLine');
+  const newBestEl = document.getElementById('newBest');
+  const speedGroup = document.getElementById('speedGroup');
+  const rulesToggle = document.getElementById('rulesToggle');
+  const rulesEl = document.getElementById('rules');
+
+  const SPEED_MODES = {
+    easy:    { base: 150 },
+    normal:  { base: 220 },
+    hard:    { base: 310 },
+    extreme: { base: 430 }
+  };
+
+  const NOTES = [261.63, 329.63, 392.00, 523.25];
+
+  function loadJSON(key, fallback) {
+    try {
+      const v = JSON.parse(localStorage.getItem(key));
+      return (v === null || v === undefined) ? fallback : v;
+    } catch (e) { return fallback; }
+  }
+  function saveJSON(key, v) {
+    try { localStorage.setItem(key, JSON.stringify(v)); } catch (e) {}
+  }
+
+  let bestScores = loadJSON(BEST_KEY, { easy: 0, normal: 0, hard: 0, extreme: 0 });
+  let prefs = loadJSON(PREF_KEY, { speed: 'normal' });
+
+  let currentSpeed = SPEED_MODES[prefs.speed] ? prefs.speed : 'normal';
+  let running = false;
+  let score = 0;
+  let tiles = [];
+  let speedMultiplier = 1;
+  let lastT = 0;
+  let rafId = null;
+  let boardH = 0;
+  let tileH = 0;
+
+  let audioCtx = null;
+  function ensureAudio() {
+    if (audioCtx) return;
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) audioCtx = new AC();
+    } catch (e) {}
+  }
+  function playNote(col) {
+    if (!audioCtx) return;
+    const freq = NOTES[col] || 440;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.16, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.3);
+  }
+
+  function updateBestDisplay() {
+    bestEl.textContent = bestScores[currentSpeed] || 0;
+  }
+
+  function setSpeedPill() {
+    const pills = speedGroup.querySelectorAll('.pill');
+    for (const p of pills) {
+      p.classList.toggle('active', p.dataset.speed === currentSpeed);
+    }
+  }
+
+  function measureBoard() {
+    const rect = boardEl.getBoundingClientRect();
+    boardH = rect.height;
+    tileH = Math.round(boardH / 4);
+  }
+
+  function createTile(col, y) {
+    const el = document.createElement('div');
+    el.className = 'tile';
+    el.style.height = tileH + 'px';
+    el.style.left = (col * 25) + '%';
+    el.style.transform = 'translateY(' + y + 'px)';
+    tilesEl.appendChild(el);
+    return { el, col, y, tapped: false };
+  }
+
+  function resetBoard() {
+    tilesEl.innerHTML = '';
+    tiles = [];
+    score = 0;
+    speedMultiplier = 1;
+    scoreEl.textContent = '0';
+    speedDispEl.textContent = '1.0×';
+    measureBoard();
+
+    // Tiles scroll upward. Start with a stack below the board that will rise into view.
+    // The first tile is placed just below the bottom edge (y = boardH), next ones below it.
+    let y = boardH;
+    let lastCol = -1;
+    for (let i = 0; i < 6; i++) {
+      let c;
+      do { c = Math.floor(Math.random() * COLS); } while (c === lastCol);
+      lastCol = c;
+      tiles.push(createTile(c, y));
+      y += tileH;
+    }
+  }
+
+  function spawnNextIfNeeded() {
+    // Find the bottommost tile (largest y). Spawn more below it as needed.
+    let bottom = null;
+    for (const t of tiles) {
+      if (!bottom || t.y > bottom.y) bottom = t;
+    }
+    let bottomY = bottom ? bottom.y : boardH;
+    let lastCol = bottom ? bottom.col : -1;
+    // Keep a buffer of tiles queued below the visible area.
+    while (bottomY < boardH + tileH * 3) {
+      let c;
+      do { c = Math.floor(Math.random() * COLS); } while (c === lastCol);
+      const newY = bottomY + tileH;
+      tiles.push(createTile(c, newY));
+      bottomY = newY;
+      lastCol = c;
+    }
+  }
+
+  function tapTile(tile) {
+    if (tile.tapped) return;
+    tile.tapped = true;
+    tile.el.classList.add('tapped');
+    score++;
+    scoreEl.textContent = score;
+    playNote(tile.col);
+    if (score > 0 && score % 10 === 0) {
+      speedMultiplier = Math.min(4, speedMultiplier + 0.12);
+      speedDispEl.textContent = speedMultiplier.toFixed(1) + '×';
+    }
+  }
+
+  function onBoardTap(e) {
+    if (!running) return;
+    e.preventDefault();
+    ensureAudio();
+    const rect = boardEl.getBoundingClientRect();
+    const clientX = (e.clientX !== undefined)
+      ? e.clientX
+      : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+    const col = Math.min(COLS - 1, Math.max(0, Math.floor((clientX - rect.left) / rect.width * COLS)));
+
+    // Topmost un-tapped tile in the column that is still within (or partially within) the board.
+    // Tiles move upward; the topmost one (smallest y) is next to leave.
+    let target = null;
+    for (const t of tiles) {
+      if (t.col === col && !t.tapped && t.y + tileH > 0 && t.y < boardH) {
+        if (!target || t.y < target.y) target = t;
+      }
+    }
+    if (!target) {
+      gameOver('wrong');
+      return;
+    }
+    tapTile(target);
+  }
+
+  function gameOver(reason, missedTile) {
+    if (!running) return;
+    running = false;
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+
+    if (missedTile && missedTile.el) {
+      missedTile.el.classList.add('missed');
+      missedTile.el.style.setProperty('--ty', missedTile.y + 'px');
+    }
+
+    finalScore.textContent = score;
+    const prevBest = bestScores[currentSpeed] || 0;
+    const isNewBest = score > prevBest;
+    if (isNewBest) {
+      bestScores[currentSpeed] = score;
+      saveJSON(BEST_KEY, bestScores);
+      newBestEl.classList.remove('hidden');
+    } else {
+      newBestEl.classList.add('hidden');
+    }
+    bestLine.textContent = 'Best: ' + (bestScores[currentSpeed] || 0);
+    overSub.textContent = reason === 'wrong'
+      ? 'Wrong tap — that column was empty.'
+      : 'A tile scrolled off the top.';
+    updateBestDisplay();
+
+    setTimeout(() => { overOverlay.classList.remove('hidden'); }, 420);
+
+    if (window.Leaderboard && Leaderboard.submitScore && score > 0) {
+      try { Leaderboard.submitScore(score); } catch (e) {}
+    }
+  }
+
+  function frame(t) {
+    if (!running) return;
+    if (!lastT) lastT = t;
+    const dt = Math.min(50, t - lastT) / 1000;
+    lastT = t;
+
+    const pxPerSec = SPEED_MODES[currentSpeed].base * speedMultiplier;
+    const deltaY = pxPerSec * dt;
+
+    // Move every tile upward (y decreases).
+    for (const tile of tiles) {
+      tile.y -= deltaY;
+      tile.el.style.transform = 'translateY(' + tile.y + 'px)';
+    }
+
+    // Miss detection: an un-tapped tile fully exited the top.
+    for (const tile of tiles) {
+      if (!tile.tapped && tile.y + tileH <= 0) {
+        return gameOver('missed', tile);
+      }
+    }
+
+    // Clean up tiles that have left the top (tapped ones or already-processed).
+    const kept = [];
+    for (const tile of tiles) {
+      if (tile.y + tileH < -tileH) {
+        if (tile.el.parentNode) tile.el.parentNode.removeChild(tile.el);
+      } else {
+        kept.push(tile);
+      }
+    }
+    tiles = kept;
+
+    spawnNextIfNeeded();
+
+    rafId = requestAnimationFrame(frame);
+  }
+
+  function startGame() {
+    ensureAudio();
+    startOverlay.classList.add('hidden');
+    overOverlay.classList.add('hidden');
+    newBestEl.classList.add('hidden');
+    resetBoard();
+    running = true;
+    lastT = 0;
+    rafId = requestAnimationFrame(frame);
+  }
+
+  boardEl.addEventListener('pointerdown', onBoardTap);
+  boardEl.addEventListener('touchstart', (e) => {
+    if (running) e.preventDefault();
+  }, { passive: false });
+
+  startBtn.addEventListener('click', (e) => { e.stopPropagation(); startGame(); });
+  playAgainBtn.addEventListener('click', (e) => { e.stopPropagation(); startGame(); });
+
+  speedGroup.addEventListener('click', (e) => {
+    const p = e.target.closest('.pill');
+    if (!p || !p.dataset.speed) return;
+    if (running) return;
+    currentSpeed = p.dataset.speed;
+    prefs.speed = currentSpeed;
+    saveJSON(PREF_KEY, prefs);
+    setSpeedPill();
+    updateBestDisplay();
+  });
+
+  rulesToggle.addEventListener('click', () => {
+    const open = rulesEl.classList.toggle('open');
+    rulesToggle.classList.toggle('open', open);
+    rulesToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+
+  window.addEventListener('resize', () => {
+    const prevH = tileH;
+    measureBoard();
+    if (prevH && tileH !== prevH) {
+      const ratio = tileH / prevH;
+      for (const tile of tiles) {
+        tile.y *= ratio;
+        tile.el.style.height = tileH + 'px';
+        tile.el.style.transform = 'translateY(' + tile.y + 'px)';
+      }
+    }
+  });
+
+  measureBoard();
+  setSpeedPill();
+  updateBestDisplay();
+})();
+</script>
+
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Cryptogram — FindPicked Games</title>
+<meta name="description" content="Play Cryptogram free — crack the substitution cipher to reveal a famous quote. No downloads, no sign-ups.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ctext x='16' y='22' font-size='14' fill='white' text-anchor='middle' font-family='system-ui' font-weight='700'%3ECG%3C/text%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-board: #f5f5f7;
+  --cell-bg: #ffffff;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --accent-soft: rgba(0, 113, 227, 0.12);
+  --accent-strong: rgba(0, 113, 227, 0.28);
+  --good: #34c759;
+  --good-soft: rgba(52, 199, 89, 0.16);
+  --bad: #ff3b30;
+  --bad-soft: rgba(255, 59, 48, 0.14);
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+  --radius: 16px;
+}
+
+html, body {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px 20px 40px;
+  touch-action: manipulation;
+}
+
+.back {
+  align-self: flex-start;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 400;
+  padding: 8px 4px;
+  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.back:hover { color: var(--text-primary); }
+.back .arrow { font-size: 18px; line-height: 1; }
+
+.wrap {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+h1 {
+  font-size: clamp(32px, 8vw, 44px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.stats {
+  display: flex;
+  gap: 8px;
+}
+
+.stat-box {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 10px 14px;
+  min-width: 70px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.stat-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  margin-bottom: 2px;
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.rules-toggle {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 8px 16px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 36px;
+}
+.rules-toggle:hover { color: var(--text-primary); border-color: rgba(0,0,0,0.18); }
+
+.rules-panel {
+  display: none;
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-top: 12px;
+  box-shadow: var(--shadow);
+  text-align: left;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.rules-panel.open { display: block; }
+.rules-panel ul { padding-left: 18px; }
+.rules-panel li { margin-bottom: 4px; }
+.rules-panel li:last-child { margin-bottom: 0; }
+
+.author-line {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-tertiary);
+  font-style: italic;
+  min-height: 18px;
+}
+
+.quote-board {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 22px 18px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 6px;
+  min-height: 140px;
+}
+
+.word {
+  display: inline-flex;
+  gap: 4px;
+  margin-right: 4px;
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 30px;
+  user-select: none;
+}
+
+.cell .glyph {
+  height: 32px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--border);
+  transition: all 0.12s ease;
+  font-variant-numeric: tabular-nums;
+}
+
+.cell .cipher {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-tertiary);
+  margin-top: 4px;
+  text-transform: uppercase;
+}
+
+.cell.letter { cursor: pointer; }
+.cell.letter .glyph:hover { background: var(--bg-board); }
+.cell.selected .glyph { border-bottom-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.cell.peer .glyph { background: var(--accent-soft); }
+.cell.locked .glyph { color: var(--text-tertiary); border-bottom-color: var(--good); }
+.cell.wrong .glyph { color: var(--bad); border-bottom-color: var(--bad); }
+.cell.hinted .glyph { color: var(--accent); border-bottom-color: var(--accent); }
+
+.cell.punct .glyph {
+  border-bottom-color: transparent;
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+.cell.punct .cipher { visibility: hidden; }
+
+.keyboard {
+  display: grid;
+  grid-template-columns: repeat(13, 1fr);
+  gap: 6px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 12px;
+  box-shadow: var(--shadow);
+}
+
+.key {
+  background: var(--bg-board);
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font: inherit;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-primary);
+  cursor: pointer;
+  min-height: 44px;
+  padding: 4px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.1;
+  transition: all 0.12s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.key:hover { background: #ebebef; }
+.key:active { transform: scale(0.96); }
+.key.used { color: var(--text-tertiary); background: transparent; }
+.key.used .freq { color: var(--text-tertiary); }
+.key .ltr { font-size: 14px; font-weight: 700; }
+.key .freq {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 999px;
+  padding: 12px 24px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  min-height: 44px;
+  min-width: 88px;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+.btn.secondary {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  box-shadow: var(--shadow);
+}
+.btn.secondary:hover { background: white; box-shadow: var(--shadow-hover); }
+.btn.ghost {
+  background: transparent;
+  color: var(--text-secondary);
+}
+.btn.ghost:hover { color: var(--text-primary); background: var(--bg-card); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+footer {
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 100;
+  animation: fadeIn 0.25s ease;
+}
+.overlay.show { display: flex; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.overlay-card {
+  background: var(--bg-card);
+  border-radius: 22px;
+  padding: 32px 28px;
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  animation: pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes pop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+.overlay-card h2 {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+
+.overlay-card .quote-result {
+  font-size: 16px;
+  color: var(--text-primary);
+  margin: 14px 0 6px;
+  line-height: 1.4;
+  font-style: italic;
+}
+.overlay-card .author-result {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 18px;
+}
+
+.score-big {
+  font-size: 44px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.03em;
+  margin: 6px 0 4px;
+  font-variant-numeric: tabular-nums;
+}
+.score-sub {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  margin-bottom: 20px;
+}
+
+.row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+@media (max-width: 520px) {
+  body { padding: 16px 12px 32px; }
+  .wrap { gap: 16px; }
+  header { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .stats { width: 100%; justify-content: space-between; }
+  .stat-box { flex: 1; }
+  .quote-board { padding: 16px 10px; gap: 8px 4px; }
+  .cell { width: 24px; }
+  .cell .glyph { height: 28px; font-size: 18px; }
+  .cell .cipher { font-size: 10px; margin-top: 3px; }
+  .keyboard { grid-template-columns: repeat(7, 1fr); padding: 10px; gap: 5px; }
+  .key { min-height: 44px; }
+}
+
+@media (max-width: 360px) {
+  .cell { width: 20px; }
+  .cell .glyph { height: 24px; font-size: 15px; }
+  .quote-board { gap: 6px 2px; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="back" href="../" aria-label="Back to games">
+    <span class="arrow">←</span>
+    <span>Games</span>
+  </a>
+
+  <header>
+    <h1>Cryptogram</h1>
+    <div class="stats">
+      <div class="stat-box">
+        <div class="stat-label">Time</div>
+        <div class="stat-value" id="timer">0:00</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Hints</div>
+        <div class="stat-value" id="hints-stat">3</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Best</div>
+        <div class="stat-value" id="best-stat">—</div>
+      </div>
+    </div>
+  </header>
+
+  <div style="text-align:center">
+    <button class="rules-toggle" onclick="this.nextElementSibling.classList.toggle('open')">How to Play ▾</button>
+    <div class="rules-panel"><ul>
+      <li>Each letter in the quote has been swapped with another letter using a single substitution cipher</li>
+      <li>Click an encrypted letter (cipher shown below the box) to select it, then tap a key to guess what it stands for</li>
+      <li>The keyboard shows how often each cipher letter appears — common letters are usually E, T, A, O, I, N</li>
+      <li>Tap your selected letter again, hit ⌫ on the keyboard, or pick a different cell to clear or change a guess</li>
+      <li>Use a Hint to reveal one correct letter (limited per puzzle)</li>
+      <li>Decode the whole quote to win — finish faster and use fewer hints for a higher score</li>
+    </ul></div>
+  </div>
+
+  <div class="author-line" id="author-line">— Decode the quote —</div>
+
+  <div class="quote-board" id="board"></div>
+
+  <div class="keyboard" id="keyboard"></div>
+
+  <div class="controls">
+    <button class="btn secondary" id="hint-btn">Hint</button>
+    <button class="btn secondary" id="check-btn">Check</button>
+    <button class="btn" id="new-btn">New Quote</button>
+  </div>
+
+  <footer>
+    Tap a cipher letter, then tap a key to assign · Frequency hints in keyboard
+  </footer>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-card">
+    <h2 id="over-title">Solved!</h2>
+    <div class="quote-result" id="over-quote">""</div>
+    <div class="author-result" id="over-author">— Author</div>
+    <div class="score-big" id="over-score">0</div>
+    <div class="score-sub" id="over-sub">Time · Hints used</div>
+    <div class="row">
+      <button class="btn secondary" id="over-close">Close</button>
+      <button class="btn" id="over-again">Play Again</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const STORE_BEST = 'findpicked:cryptogram:best';
+  const STORE_INDEX = 'findpicked:cryptogram:lastIdx';
+  const MAX_HINTS = 3;
+  const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+  const QUOTES = [
+    { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
+    { text: "Imagination is more important than knowledge.", author: "Albert Einstein" },
+    { text: "In the middle of difficulty lies opportunity.", author: "Albert Einstein" },
+    { text: "Life is what happens when you're busy making other plans.", author: "John Lennon" },
+    { text: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt" },
+    { text: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill" },
+    { text: "Be the change that you wish to see in the world.", author: "Mahatma Gandhi" },
+    { text: "Whether you think you can or you think you can't, you're right.", author: "Henry Ford" },
+    { text: "The only thing we have to fear is fear itself.", author: "Franklin D. Roosevelt" },
+    { text: "I think, therefore I am.", author: "Rene Descartes" },
+    { text: "That which does not kill us makes us stronger.", author: "Friedrich Nietzsche" },
+    { text: "The journey of a thousand miles begins with a single step.", author: "Lao Tzu" },
+    { text: "It always seems impossible until it's done.", author: "Nelson Mandela" },
+    { text: "Float like a butterfly, sting like a bee.", author: "Muhammad Ali" },
+    { text: "The unexamined life is not worth living.", author: "Socrates" },
+    { text: "Stay hungry, stay foolish.", author: "Steve Jobs" },
+    { text: "All our dreams can come true if we have the courage to pursue them.", author: "Walt Disney" },
+    { text: "Do not go where the path may lead, go instead where there is no path and leave a trail.", author: "Ralph Waldo Emerson" },
+    { text: "The best way to predict the future is to create it.", author: "Peter Drucker" },
+    { text: "If you tell the truth, you don't have to remember anything.", author: "Mark Twain" },
+    { text: "An investment in knowledge pays the best interest.", author: "Benjamin Franklin" },
+    { text: "We are what we repeatedly do. Excellence is not an act, but a habit.", author: "Aristotle" },
+    { text: "The greatest glory in living lies not in never falling, but in rising every time we fall.", author: "Nelson Mandela" },
+    { text: "Two roads diverged in a wood, and I took the one less traveled by.", author: "Robert Frost" },
+    { text: "Try not to become a man of success, but rather try to become a man of value.", author: "Albert Einstein" },
+    { text: "Happiness is not something ready made. It comes from your own actions.", author: "Dalai Lama" },
+    { text: "The only impossible journey is the one you never begin.", author: "Tony Robbins" },
+    { text: "Talk is cheap. Show me the code.", author: "Linus Torvalds" },
+    { text: "Simplicity is the ultimate sophistication.", author: "Leonardo da Vinci" },
+    { text: "What we think, we become.", author: "Buddha" },
+    { text: "Knowing yourself is the beginning of all wisdom.", author: "Aristotle" },
+    { text: "The best revenge is massive success.", author: "Frank Sinatra" }
+  ];
+
+  const boardEl = document.getElementById('board');
+  const keyboardEl = document.getElementById('keyboard');
+  const timerEl = document.getElementById('timer');
+  const hintsStatEl = document.getElementById('hints-stat');
+  const bestStatEl = document.getElementById('best-stat');
+  const authorLineEl = document.getElementById('author-line');
+  const overlayEl = document.getElementById('overlay');
+  const overTitle = document.getElementById('over-title');
+  const overQuote = document.getElementById('over-quote');
+  const overAuthor = document.getElementById('over-author');
+  const overScore = document.getElementById('over-score');
+  const overSub = document.getElementById('over-sub');
+  const overAgain = document.getElementById('over-again');
+  const overClose = document.getElementById('over-close');
+  const newBtn = document.getElementById('new-btn');
+  const hintBtn = document.getElementById('hint-btn');
+  const checkBtn = document.getElementById('check-btn');
+
+  let plain = '';            // Plaintext quote (uppercase)
+  let cipher = '';           // Ciphertext (uppercase, same punctuation)
+  let cipherToPlain = {};    // True mapping cipher -> plain
+  let plainToCipher = {};    // Inverse
+  let guesses = {};          // cipher letter -> player's guess (plain letter)
+  let hinted = {};           // cipher letter -> true if revealed via hint
+  let cells = [];            // Array of cell descriptors {ch, isLetter, el, cipherEl, glyphEl}
+  let cipherCounts = {};     // cipher letter -> count
+  let selectedCipher = null;
+  let hintsLeft = MAX_HINTS;
+  let timerId = null;
+  let startTime = 0;
+  let elapsed = 0;
+  let gameOver = false;
+  let lastQuoteIdx = -1;
+
+  // ---- Setup ----
+  function loadBest() {
+    const best = parseInt(localStorage.getItem(STORE_BEST) || '0', 10);
+    bestStatEl.textContent = best > 0 ? best : '—';
+  }
+
+  function makeCipher() {
+    const letters = ALPHA.split('');
+    let mapping;
+    let attempts = 0;
+    do {
+      mapping = letters.slice();
+      for (let i = mapping.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [mapping[i], mapping[j]] = [mapping[j], mapping[i]];
+      }
+      attempts++;
+      // Reject if any letter maps to itself (would give a free reveal)
+      if (attempts > 50) break;
+    } while (mapping.some((m, i) => m === ALPHA[i]));
+    const c2p = {};
+    const p2c = {};
+    for (let i = 0; i < 26; i++) {
+      const p = ALPHA[i];
+      const c = mapping[i];
+      p2c[p] = c;
+      c2p[c] = p;
+    }
+    return { c2p, p2c };
+  }
+
+  function pickQuote() {
+    const lastStored = parseInt(localStorage.getItem(STORE_INDEX) || '-1', 10);
+    let idx;
+    do {
+      idx = Math.floor(Math.random() * QUOTES.length);
+    } while ((idx === lastStored || idx === lastQuoteIdx) && QUOTES.length > 1);
+    lastQuoteIdx = idx;
+    localStorage.setItem(STORE_INDEX, String(idx));
+    return QUOTES[idx];
+  }
+
+  function newGame() {
+    hideOverlay();
+    const q = pickQuote();
+    plain = q.text.toUpperCase();
+    const map = makeCipher();
+    cipherToPlain = {};
+    plainToCipher = {};
+    for (const p in map.p2c) {
+      const c = map.p2c[p];
+      plainToCipher[p] = c;
+      cipherToPlain[c] = p;
+    }
+    cipher = plain.split('').map(ch => /[A-Z]/.test(ch) ? plainToCipher[ch] : ch).join('');
+    guesses = {};
+    hinted = {};
+    selectedCipher = null;
+    hintsLeft = MAX_HINTS;
+    gameOver = false;
+    elapsed = 0;
+    cipherCounts = {};
+    for (const ch of cipher) {
+      if (/[A-Z]/.test(ch)) cipherCounts[ch] = (cipherCounts[ch] || 0) + 1;
+    }
+    authorLineEl.textContent = '— ' + q.author;
+    hintsStatEl.textContent = String(hintsLeft);
+    renderBoard();
+    renderKeyboard();
+    startTimer();
+  }
+
+  // ---- Render board ----
+  function renderBoard() {
+    boardEl.innerHTML = '';
+    cells = [];
+    const words = cipher.split(' ');
+    for (let w = 0; w < words.length; w++) {
+      const wordEl = document.createElement('div');
+      wordEl.className = 'word';
+      const word = words[w];
+      for (let i = 0; i < word.length; i++) {
+        const ch = word[i];
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        const glyph = document.createElement('div');
+        glyph.className = 'glyph';
+        const cipherLbl = document.createElement('div');
+        cipherLbl.className = 'cipher';
+        if (/[A-Z]/.test(ch)) {
+          cell.classList.add('letter');
+          cell.dataset.cipher = ch;
+          cipherLbl.textContent = ch;
+          glyph.textContent = guesses[ch] || '';
+          cell.addEventListener('click', () => onCellClick(ch));
+        } else {
+          cell.classList.add('punct');
+          glyph.textContent = ch === ' ' ? '' : ch;
+          cipherLbl.textContent = ' ';
+        }
+        cell.appendChild(glyph);
+        cell.appendChild(cipherLbl);
+        wordEl.appendChild(cell);
+        cells.push({ ch, isLetter: /[A-Z]/.test(ch), el: cell, glyphEl: glyph });
+      }
+      boardEl.appendChild(wordEl);
+    }
+    updateBoardState();
+  }
+
+  function updateBoardState() {
+    for (const cell of cells) {
+      if (!cell.isLetter) continue;
+      cell.el.classList.remove('selected', 'peer', 'locked', 'wrong', 'hinted');
+      const cip = cell.ch;
+      const guess = guesses[cip] || '';
+      cell.glyphEl.textContent = guess;
+      if (hinted[cip]) {
+        cell.el.classList.add('hinted');
+      }
+      if (selectedCipher && cip === selectedCipher) {
+        cell.el.classList.add('selected');
+      } else if (selectedCipher && guess && guess === (guesses[selectedCipher] || '__')) {
+        // Mark cells that share the same guess as the selected one's guess (helps spot conflicts)
+        if (guess) cell.el.classList.add('peer');
+      }
+    }
+  }
+
+  // ---- Render keyboard ----
+  function renderKeyboard() {
+    keyboardEl.innerHTML = '';
+    for (const ltr of ALPHA) {
+      const key = document.createElement('button');
+      key.className = 'key';
+      key.type = 'button';
+      const ltrEl = document.createElement('span');
+      ltrEl.className = 'ltr';
+      ltrEl.textContent = ltr;
+      const freqEl = document.createElement('span');
+      freqEl.className = 'freq';
+      freqEl.textContent = '·';
+      key.appendChild(ltrEl);
+      key.appendChild(freqEl);
+      key.dataset.ltr = ltr;
+      key.addEventListener('click', () => onKeyClick(ltr));
+      keyboardEl.appendChild(key);
+    }
+    // Backspace key
+    const back = document.createElement('button');
+    back.className = 'key';
+    back.type = 'button';
+    back.innerHTML = '<span class="ltr">⌫</span><span class="freq">clear</span>';
+    back.addEventListener('click', () => onKeyClick(null));
+    keyboardEl.appendChild(back);
+    updateKeyboardState();
+  }
+
+  function updateKeyboardState() {
+    const usedAsGuess = new Set(Object.values(guesses).filter(Boolean));
+    for (const btn of keyboardEl.querySelectorAll('.key')) {
+      const ltr = btn.dataset.ltr;
+      if (!ltr) continue;
+      const freqEl = btn.querySelector('.freq');
+      const cnt = cipherCounts[ltr] || 0;
+      freqEl.textContent = cnt > 0 ? '×' + cnt : '·';
+      if (usedAsGuess.has(ltr)) {
+        btn.classList.add('used');
+      } else {
+        btn.classList.remove('used');
+      }
+    }
+  }
+
+  // ---- Interaction ----
+  function onCellClick(cipherCh) {
+    if (gameOver) return;
+    if (hinted[cipherCh]) return;
+    if (selectedCipher === cipherCh) {
+      selectedCipher = null;
+    } else {
+      selectedCipher = cipherCh;
+    }
+    updateBoardState();
+  }
+
+  function onKeyClick(plainCh) {
+    if (gameOver) return;
+    if (!selectedCipher) return;
+    const cip = selectedCipher;
+    if (hinted[cip]) return;
+
+    if (plainCh === null) {
+      delete guesses[cip];
+    } else {
+      // Remove this plain letter from any other cipher it was assigned to
+      for (const k in guesses) {
+        if (guesses[k] === plainCh && k !== cip) {
+          delete guesses[k];
+        }
+      }
+      guesses[cip] = plainCh;
+    }
+
+    // Auto-advance to next unsolved cipher cell (best UX)
+    if (plainCh !== null) {
+      const next = findNextCipher(cip);
+      selectedCipher = next;
+    }
+
+    updateBoardState();
+    updateKeyboardState();
+    checkSolved();
+  }
+
+  function findNextCipher(currentCip) {
+    const idx = cells.findIndex(c => c.isLetter && c.ch === currentCip);
+    for (let off = 1; off < cells.length; off++) {
+      const c = cells[(idx + off) % cells.length];
+      if (c.isLetter && !guesses[c.ch] && !hinted[c.ch]) return c.ch;
+    }
+    return null;
+  }
+
+  function checkSolved() {
+    for (const ch of cipher) {
+      if (!/[A-Z]/.test(ch)) continue;
+      if ((guesses[ch] || '') !== cipherToPlain[ch]) return false;
+    }
+    win();
+    return true;
+  }
+
+  // ---- Hint / Check ----
+  function useHint() {
+    if (gameOver) return;
+    if (hintsLeft <= 0) return;
+    // Find an unsolved cipher letter (no guess or wrong guess), prefer most frequent
+    const unsolved = Object.keys(cipherCounts)
+      .filter(c => !hinted[c] && (guesses[c] || '') !== cipherToPlain[c])
+      .sort((a, b) => cipherCounts[b] - cipherCounts[a]);
+    if (!unsolved.length) return;
+    let target = unsolved[0];
+    if (selectedCipher && unsolved.includes(selectedCipher)) target = selectedCipher;
+    const correct = cipherToPlain[target];
+    // Clear that letter from anywhere else it was guessed
+    for (const k in guesses) {
+      if (guesses[k] === correct) delete guesses[k];
+    }
+    guesses[target] = correct;
+    hinted[target] = true;
+    hintsLeft--;
+    hintsStatEl.textContent = String(hintsLeft);
+    if (selectedCipher === target) selectedCipher = null;
+    updateBoardState();
+    updateKeyboardState();
+    checkSolved();
+  }
+
+  function checkAnswers() {
+    if (gameOver) return;
+    let any = false;
+    for (const cell of cells) {
+      if (!cell.isLetter) continue;
+      const g = guesses[cell.ch];
+      if (g && g !== cipherToPlain[cell.ch] && !hinted[cell.ch]) {
+        cell.el.classList.add('wrong');
+        any = true;
+      }
+    }
+    if (any) {
+      setTimeout(() => {
+        for (const cell of cells) cell.el.classList.remove('wrong');
+        updateBoardState();
+      }, 1200);
+    }
+  }
+
+  // ---- Win / Score ----
+  function win() {
+    gameOver = true;
+    stopTimer();
+    elapsed = Math.floor((Date.now() - startTime) / 1000);
+    const hintsUsed = MAX_HINTS - hintsLeft;
+    // Score: base 1000, minus seconds, minus hints * 75. Floor 50.
+    const lengthBonus = Math.max(0, plain.length * 4);
+    const score = Math.max(50, 1000 + lengthBonus - elapsed * 2 - hintsUsed * 100);
+
+    const best = parseInt(localStorage.getItem(STORE_BEST) || '0', 10);
+    const isBest = score > best;
+    if (isBest) {
+      localStorage.setItem(STORE_BEST, String(score));
+      bestStatEl.textContent = String(score);
+    }
+
+    overTitle.textContent = isBest ? 'New Best!' : 'Solved!';
+    const q = QUOTES[lastQuoteIdx];
+    overQuote.textContent = '"' + q.text + '"';
+    overAuthor.textContent = '— ' + q.author;
+    overScore.textContent = String(score);
+    overSub.textContent = `${formatTime(elapsed)} · ${hintsUsed} hint${hintsUsed === 1 ? '' : 's'} used`;
+
+    // Mark all letters as locked (correct)
+    for (const cell of cells) {
+      if (cell.isLetter) {
+        cell.el.classList.remove('selected', 'peer', 'wrong', 'hinted');
+        cell.el.classList.add('locked');
+      }
+    }
+
+    setTimeout(() => overlayEl.classList.add('show'), 400);
+
+    setTimeout(() => {
+      if (window.Leaderboard && Leaderboard.submitScore) {
+        Leaderboard.submitScore(score);
+      }
+    }, 700);
+  }
+
+  function hideOverlay() {
+    overlayEl.classList.remove('show');
+  }
+
+  // ---- Timer ----
+  function formatTime(s) {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${sec.toString().padStart(2, '0')}`;
+  }
+
+  function startTimer() {
+    startTime = Date.now();
+    timerEl.textContent = '0:00';
+    if (timerId) clearInterval(timerId);
+    timerId = setInterval(() => {
+      if (gameOver) return;
+      const e = Math.floor((Date.now() - startTime) / 1000);
+      timerEl.textContent = formatTime(e);
+    }, 500);
+  }
+
+  function stopTimer() {
+    if (timerId) { clearInterval(timerId); timerId = null; }
+  }
+
+  // ---- Keyboard input ----
+  document.addEventListener('keydown', (e) => {
+    if (overlayEl.classList.contains('show')) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); newGame(); }
+      return;
+    }
+    if (e.key === 'Backspace' || e.key === 'Delete') {
+      e.preventDefault();
+      onKeyClick(null);
+      return;
+    }
+    if (/^[a-zA-Z]$/.test(e.key)) {
+      e.preventDefault();
+      onKeyClick(e.key.toUpperCase());
+      return;
+    }
+    if (e.key === 'h' || e.key === 'H') { useHint(); return; }
+  });
+
+  // ---- Buttons ----
+  newBtn.addEventListener('click', newGame);
+  overAgain.addEventListener('click', newGame);
+  overClose.addEventListener('click', hideOverlay);
+  hintBtn.addEventListener('click', useHint);
+  checkBtn.addEventListener('click', checkAnswers);
+
+  // ---- Init ----
+  loadBest();
+  newGame();
+})();
+</script>
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

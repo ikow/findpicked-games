@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Dot Connect — Connect the Dots Puzzle</title>
+<meta name="description" content="Play Dot Connect free online. Tap numbered dots in order to reveal hidden pictures and race the clock.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ccircle cx='9' cy='9' r='2.4' fill='white'/%3E%3Ccircle cx='23' cy='9' r='2.4' fill='white'/%3E%3Ccircle cx='9' cy='23' r='2.4' fill='white'/%3E%3Ccircle cx='23' cy='23' r='2.4' fill='white'/%3E%3Cpath d='M9 9 L23 9 L9 23 L23 23' stroke='white' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg: #fafafa;
+    --bg-card: #ffffff;
+    --bg-board: #ffffff;
+    --text: #1d1d1f;
+    --text-2: #6e6e73;
+    --text-3: #86868b;
+    --accent: #0071e3;
+    --accent-hover: #0077ed;
+    --accent-soft: rgba(0, 113, 227, 0.08);
+    --good: #34c759;
+    --bad: #ff3b30;
+    --border: rgba(0, 0, 0, 0.08);
+    --shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.08);
+  }
+
+  html, body {
+    height: 100%;
+    overscroll-behavior: none;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 24px 20px 48px;
+  }
+
+  .back {
+    align-self: flex-start;
+    color: var(--text-2);
+    text-decoration: none;
+    font-size: 15px;
+    padding: 8px 4px;
+    transition: color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .back:hover { color: var(--text); }
+  .back .arrow { font-size: 18px; line-height: 1; }
+
+  .wrap {
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  header {
+    text-align: center;
+    margin-top: 4px;
+  }
+
+  h1 {
+    font-size: clamp(34px, 8vw, 44px);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: var(--text-2);
+  }
+
+  .hud {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .hud-item {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 10px 8px;
+    text-align: center;
+    box-shadow: var(--shadow);
+  }
+
+  .hud-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-3);
+    margin-bottom: 4px;
+  }
+
+  .hud-value {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    transition: color 0.2s;
+  }
+  .hud-value.good { color: var(--good); }
+  .hud-value.accent { color: var(--accent); }
+
+  .board-wrap {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: var(--bg-board);
+    border-radius: 20px;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .board-wrap.shake {
+    animation: shake 0.32s ease-in-out;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+
+  #canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    touch-action: manipulation;
+  }
+
+  .picture-name {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-3);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    pointer-events: none;
+  }
+
+  .status {
+    text-align: center;
+    font-size: 14px;
+    color: var(--text-2);
+    min-height: 20px;
+    transition: color 0.2s;
+  }
+  .status.win { color: var(--good); font-weight: 600; }
+  .status.error { color: var(--bad); font-weight: 600; }
+
+  /* SVG element styles */
+  .dot-fill {
+    fill: var(--text);
+    transition: fill 0.25s, r 0.2s;
+  }
+  .dot-fill.connected { fill: var(--accent); }
+  .dot-fill.next {
+    fill: var(--accent);
+  }
+
+  .dot-pulse {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 0.5;
+    opacity: 0;
+    transform-origin: center;
+    transform-box: fill-box;
+  }
+  .dot-pulse.next {
+    animation: pulse 1.4s ease-out infinite;
+  }
+
+  @keyframes pulse {
+    0% { opacity: 0.85; r: 2; stroke-width: 0.6; }
+    100% { opacity: 0; r: 7; stroke-width: 0.2; }
+  }
+
+  .dot-num {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    font-size: 3.6px;
+    font-weight: 600;
+    fill: var(--text);
+    text-anchor: middle;
+    dominant-baseline: middle;
+    pointer-events: none;
+    transition: fill 0.25s, opacity 0.5s;
+  }
+  .dot-num.connected { fill: var(--accent); }
+  .dot-num.faded { opacity: 0; }
+
+  .dot-hit {
+    fill: transparent;
+    cursor: pointer;
+  }
+
+  .line {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 0.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 0.4px 0.6px rgba(0, 113, 227, 0.25));
+  }
+
+  .fill-shape {
+    fill: var(--accent);
+    fill-opacity: 0;
+    transition: fill-opacity 0.9s ease-out;
+  }
+  .fill-shape.show { fill-opacity: 0.18; }
+
+  .line.complete {
+    animation: lineGlow 1.2s ease-in-out;
+  }
+
+  @keyframes lineGlow {
+    0% { filter: drop-shadow(0 0 0 rgba(0, 113, 227, 0)); }
+    50% { filter: drop-shadow(0 0 2px rgba(0, 113, 227, 0.9)); }
+    100% { filter: drop-shadow(0 0.4px 0.6px rgba(0, 113, 227, 0.25)); }
+  }
+
+  .dot-flash {
+    fill: var(--bad);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .dot-flash.flash {
+    animation: flashRed 0.4s ease-out;
+  }
+  @keyframes flashRed {
+    0% { opacity: 0.9; r: 2.6; }
+    100% { opacity: 0; r: 6; }
+  }
+
+  .sparkle {
+    fill: #ffd60a;
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  .sparkle.go {
+    animation: sparkle 1.1s ease-out forwards;
+  }
+  @keyframes sparkle {
+    0% { opacity: 0; transform: scale(0.4); }
+    50% { opacity: 1; transform: scale(1.4); }
+    100% { opacity: 0; transform: scale(2); }
+  }
+
+  .buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    height: 44px;
+    padding: 0 22px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s, opacity 0.2s;
+    min-width: 44px;
+  }
+  .btn:hover { background: var(--accent-hover); }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn.secondary {
+    background: transparent;
+    color: var(--accent);
+    border: 1.5px solid var(--accent);
+  }
+  .btn.secondary:hover { background: var(--accent-soft); }
+
+  .btn.ghost {
+    background: var(--bg-card);
+    color: var(--text);
+    box-shadow: var(--shadow);
+  }
+  .btn.ghost:hover { background: #f5f5f7; }
+
+  details {
+    background: var(--bg-card);
+    border-radius: 14px;
+    padding: 14px 18px;
+    box-shadow: var(--shadow);
+  }
+  summary {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::after {
+    content: '+';
+    font-size: 18px;
+    color: var(--text-3);
+    transition: transform 0.2s;
+  }
+  details[open] summary::after { transform: rotate(45deg); }
+
+  .rules-content {
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--text-2);
+    line-height: 1.6;
+  }
+  .rules-content ul { padding-left: 20px; }
+  .rules-content li { margin-bottom: 4px; }
+
+  .progress {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .pip {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #e5e5ea;
+    transition: background 0.3s, transform 0.2s;
+  }
+  .pip.done { background: var(--good); }
+  .pip.current {
+    background: var(--accent);
+    transform: scale(1.2);
+    box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.18);
+  }
+
+  /* Win overlay */
+  .win-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+    padding: 20px;
+  }
+  .win-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .win-card {
+    background: #fff;
+    border-radius: 22px;
+    padding: 28px 26px;
+    max-width: 320px;
+    width: 100%;
+    text-align: center;
+    transform: scale(0.92);
+    transition: transform 0.3s;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+  }
+  .win-overlay.show .win-card { transform: scale(1); }
+  .win-emoji { font-size: 48px; margin-bottom: 4px; }
+  .win-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .win-time {
+    font-size: 44px;
+    font-weight: 700;
+    color: var(--accent);
+    margin: 10px 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .win-sub { font-size: 14px; color: var(--text-2); margin-bottom: 20px; }
+  .win-best { font-size: 13px; color: var(--good); font-weight: 600; margin-top: -6px; margin-bottom: 14px; }
+  .win-actions { display: flex; flex-direction: column; gap: 8px; }
+  .win-actions .btn { width: 100%; }
+
+  @media (max-width: 380px) {
+    .hud-value { font-size: 18px; }
+    .btn { font-size: 14px; padding: 0 18px; }
+  }
+</style>
+</head>
+<body>
+<a class="back" href="../"><span class="arrow">←</span> Back</a>
+
+<main class="wrap">
+  <header>
+    <h1>Dot Connect</h1>
+    <p class="subtitle">Tap dots in order to reveal each picture</p>
+  </header>
+
+  <div class="hud">
+    <div class="hud-item">
+      <div class="hud-label">Picture</div>
+      <div class="hud-value" id="hudPicture">1 / 6</div>
+    </div>
+    <div class="hud-item">
+      <div class="hud-label">Time</div>
+      <div class="hud-value" id="hudTime">0:00</div>
+    </div>
+    <div class="hud-item">
+      <div class="hud-label">Best</div>
+      <div class="hud-value" id="hudBest">—</div>
+    </div>
+  </div>
+
+  <div class="progress" id="progress"></div>
+
+  <div class="board-wrap" id="boardWrap">
+    <div class="picture-name" id="pictureName">Diamond</div>
+    <svg id="canvas" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <filter id="shapeGlow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="0.6"/>
+        </filter>
+      </defs>
+      <polygon id="fillShape" class="fill-shape" points=""/>
+      <polyline id="line" class="line" points=""/>
+      <g id="dotsLayer"></g>
+      <g id="sparkleLayer"></g>
+    </svg>
+  </div>
+
+  <div class="status" id="status">Tap dot 1 to start the timer</div>
+
+  <div class="buttons">
+    <button class="btn primary" id="restartBtn">Restart</button>
+    <button class="btn ghost" id="skipBtn">Skip Picture</button>
+  </div>
+
+  <details>
+    <summary>How to Play</summary>
+    <div class="rules-content">
+      <ul>
+        <li>Tap each dot in numerical order: 1 → 2 → 3 …</li>
+        <li>Every correct tap draws a line from the last dot.</li>
+        <li>Connect every dot to reveal the picture.</li>
+        <li>The timer starts when you tap dot 1 of the first picture and runs through all six.</li>
+        <li>Wrong tap? The board shakes — keep going to find the right dot.</li>
+        <li>Finish all 6 pictures to record your time on the leaderboard. Lower is better.</li>
+      </ul>
+    </div>
+  </details>
+</main>
+
+<div class="win-overlay" id="winOverlay">
+  <div class="win-card">
+    <div class="win-emoji">★</div>
+    <div class="win-title">All Pictures Connected!</div>
+    <div class="win-time" id="winTime">0:00</div>
+    <div class="win-best" id="winBest" style="display:none">★ New Personal Best</div>
+    <div class="win-sub">Six pictures, no shortcuts.</div>
+    <div class="win-actions">
+      <button class="btn primary" id="winPlayAgain">Play Again</button>
+      <button class="btn secondary" id="winViewBoard">View Leaderboard</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const PICTURES = [
+    {
+      name: 'Diamond',
+      dots: [[50, 18], [80, 50], [50, 82], [20, 50]]
+    },
+    {
+      name: 'House',
+      dots: [
+        [22, 44], [50, 18], [78, 44], [78, 84],
+        [62, 84], [62, 62], [38, 62], [38, 84], [22, 84]
+      ]
+    },
+    {
+      name: 'Star',
+      dots: [
+        [50, 10], [60.6, 35.4], [88, 37.6], [67.1, 55.6],
+        [73.5, 82.4], [50, 68], [26.5, 82.4], [32.9, 55.6],
+        [12, 37.6], [39.4, 35.4]
+      ]
+    },
+    {
+      name: 'Fish',
+      dots: [
+        [16, 50], [30, 30], [56, 26], [72, 38],
+        [90, 22], [90, 76], [72, 60], [56, 70], [30, 66]
+      ]
+    },
+    {
+      name: 'Heart',
+      dots: [
+        [50, 30], [60, 20], [72, 18], [82, 26], [82, 38],
+        [72, 52], [50, 74], [28, 52], [18, 38], [18, 26],
+        [28, 18], [40, 20]
+      ]
+    },
+    {
+      name: 'Cat',
+      dots: [
+        [25, 32], [20, 12], [40, 26], [60, 26], [80, 12],
+        [75, 32], [86, 52], [78, 72], [60, 82], [40, 82],
+        [22, 72], [14, 52]
+      ]
+    }
+  ];
+
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+
+  const els = {
+    canvas: document.getElementById('canvas'),
+    boardWrap: document.getElementById('boardWrap'),
+    dotsLayer: document.getElementById('dotsLayer'),
+    sparkleLayer: document.getElementById('sparkleLayer'),
+    line: document.getElementById('line'),
+    fillShape: document.getElementById('fillShape'),
+    pictureName: document.getElementById('pictureName'),
+    hudPicture: document.getElementById('hudPicture'),
+    hudTime: document.getElementById('hudTime'),
+    hudBest: document.getElementById('hudBest'),
+    progress: document.getElementById('progress'),
+    status: document.getElementById('status'),
+    restartBtn: document.getElementById('restartBtn'),
+    skipBtn: document.getElementById('skipBtn'),
+    winOverlay: document.getElementById('winOverlay'),
+    winTime: document.getElementById('winTime'),
+    winBest: document.getElementById('winBest'),
+    winPlayAgain: document.getElementById('winPlayAgain'),
+    winViewBoard: document.getElementById('winViewBoard')
+  };
+
+  const LS_BEST = 'dotconnect-best-total';
+  const LS_PIC_BEST = 'dotconnect-best-picture';
+
+  let state = {
+    pictureIndex: 0,
+    nextDot: 0,
+    points: [],
+    started: false,
+    pictureDone: false,
+    runDone: false,
+    runStartTime: 0,
+    pictureStartTime: 0,
+    timerInterval: null,
+    autoNextTimer: null
+  };
+
+  function fmtTime(sec) {
+    sec = Math.max(0, Math.floor(sec));
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return m + ':' + String(s).padStart(2, '0');
+  }
+
+  function getBestTotal() {
+    try { return parseInt(localStorage.getItem(LS_BEST), 10) || null; } catch (e) { return null; }
+  }
+  function setBestTotal(v) {
+    try { localStorage.setItem(LS_BEST, String(v)); } catch (e) {}
+  }
+  function getPictureBests() {
+    try { return JSON.parse(localStorage.getItem(LS_PIC_BEST)) || {}; } catch (e) { return {}; }
+  }
+  function setPictureBest(name, sec) {
+    const all = getPictureBests();
+    if (!all[name] || sec < all[name]) {
+      all[name] = sec;
+      try { localStorage.setItem(LS_PIC_BEST, JSON.stringify(all)); } catch (e) {}
+    }
+  }
+
+  function refreshBestHud() {
+    const best = getBestTotal();
+    els.hudBest.textContent = best ? fmtTime(best) : '—';
+  }
+
+  function buildProgress() {
+    els.progress.innerHTML = '';
+    for (let i = 0; i < PICTURES.length; i++) {
+      const pip = document.createElement('div');
+      pip.className = 'pip';
+      els.progress.appendChild(pip);
+    }
+    updateProgress();
+  }
+
+  function updateProgress() {
+    [...els.progress.children].forEach((pip, i) => {
+      pip.classList.toggle('done', i < state.pictureIndex);
+      pip.classList.toggle('current', i === state.pictureIndex && !state.runDone);
+    });
+  }
+
+  function centroid(dots) {
+    let sx = 0, sy = 0;
+    for (const d of dots) { sx += d[0]; sy += d[1]; }
+    return [sx / dots.length, sy / dots.length];
+  }
+
+  function numberPosition(dot, ctr) {
+    const dx = dot[0] - ctr[0];
+    const dy = dot[1] - ctr[1];
+    const len = Math.sqrt(dx * dx + dy * dy) || 1;
+    const off = 6.2;
+    return [dot[0] + off * dx / len, dot[1] + off * dy / len];
+  }
+
+  function clearSvg() {
+    els.dotsLayer.innerHTML = '';
+    els.sparkleLayer.innerHTML = '';
+    els.line.setAttribute('points', '');
+    els.line.classList.remove('complete');
+    els.fillShape.setAttribute('points', '');
+    els.fillShape.classList.remove('show');
+  }
+
+  function renderPicture() {
+    clearSvg();
+    state.nextDot = 0;
+    state.points = [];
+    state.pictureDone = false;
+
+    const pic = PICTURES[state.pictureIndex];
+    const ctr = centroid(pic.dots);
+
+    pic.dots.forEach((d, i) => {
+      const g = document.createElementNS(SVG_NS, 'g');
+      g.setAttribute('class', 'dot');
+      g.dataset.i = String(i);
+
+      const flash = document.createElementNS(SVG_NS, 'circle');
+      flash.setAttribute('class', 'dot-flash');
+      flash.setAttribute('cx', d[0]);
+      flash.setAttribute('cy', d[1]);
+      flash.setAttribute('r', '3');
+      g.appendChild(flash);
+
+      const pulse = document.createElementNS(SVG_NS, 'circle');
+      pulse.setAttribute('class', 'dot-pulse');
+      pulse.setAttribute('cx', d[0]);
+      pulse.setAttribute('cy', d[1]);
+      pulse.setAttribute('r', '2');
+      g.appendChild(pulse);
+
+      const fill = document.createElementNS(SVG_NS, 'circle');
+      fill.setAttribute('class', 'dot-fill');
+      fill.setAttribute('cx', d[0]);
+      fill.setAttribute('cy', d[1]);
+      fill.setAttribute('r', '1.6');
+      g.appendChild(fill);
+
+      const np = numberPosition(d, ctr);
+      const num = document.createElementNS(SVG_NS, 'text');
+      num.setAttribute('class', 'dot-num');
+      num.setAttribute('x', np[0]);
+      num.setAttribute('y', np[1]);
+      num.textContent = String(i + 1);
+      g.appendChild(num);
+
+      // Large invisible hit area for 44px+ touch target.
+      // SVG renders 100 units wide → at typical 320–460px display, r=4.5 → ~28–41px.
+      // We use r=5 so it exceeds 44px on most phones, and SVG inner-padding wraps overflow.
+      const hit = document.createElementNS(SVG_NS, 'circle');
+      hit.setAttribute('class', 'dot-hit');
+      hit.setAttribute('cx', d[0]);
+      hit.setAttribute('cy', d[1]);
+      hit.setAttribute('r', '5');
+      hit.addEventListener('pointerdown', onDotTap, { passive: true });
+      g.appendChild(hit);
+
+      els.dotsLayer.appendChild(g);
+    });
+
+    els.pictureName.textContent = pic.name;
+    els.hudPicture.textContent = (state.pictureIndex + 1) + ' / ' + PICTURES.length;
+    setStatus(state.started
+      ? 'Tap dot 1 next'
+      : 'Tap dot 1 to start the timer', '');
+    updateProgress();
+    refreshNextHighlight();
+  }
+
+  function refreshNextHighlight() {
+    const groups = els.dotsLayer.children;
+    for (let i = 0; i < groups.length; i++) {
+      const g = groups[i];
+      const pulse = g.querySelector('.dot-pulse');
+      const fill = g.querySelector('.dot-fill');
+      const num = g.querySelector('.dot-num');
+      const idx = Number(g.dataset.i);
+
+      pulse.classList.remove('next');
+      fill.classList.remove('next', 'connected');
+      num.classList.remove('connected', 'faded');
+
+      if (state.pictureDone) {
+        num.classList.add('faded');
+      } else if (idx < state.nextDot) {
+        fill.classList.add('connected');
+        num.classList.add('connected');
+      } else if (idx === state.nextDot) {
+        pulse.classList.add('next');
+        fill.classList.add('next');
+      }
+    }
+  }
+
+  function setStatus(msg, kind) {
+    els.status.textContent = msg;
+    els.status.className = 'status' + (kind ? ' ' + kind : '');
+  }
+
+  function onDotTap(e) {
+    if (state.pictureDone || state.runDone) return;
+    const idx = Number(e.currentTarget.parentNode.dataset.i);
+
+    if (idx !== state.nextDot) {
+      // Wrong dot - flash it red, shake the board.
+      const flash = e.currentTarget.parentNode.querySelector('.dot-flash');
+      flash.classList.remove('flash');
+      // Force reflow so the animation re-triggers.
+      void flash.getBoundingClientRect();
+      flash.classList.add('flash');
+      els.boardWrap.classList.remove('shake');
+      void els.boardWrap.getBoundingClientRect();
+      els.boardWrap.classList.add('shake');
+      setStatus('Find dot ' + (state.nextDot + 1), 'error');
+      return;
+    }
+
+    // Correct tap.
+    if (!state.started) {
+      state.started = true;
+      state.runStartTime = performance.now();
+      state.pictureStartTime = state.runStartTime;
+      startTimer();
+    }
+
+    const pic = PICTURES[state.pictureIndex];
+    const dot = pic.dots[idx];
+    state.points.push(dot);
+    state.nextDot++;
+
+    const ptsStr = state.points.map(p => p[0] + ',' + p[1]).join(' ');
+    els.line.setAttribute('points', ptsStr);
+
+    refreshNextHighlight();
+
+    if (state.nextDot < pic.dots.length) {
+      setStatus('Tap dot ' + (state.nextDot + 1), '');
+    } else {
+      completePicture();
+    }
+  }
+
+  function completePicture() {
+    state.pictureDone = true;
+    const pic = PICTURES[state.pictureIndex];
+
+    // Close the polygon and start the fill animation.
+    const closedPts = pic.dots.concat([pic.dots[0]]);
+    const ptsStr = closedPts.map(p => p[0] + ',' + p[1]).join(' ');
+    els.line.setAttribute('points', ptsStr);
+    els.fillShape.setAttribute('points', pic.dots.map(p => p[0] + ',' + p[1]).join(' '));
+    requestAnimationFrame(() => {
+      els.fillShape.classList.add('show');
+      els.line.classList.add('complete');
+    });
+
+    refreshNextHighlight();
+    spawnSparkles();
+
+    const pictureSec = (performance.now() - state.pictureStartTime) / 1000;
+    setPictureBest(pic.name, Math.round(pictureSec));
+
+    setStatus(pic.name + ' complete in ' + fmtTime(pictureSec) + ' — nice!', 'win');
+
+    if (state.pictureIndex === PICTURES.length - 1) {
+      // Final picture - finish run.
+      clearTimeout(state.autoNextTimer);
+      state.autoNextTimer = setTimeout(finishRun, 1400);
+    } else {
+      clearTimeout(state.autoNextTimer);
+      state.autoNextTimer = setTimeout(advancePicture, 1400);
+    }
+  }
+
+  function spawnSparkles() {
+    const pic = PICTURES[state.pictureIndex];
+    const ctr = centroid(pic.dots);
+    const n = 10;
+    for (let i = 0; i < n; i++) {
+      const ang = (i / n) * Math.PI * 2 + Math.random() * 0.4;
+      const r = 18 + Math.random() * 14;
+      const x = ctr[0] + Math.cos(ang) * r;
+      const y = ctr[1] + Math.sin(ang) * r;
+      const star = document.createElementNS(SVG_NS, 'circle');
+      star.setAttribute('class', 'sparkle');
+      star.setAttribute('cx', x);
+      star.setAttribute('cy', y);
+      star.setAttribute('r', '1.1');
+      els.sparkleLayer.appendChild(star);
+      // Stagger.
+      setTimeout(() => star.classList.add('go'), i * 40);
+      setTimeout(() => star.remove(), 1300 + i * 40);
+    }
+  }
+
+  function advancePicture() {
+    state.pictureIndex++;
+    state.pictureStartTime = performance.now();
+    renderPicture();
+  }
+
+  function finishRun() {
+    state.runDone = true;
+    stopTimer();
+    const totalSec = Math.round((performance.now() - state.runStartTime) / 1000);
+    els.hudTime.textContent = fmtTime(totalSec);
+    els.hudTime.classList.add('good');
+    updateProgress();
+
+    const prevBest = getBestTotal();
+    const isBest = !prevBest || totalSec < prevBest;
+    if (isBest) setBestTotal(totalSec);
+    refreshBestHud();
+
+    els.winTime.textContent = fmtTime(totalSec);
+    els.winBest.style.display = isBest ? 'block' : 'none';
+    els.winOverlay.classList.add('show');
+
+    if (window.Leaderboard && Leaderboard.submitScore) {
+      try { Leaderboard.submitScore(totalSec, { lowerIsBetter: true }); } catch (e) {}
+    }
+  }
+
+  function startTimer() {
+    stopTimer();
+    state.timerInterval = setInterval(() => {
+      const sec = (performance.now() - state.runStartTime) / 1000;
+      els.hudTime.textContent = fmtTime(sec);
+    }, 200);
+  }
+
+  function stopTimer() {
+    if (state.timerInterval) {
+      clearInterval(state.timerInterval);
+      state.timerInterval = null;
+    }
+  }
+
+  function restart() {
+    clearTimeout(state.autoNextTimer);
+    stopTimer();
+    state = {
+      pictureIndex: 0,
+      nextDot: 0,
+      points: [],
+      started: false,
+      pictureDone: false,
+      runDone: false,
+      runStartTime: 0,
+      pictureStartTime: 0,
+      timerInterval: null,
+      autoNextTimer: null
+    };
+    els.hudTime.textContent = '0:00';
+    els.hudTime.classList.remove('good');
+    els.winOverlay.classList.remove('show');
+    refreshBestHud();
+    buildProgress();
+    renderPicture();
+  }
+
+  function skipPicture() {
+    if (state.runDone) return;
+    clearTimeout(state.autoNextTimer);
+    if (state.pictureIndex >= PICTURES.length - 1) return;
+    // Auto-finish current picture so timer keeps a fair count, then advance.
+    if (!state.pictureDone) {
+      // Penalty: act as if the picture took 60s extra.
+      state.pictureStartTime -= 60000;
+      if (state.started) {
+        state.runStartTime -= 60000;
+      }
+    }
+    advancePicture();
+    if (state.started) setStatus('Skipped — +60s penalty. Tap dot 1.', 'error');
+  }
+
+  // Wire up events.
+  els.restartBtn.addEventListener('click', restart);
+  els.skipBtn.addEventListener('click', skipPicture);
+  els.winPlayAgain.addEventListener('click', restart);
+  els.winViewBoard.addEventListener('click', () => {
+    window.location.href = '../leaderboard/#dotconnect';
+  });
+  // Tap outside the win card closes it.
+  els.winOverlay.addEventListener('click', (e) => {
+    if (e.target === els.winOverlay) els.winOverlay.classList.remove('show');
+  });
+
+  // Boot.
+  refreshBestHud();
+  buildProgress();
+  renderPicture();
+})();
+</script>
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>
