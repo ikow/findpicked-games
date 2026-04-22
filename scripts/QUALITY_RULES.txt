@@ -1,0 +1,17 @@
+MANDATORY QUALITY RULES (violations = broken game):
+
+1. NO self-referencing constants. WRONG: const X = X; RIGHT: const X = Math.sqrt(3);
+2. ALL text must be English. No Chinese characters anywhere.
+3. Back link MUST exist: <a href="../" style="position:fixed;top:16px;left:16px;color:#6e6e73;text-decoration:none;font-size:15px;z-index:9999">← Back</a>
+4. Game MUST be playable on first load — no stuck states, no impossible starting positions.
+5. Touch targets minimum 44px for all interactive elements.
+6. Controls must be obvious — show control hints on screen.
+7. Leaderboard call MUST be guarded: window.Leaderboard && Leaderboard.submitScore(score)
+8. Include <script src="../shared-leaderboard.js"></script> before </body>
+9. How to Play section: <button class="rules-toggle" onclick="this.nextElementSibling.classList.toggle('open')">How to Play ▾</button><div class="rules-panel">...</div>
+10. Rules CSS must be included in <style>.
+11. localStorage for high scores with try/catch.
+12. Game over screen with score + Play Again button.
+13. NO external dependencies, NO images — everything in one index.html.
+14. Mobile responsive — test at 375px width mentally.
+15. Canvas games: handle devicePixelRatio for sharp rendering.

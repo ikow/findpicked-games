@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Tower of Hanoi — FindPicked Games</title>
+<meta name="description" content="Play Tower of Hanoi free — move all disks to the right peg in as few moves as possible. No downloads.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Crect x='6' y='20' width='20' height='2' fill='white'/%3E%3Crect x='8' y='16' width='16' height='3' rx='1' fill='white'/%3E%3Crect x='10' y='12' width='12' height='3' rx='1' fill='white'/%3E%3Crect x='12' y='8' width='8' height='3' rx='1' fill='white'/%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.06);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+  --radius: 16px;
+  --peg-color: #c7c7cc;
+  --base-color: #d1d1d6;
+  --highlight: #0071e3;
+  --success: #34c759;
+}
+
+html, body { height: 100%; overscroll-behavior: none; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px 20px 40px;
+  touch-action: manipulation;
+}
+
+.back {
+  align-self: flex-start;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 400;
+  padding: 8px 4px;
+  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.back:hover { color: var(--text-primary); }
+.back .arrow { font-size: 18px; line-height: 1; }
+
+.wrap {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+h1 {
+  font-size: clamp(32px, 7vw, 44px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 15px;
+  text-align: center;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.stat {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 8px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.stat-label {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+.stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.stat-value.good { color: var(--success); }
+.stat-value.accent { color: var(--accent); }
+
+.board {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px 16px 12px;
+  box-shadow: var(--shadow);
+  position: relative;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.pegs {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  height: 280px;
+  position: relative;
+}
+
+.peg {
+  flex: 1;
+  max-width: 33%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  justify-content: flex-start;
+  cursor: pointer;
+  padding-top: 12px;
+  transition: background 0.2s ease;
+  border-radius: 12px;
+  min-width: 44px;
+}
+.peg:hover { background: rgba(0,113,227,0.04); }
+.peg.selected { background: rgba(0,113,227,0.1); }
+.peg.selected .peg-stick { background: var(--accent); }
+.peg.target { background: rgba(52,199,89,0.08); }
+
+.peg-stick {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  transform: translateX(-50%);
+  width: 6px;
+  height: calc(100% - 16px);
+  background: var(--peg-color);
+  border-radius: 3px;
+  transition: background 0.2s ease;
+  z-index: 0;
+}
+
+.peg-base {
+  position: absolute;
+  bottom: 0;
+  left: 4%;
+  right: 4%;
+  height: 8px;
+  background: var(--base-color);
+  border-radius: 4px;
+  z-index: 1;
+}
+
+.peg-label {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  z-index: 2;
+}
+
+.disk {
+  height: 26px;
+  border-radius: 13px;
+  margin-bottom: 2px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  position: relative;
+  z-index: 2;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s;
+}
+.disk.lifted {
+  transform: translateY(-18px) scale(1.03);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
+
+.size-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  justify-content: center;
+  padding: 6px 0;
+}
+.size-row label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+.size-btns {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.size-btn {
+  min-width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+.size-btn:hover { border-color: var(--accent); color: var(--accent); }
+.size-btn.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.btn {
+  min-height: 44px;
+  padding: 10px 22px;
+  border-radius: 22px;
+  border: none;
+  background: var(--accent);
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn.secondary {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+.btn.secondary:hover { background: #f5f5f7; }
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.96);
+  border-radius: var(--radius);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 10;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 24px;
+  text-align: center;
+}
+.overlay.show { display: flex; }
+.overlay h2 {
+  font-size: 28px;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+.overlay p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.5;
+  max-width: 320px;
+}
+.overlay .badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  background: rgba(52,199,89,0.12);
+  color: var(--success);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.rules-toggle {
+  display: inline-block;
+  margin: 4px auto 0;
+  font-size: 13px;
+  color: var(--accent);
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+  padding: 4px 8px;
+}
+.rules-toggle:hover { text-decoration: underline; }
+.rules-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  text-align: left;
+  max-width: 560px;
+  margin: 0 auto;
+}
+.rules-panel.open { max-height: 500px; }
+.rules-panel-inner { padding: 12px 4px 0; }
+.rules-panel ul { margin: 6px 0 0 20px; }
+.rules-panel li { margin-bottom: 4px; }
+
+@media (max-width: 480px) {
+  body { padding: 16px 12px 32px; }
+  .wrap { gap: 14px; }
+  .pegs { height: 240px; }
+  .disk { height: 22px; border-radius: 11px; font-size: 11px; }
+  .stat-value { font-size: 17px; }
+  .stat { padding: 8px 4px; }
+  .stat-label { font-size: 10px; }
+  .board { padding: 18px 10px 10px; }
+  .size-btn { min-width: 40px; height: 40px; font-size: 14px; }
+}
+
+@media (max-width: 360px) {
+  .stats { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="back" href="../" aria-label="Back to games">
+    <span class="arrow">←</span>
+    <span>Games</span>
+  </a>
+
+  <header>
+    <h1>Tower of Hanoi</h1>
+    <p class="subtitle">Move all disks to the right peg. One at a time. Larger never on smaller.</p>
+    <button class="rules-toggle" id="rules-btn">How to Play ▾</button>
+    <div class="rules-panel" id="rules-panel">
+      <div class="rules-panel-inner">
+        <ul>
+          <li>Tap a peg to pick up its <strong>top disk</strong>, then tap another peg to place it.</li>
+          <li>You can only move <strong>one disk at a time</strong>.</li>
+          <li>You can never place a <strong>larger disk on a smaller disk</strong>.</li>
+          <li>Goal: move the entire stack from the <strong>left peg (A)</strong> to the <strong>right peg (C)</strong>.</li>
+          <li>The minimum number of moves for <em>n</em> disks is <strong>2ⁿ − 1</strong>.</li>
+          <li>Tap <strong>Solve</strong> to watch an automatic solution (won't submit to leaderboard).</li>
+        </ul>
+      </div>
+    </div>
+  </header>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-label">Moves</div>
+      <div class="stat-value" id="moves">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Optimal</div>
+      <div class="stat-value accent" id="optimal">31</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Time</div>
+      <div class="stat-value" id="time">0:00</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Best</div>
+      <div class="stat-value" id="best">—</div>
+    </div>
+  </div>
+
+  <div class="board" id="board">
+    <div class="pegs" id="pegs">
+      <div class="peg" data-peg="0">
+        <div class="peg-label">A</div>
+        <div class="peg-stick"></div>
+        <div class="peg-base"></div>
+      </div>
+      <div class="peg" data-peg="1">
+        <div class="peg-label">B</div>
+        <div class="peg-stick"></div>
+        <div class="peg-base"></div>
+      </div>
+      <div class="peg" data-peg="2">
+        <div class="peg-label">C</div>
+        <div class="peg-stick"></div>
+        <div class="peg-base"></div>
+      </div>
+    </div>
+    <div class="overlay" id="overlay">
+      <div class="badge" id="badge">Solved</div>
+      <h2 id="overlay-title">Well done!</h2>
+      <p id="overlay-text">You solved it.</p>
+      <button class="btn" id="overlay-play">Play Again</button>
+    </div>
+  </div>
+
+  <div class="size-row">
+    <label>Disks:</label>
+    <div class="size-btns" id="size-btns">
+      <button class="size-btn" data-size="3">3</button>
+      <button class="size-btn" data-size="4">4</button>
+      <button class="size-btn active" data-size="5">5</button>
+      <button class="size-btn" data-size="6">6</button>
+      <button class="size-btn" data-size="7">7</button>
+      <button class="size-btn" data-size="8">8</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn secondary" id="reset-btn">Reset</button>
+    <button class="btn secondary" id="solve-btn">Solve</button>
+  </div>
+</div>
+
+<script>
+(function() {
+  const DISK_COLORS = [
+    '#0071e3', '#34c759', '#ff9500', '#ff3b30',
+    '#af52de', '#ff2d55', '#5ac8fa', '#ffcc00'
+  ];
+
+  const pegsEl = document.getElementById('pegs');
+  const movesEl = document.getElementById('moves');
+  const optimalEl = document.getElementById('optimal');
+  const timeEl = document.getElementById('time');
+  const bestEl = document.getElementById('best');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlay-title');
+  const overlayText = document.getElementById('overlay-text');
+  const overlayPlay = document.getElementById('overlay-play');
+  const badge = document.getElementById('badge');
+  const sizeBtns = document.getElementById('size-btns');
+  const resetBtn = document.getElementById('reset-btn');
+  const solveBtn = document.getElementById('solve-btn');
+  const rulesBtn = document.getElementById('rules-btn');
+  const rulesPanel = document.getElementById('rules-panel');
+
+  let disks = 5;
+  let towers = [[], [], []];
+  let selected = null;
+  let moves = 0;
+  let startTime = null;
+  let elapsed = 0;
+  let timerId = null;
+  let solving = false;
+  let usedSolve = false;
+  let won = false;
+
+  const BEST_KEY = 'hanoi-best-';
+
+  function formatTime(s) {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${sec.toString().padStart(2, '0')}`;
+  }
+
+  function loadBest(n) {
+    try {
+      const raw = localStorage.getItem(BEST_KEY + n);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  }
+
+  function saveBest(n, best) {
+    try { localStorage.setItem(BEST_KEY + n, JSON.stringify(best)); } catch {}
+  }
+
+  function updateBestDisplay() {
+    const best = loadBest(disks);
+    if (best) {
+      bestEl.textContent = best.moves;
+      bestEl.classList.toggle('good', best.moves === Math.pow(2, disks) - 1);
+    } else {
+      bestEl.textContent = '—';
+      bestEl.classList.remove('good');
+    }
+  }
+
+  function diskWidth(size, maxDisks) {
+    const minPct = 26;
+    const maxPct = 92;
+    const step = (maxPct - minPct) / Math.max(1, maxDisks - 1);
+    return minPct + (size - 1) * step;
+  }
+
+  function render() {
+    const pegEls = pegsEl.querySelectorAll('.peg');
+    pegEls.forEach((pegEl, i) => {
+      const stick = pegEl.querySelector('.peg-stick');
+      const base = pegEl.querySelector('.peg-base');
+      const label = pegEl.querySelector('.peg-label');
+      pegEl.innerHTML = '';
+      pegEl.appendChild(label);
+      pegEl.appendChild(stick);
+      pegEl.appendChild(base);
+      pegEl.classList.toggle('selected', selected === i);
+
+      towers[i].forEach((size, idx) => {
+        const d = document.createElement('div');
+        d.className = 'disk';
+        d.style.width = diskWidth(size, disks) + '%';
+        d.style.background = DISK_COLORS[(size - 1) % DISK_COLORS.length];
+        d.textContent = size;
+        if (selected === i && idx === towers[i].length - 1) {
+          d.classList.add('lifted');
+        }
+        pegEl.appendChild(d);
+      });
+    });
+  }
+
+  function canMove(from, to) {
+    if (from === to) return false;
+    if (towers[from].length === 0) return false;
+    const disk = towers[from][towers[from].length - 1];
+    if (towers[to].length === 0) return true;
+    const top = towers[to][towers[to].length - 1];
+    return disk < top;
+  }
+
+  function startTimer() {
+    if (startTime) return;
+    startTime = Date.now();
+    timerId = setInterval(() => {
+      elapsed = Math.floor((Date.now() - startTime) / 1000);
+      timeEl.textContent = formatTime(elapsed);
+    }, 250);
+  }
+
+  function stopTimer() {
+    if (timerId) clearInterval(timerId);
+    timerId = null;
+  }
+
+  function checkWin() {
+    if (towers[2].length === disks) {
+      won = true;
+      stopTimer();
+      setTimeout(() => showWin(), 350);
+    }
+  }
+
+  function doMove(from, to, byUser) {
+    if (!canMove(from, to)) return false;
+    if (byUser && !startTime) startTimer();
+    const disk = towers[from].pop();
+    towers[to].push(disk);
+    moves++;
+    movesEl.textContent = moves;
+    render();
+    if (byUser) checkWin();
+    return true;
+  }
+
+  function onPegClick(i) {
+    if (solving || won) return;
+    if (selected === null) {
+      if (towers[i].length === 0) return;
+      selected = i;
+      render();
+    } else {
+      if (selected === i) {
+        selected = null;
+        render();
+        return;
+      }
+      const moved = doMove(selected, i, true);
+      if (!moved) {
+        if (towers[i].length > 0) {
+          selected = i;
+        } else {
+          selected = null;
+        }
+        render();
+      } else {
+        selected = null;
+        render();
+      }
+    }
+  }
+
+  function showWin() {
+    const optimal = Math.pow(2, disks) - 1;
+    const perfect = moves === optimal;
+    const time = elapsed;
+
+    if (!usedSolve) {
+      const best = loadBest(disks);
+      const better = !best || moves < best.moves || (moves === best.moves && time < best.time);
+      if (better) saveBest(disks, { moves, time });
+      updateBestDisplay();
+    }
+
+    badge.textContent = perfect ? 'Perfect!' : 'Solved';
+    badge.style.background = perfect ? 'rgba(52,199,89,0.12)' : 'rgba(0,113,227,0.1)';
+    badge.style.color = perfect ? 'var(--success)' : 'var(--accent)';
+    overlayTitle.textContent = perfect ? 'Optimal solution!' : 'Well done!';
+    overlayText.innerHTML = `Solved in <strong>${moves}</strong> move${moves !== 1 ? 's' : ''} · ${formatTime(time)}<br>Optimal: ${optimal} · ${disks} disks`;
+    overlay.classList.add('show');
+
+    if (!usedSolve && window.Leaderboard && Leaderboard.submitScore) {
+      const score = moves * 10000 + time;
+      setTimeout(() => {
+        Leaderboard.submitScore(score, { lowerIsBetter: true });
+      }, 700);
+    }
+  }
+
+  function reset(n) {
+    if (n !== undefined) disks = n;
+    towers = [[], [], []];
+    for (let i = disks; i >= 1; i--) towers[0].push(i);
+    selected = null;
+    moves = 0;
+    elapsed = 0;
+    startTime = null;
+    stopTimer();
+    solving = false;
+    usedSolve = false;
+    won = false;
+    movesEl.textContent = '0';
+    timeEl.textContent = '0:00';
+    optimalEl.textContent = Math.pow(2, disks) - 1;
+    overlay.classList.remove('show');
+    solveBtn.disabled = false;
+    resetBtn.disabled = false;
+    updateBestDisplay();
+    render();
+    sizeBtns.querySelectorAll('.size-btn').forEach(b => {
+      b.classList.toggle('active', +b.dataset.size === disks);
+    });
+  }
+
+  function buildSolution(n, from, to, via, list) {
+    if (n === 0) return;
+    buildSolution(n - 1, from, via, to, list);
+    list.push([from, to]);
+    buildSolution(n - 1, via, to, from, list);
+  }
+
+  async function autoSolve() {
+    if (solving) return;
+    if (won) return;
+    reset(disks);
+    usedSolve = true;
+    solving = true;
+    solveBtn.disabled = true;
+    const list = [];
+    buildSolution(disks, 0, 2, 1, list);
+    const baseDelay = disks >= 7 ? 220 : disks >= 5 ? 320 : 450;
+    for (let i = 0; i < list.length; i++) {
+      if (!solving) return;
+      const [from, to] = list[i];
+      selected = from;
+      render();
+      await sleep(baseDelay * 0.45);
+      if (!solving) return;
+      doMove(from, to, false);
+      selected = null;
+      render();
+      await sleep(baseDelay * 0.55);
+    }
+    solving = false;
+    solveBtn.disabled = false;
+    won = true;
+    setTimeout(() => showWin(), 300);
+  }
+
+  function sleep(ms) {
+    return new Promise(r => setTimeout(r, ms));
+  }
+
+  pegsEl.addEventListener('click', (e) => {
+    const peg = e.target.closest('.peg');
+    if (!peg) return;
+    onPegClick(+peg.dataset.peg);
+  });
+
+  sizeBtns.addEventListener('click', (e) => {
+    const btn = e.target.closest('.size-btn');
+    if (!btn) return;
+    const n = +btn.dataset.size;
+    if (n === disks && !won && moves === 0) return;
+    solving = false;
+    reset(n);
+  });
+
+  resetBtn.addEventListener('click', () => {
+    solving = false;
+    reset(disks);
+  });
+
+  solveBtn.addEventListener('click', () => {
+    autoSolve();
+  });
+
+  overlayPlay.addEventListener('click', () => {
+    reset(disks);
+  });
+
+  rulesBtn.addEventListener('click', () => {
+    rulesPanel.classList.toggle('open');
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === '1') onPegClick(0);
+    else if (e.key === '2') onPegClick(1);
+    else if (e.key === '3') onPegClick(2);
+    else if (e.key.toLowerCase() === 'r') { solving = false; reset(disks); }
+    else if (e.key === 'Escape') { selected = null; render(); }
+  });
+
+  reset(5);
+})();
+</script>
+
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Lights Out — FindPicked Games</title>
+<meta name="description" content="Play Lights Out free — turn off every light on a 5×5 grid. Each tap toggles its neighbors too.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ccircle cx='10' cy='10' r='3' fill='white'/%3E%3Ccircle cx='22' cy='10' r='3' fill='white' opacity='0.35'/%3E%3Ccircle cx='10' cy='22' r='3' fill='white' opacity='0.35'/%3E%3Ccircle cx='22' cy='22' r='3' fill='white'/%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-board: #f0ebe3;
+  --cell-off: #e8e3da;
+  --cell-on: #0071e3;
+  --cell-on-glow: rgba(0, 113, 227, 0.35);
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --radius: 16px;
+}
+
+html, body {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px 20px 40px;
+  touch-action: manipulation;
+}
+
+.wrap {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.back {
+  align-self: flex-start;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 400;
+  padding: 8px 4px;
+  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.back:hover { color: var(--text-primary); }
+.back .arrow { font-size: 18px; line-height: 1; }
+
+header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 4px;
+}
+
+h1 {
+  font-size: clamp(36px, 9vw, 52px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.scores {
+  display: flex;
+  gap: 8px;
+}
+
+.score-box {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 10px 14px;
+  min-width: 72px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.score-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  margin-bottom: 2px;
+}
+
+.score-value {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  transition: transform 0.2s ease;
+}
+.score-value.bump { transform: scale(1.12); }
+
+.subhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.subhead p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.rules-toggle {
+  display: inline-block;
+  font-size: 13px;
+  color: var(--accent);
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+  padding: 0;
+}
+.rules-toggle:hover { text-decoration: underline; }
+
+.rules-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  text-align: left;
+  margin-top: 4px;
+}
+.rules-panel.open { max-height: 600px; }
+.rules-panel ul { margin: 8px 0 0 18px; }
+.rules-panel li { margin-bottom: 4px; }
+
+.btn {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  height: 44px;
+  padding: 0 22px;
+  border-radius: 22px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  min-width: 44px;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn:active { transform: scale(0.97); }
+
+.btn.secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
+}
+.btn.secondary:hover { background: rgba(0, 113, 227, 0.06); }
+
+.board {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: var(--bg-board);
+  border-radius: var(--radius);
+  padding: 14px;
+  box-shadow: var(--shadow);
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.grid {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  gap: 10px;
+}
+
+.light {
+  background: var(--cell-off);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
+  -webkit-tap-highlight-color: transparent;
+  border: none;
+  font-family: inherit;
+  padding: 0;
+  min-width: 44px;
+  min-height: 44px;
+}
+.light.on {
+  background: var(--cell-on);
+  box-shadow: 0 0 24px var(--cell-on-glow), inset 0 1px 0 rgba(255,255,255,0.22);
+}
+.light:active { transform: scale(0.94); }
+
+.controls {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  text-align: center;
+}
+.overlay.show { opacity: 1; pointer-events: auto; }
+
+.overlay h2 {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.overlay p {
+  font-size: 15px;
+  color: var(--text-secondary);
+  max-width: 320px;
+}
+.overlay .row {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+footer {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  text-align: center;
+  margin-top: 4px;
+  line-height: 1.6;
+}
+
+@media (max-width: 420px) {
+  body { padding: 16px 14px 32px; }
+  .wrap { gap: 16px; }
+  .score-box { min-width: 64px; padding: 8px 12px; }
+  .score-value { font-size: 18px; }
+  .board { padding: 10px; }
+  .grid { gap: 8px; }
+  .overlay h2 { font-size: 28px; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="back" href="../" aria-label="Back to games">
+    <span class="arrow">←</span>
+    <span>Games</span>
+  </a>
+
+  <header>
+    <h1>Lights Out</h1>
+    <div class="scores">
+      <div class="score-box">
+        <div class="score-label">Level</div>
+        <div class="score-value" id="level">1</div>
+      </div>
+      <div class="score-box">
+        <div class="score-label">Moves</div>
+        <div class="score-value" id="moves">0</div>
+      </div>
+      <div class="score-box">
+        <div class="score-label">Best</div>
+        <div class="score-value" id="best">1</div>
+      </div>
+    </div>
+  </header>
+
+  <div style="text-align:center">
+    <button class="rules-toggle" onclick="this.nextElementSibling.classList.toggle('open')">How to Play ▾</button>
+    <div class="rules-panel">
+      <ul>
+        <li>Tap any light to toggle it and its four neighbors (up, down, left, right).</li>
+        <li>Your goal is to turn <strong>every</strong> light off.</li>
+        <li>Each puzzle is solvable. Clear it to advance to the next level.</li>
+        <li>Difficulty grows with each level. How deep can you go?</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="board" id="board">
+    <div class="grid" id="grid" role="grid" aria-label="Lights Out grid"></div>
+    <div class="overlay" id="overlay">
+      <h2 id="overlay-title">Level Complete</h2>
+      <p id="overlay-text">All lights out in 12 moves.</p>
+      <div class="row">
+        <button class="btn" id="overlay-primary">Next Level</button>
+        <button class="btn secondary" id="overlay-restart">Play Again</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn secondary" id="reset">Reset Level</button>
+    <button class="btn secondary" id="new-puzzle">New Puzzle</button>
+    <button class="btn" id="play-again">Play Again</button>
+  </div>
+
+  <footer>Tap a light to flip it and its neighbors. Turn them all off to win.</footer>
+</div>
+
+<script>
+(() => {
+  const SIZE = 5;
+  const STORE_BEST = 'findpicked:lightsout:best-level';
+
+  const gridEl = document.getElementById('grid');
+  const levelEl = document.getElementById('level');
+  const movesEl = document.getElementById('moves');
+  const bestEl = document.getElementById('best');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlay-title');
+  const overlayText = document.getElementById('overlay-text');
+  const overlayPrimary = document.getElementById('overlay-primary');
+  const overlayRestart = document.getElementById('overlay-restart');
+  const resetBtn = document.getElementById('reset');
+  const newPuzzleBtn = document.getElementById('new-puzzle');
+  const playAgainBtn = document.getElementById('play-again');
+
+  let board;          // 5x5 boolean
+  let initialBoard;   // snapshot at level start (for Reset Level)
+  let level = 1;
+  let moves = 0;
+  let solved = false;
+  let best = parseInt(localStorage.getItem(STORE_BEST) || '1', 10);
+
+  const cells = [];
+
+  // Build grid once
+  for (let r = 0; r < SIZE; r++) {
+    for (let c = 0; c < SIZE; c++) {
+      const btn = document.createElement('button');
+      btn.className = 'light';
+      btn.type = 'button';
+      btn.setAttribute('role', 'gridcell');
+      btn.setAttribute('aria-label', `Row ${r + 1}, column ${c + 1}`);
+      btn.dataset.r = r;
+      btn.dataset.c = c;
+      btn.addEventListener('click', () => onCellClick(r, c));
+      gridEl.appendChild(btn);
+      cells.push(btn);
+    }
+  }
+
+  function cellEl(r, c) { return cells[r * SIZE + c]; }
+
+  function render() {
+    for (let r = 0; r < SIZE; r++) {
+      for (let c = 0; c < SIZE; c++) {
+        cellEl(r, c).classList.toggle('on', board[r][c]);
+      }
+    }
+    movesEl.textContent = moves;
+    levelEl.textContent = level;
+    bestEl.textContent = best;
+  }
+
+  function emptyBoard() {
+    return Array.from({ length: SIZE }, () => Array(SIZE).fill(false));
+  }
+
+  function copyBoard(b) {
+    return b.map(row => row.slice());
+  }
+
+  function toggle(r, c) {
+    if (r >= 0 && r < SIZE && c >= 0 && c < SIZE) {
+      board[r][c] = !board[r][c];
+    }
+  }
+
+  function press(r, c) {
+    toggle(r, c);
+    toggle(r - 1, c);
+    toggle(r + 1, c);
+    toggle(r, c - 1);
+    toggle(r, c + 1);
+  }
+
+  function allOff() {
+    for (let r = 0; r < SIZE; r++)
+      for (let c = 0; c < SIZE; c++)
+        if (board[r][c]) return false;
+    return true;
+  }
+
+  // Generate a solvable puzzle by starting from all-off and pressing random cells.
+  // Difficulty grows with level but caps so it stays enjoyable.
+  function generatePuzzle(lvl) {
+    const presses = Math.min(3 + (lvl - 1) * 2, 14);
+    let candidate;
+    // Ensure the board isn't accidentally all-off
+    do {
+      candidate = emptyBoard();
+      const used = new Set();
+      let applied = 0;
+      // Pick distinct cells to press; duplicates would cancel and lower difficulty
+      while (applied < presses) {
+        const r = Math.floor(Math.random() * SIZE);
+        const c = Math.floor(Math.random() * SIZE);
+        const key = r * SIZE + c;
+        if (used.has(key)) continue;
+        used.add(key);
+        // Apply press directly on candidate
+        const toggleOn = (rr, cc) => {
+          if (rr >= 0 && rr < SIZE && cc >= 0 && cc < SIZE) candidate[rr][cc] = !candidate[rr][cc];
+        };
+        toggleOn(r, c);
+        toggleOn(r - 1, c);
+        toggleOn(r + 1, c);
+        toggleOn(r, c - 1);
+        toggleOn(r, c + 1);
+        applied++;
+      }
+    } while (candidate.every(row => row.every(v => !v)));
+    return candidate;
+  }
+
+  function startLevel(lvl) {
+    level = lvl;
+    moves = 0;
+    solved = false;
+    board = generatePuzzle(level);
+    initialBoard = copyBoard(board);
+    hideOverlay();
+    render();
+  }
+
+  function resetLevel() {
+    if (!initialBoard) return;
+    board = copyBoard(initialBoard);
+    moves = 0;
+    solved = false;
+    hideOverlay();
+    render();
+  }
+
+  function onCellClick(r, c) {
+    if (solved) return;
+    press(r, c);
+    moves++;
+    bumpScore(movesEl);
+    render();
+    if (allOff()) onSolved();
+  }
+
+  function bumpScore(el) {
+    el.classList.remove('bump');
+    void el.offsetWidth;
+    el.classList.add('bump');
+  }
+
+  function onSolved() {
+    solved = true;
+    // Best level = highest level you have cleared
+    if (level > best) {
+      best = level;
+      localStorage.setItem(STORE_BEST, String(best));
+      bumpScore(bestEl);
+    }
+    // Submit cleared level count to leaderboard (higher is better)
+    setTimeout(() => {
+      if (window.Leaderboard && Leaderboard.submitScore) {
+        Leaderboard.submitScore(level);
+      }
+    }, 500);
+    render();
+    showOverlay(
+      `Level ${level} Complete`,
+      `Cleared in ${moves} move${moves === 1 ? '' : 's'}.`,
+      'Next Level'
+    );
+  }
+
+  function showOverlay(title, text, primaryLabel) {
+    overlayTitle.textContent = title;
+    overlayText.textContent = text;
+    overlayPrimary.textContent = primaryLabel;
+    overlay.classList.add('show');
+  }
+  function hideOverlay() {
+    overlay.classList.remove('show');
+  }
+
+  // Buttons
+  resetBtn.addEventListener('click', resetLevel);
+  newPuzzleBtn.addEventListener('click', () => startLevel(level));
+  playAgainBtn.addEventListener('click', () => startLevel(1));
+  overlayPrimary.addEventListener('click', () => startLevel(level + 1));
+  overlayRestart.addEventListener('click', () => startLevel(1));
+
+  // Keyboard: R resets, N new puzzle
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'r' || e.key === 'R') { e.preventDefault(); resetLevel(); }
+    else if (e.key === 'n' || e.key === 'N') { e.preventDefault(); startLevel(level); }
+  });
+
+  // Boot
+  startLevel(1);
+})();
+</script>
+
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

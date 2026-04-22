@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Trivia Quiz — FindPicked Games</title>
+<meta name="description" content="Trivia Quiz — a clean, Apple-inspired multiple-choice trivia game with timer, streaks, and questions across science, history, geography, and pop culture.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ctext x='16' y='23' font-size='20' fill='white' text-anchor='middle' font-family='system-ui' font-weight='700'%3E%3F%3C/text%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-hover: #f5f5f7;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --accent-soft: rgba(0, 113, 227, 0.08);
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.06);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+  --correct: #30b85c;
+  --correct-soft: rgba(48, 184, 92, 0.12);
+  --wrong: #ff3b30;
+  --wrong-soft: rgba(255, 59, 48, 0.10);
+  --streak: #ff9500;
+}
+
+html, body {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px 20px 32px;
+  touch-action: manipulation;
+}
+
+a.back {
+  position: fixed;
+  top: 18px;
+  left: 20px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 400;
+  padding: 8px 10px 8px 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.2s ease;
+  z-index: 10;
+}
+a.back:hover { color: var(--text-primary); }
+a.back .arrow { font-size: 18px; line-height: 1; }
+
+.wrap {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 20px;
+  flex: 1;
+}
+
+header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: 18px;
+  text-align: center;
+}
+
+h1 {
+  font-size: clamp(30px, 7vw, 38px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.tagline {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+
+.rules-toggle {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--accent);
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+  padding: 0;
+}
+.rules-toggle:hover { text-decoration: underline; }
+
+.rules-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  text-align: left;
+  max-width: 480px;
+  margin: 8px auto 0;
+}
+.rules-panel.open { max-height: 500px; }
+.rules-panel ul { margin: 8px 0 0 18px; }
+.rules-panel li { margin-bottom: 4px; }
+
+/* HUD */
+.hud {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  background: var(--bg-card);
+  border-radius: 14px;
+  padding: 12px 10px;
+  box-shadow: var(--shadow);
+}
+.hud-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.hud-label {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.hud-value {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.hud-value.streak.active { color: var(--streak); }
+.hud-value.timer.low { color: var(--wrong); }
+
+/* Progress bar */
+.progress {
+  width: 100%;
+  height: 4px;
+  background: var(--bg-hover);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  width: 100%;
+  transition: width 0.2s linear, background 0.3s ease;
+  border-radius: 2px;
+}
+.progress-fill.low { background: var(--wrong); }
+
+/* Question card */
+.card {
+  background: var(--bg-card);
+  border-radius: 18px;
+  padding: 22px 20px 20px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.category {
+  display: inline-flex;
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 5px 10px;
+  border-radius: 999px;
+}
+
+.question {
+  font-size: clamp(18px, 4.6vw, 22px);
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 12px 16px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  -webkit-tap-highlight-color: transparent;
+  width: 100%;
+}
+.choice:hover:not(:disabled) { background: var(--bg-hover); border-color: #c0c0c6; }
+.choice:active:not(:disabled) { transform: scale(0.99); }
+
+.choice-letter {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 13px;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.choice-text { flex: 1; line-height: 1.3; }
+
+.choice:disabled { cursor: default; }
+
+.choice.correct {
+  background: var(--correct-soft);
+  border-color: var(--correct);
+  color: var(--text-primary);
+}
+.choice.correct .choice-letter {
+  background: var(--correct);
+  color: #fff;
+}
+
+.choice.wrong {
+  background: var(--wrong-soft);
+  border-color: var(--wrong);
+}
+.choice.wrong .choice-letter {
+  background: var(--wrong);
+  color: #fff;
+}
+
+.choice.dimmed { opacity: 0.55; }
+
+/* Feedback bar */
+.feedback {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 12px;
+  padding: 10px 14px;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.feedback.show { opacity: 1; transform: translateY(0); }
+.feedback.good { color: var(--correct); background: var(--correct-soft); }
+.feedback.bad { color: var(--wrong); background: var(--wrong-soft); }
+
+.next-btn {
+  align-self: stretch;
+  height: 48px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 24px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.12s ease, opacity 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.next-btn:hover { background: var(--accent-hover); }
+.next-btn:active { transform: scale(0.98); }
+.next-btn:disabled { opacity: 0; pointer-events: none; }
+
+/* Modal */
+.modal-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  z-index: 50;
+}
+.modal-bg.show { opacity: 1; pointer-events: auto; }
+
+.modal {
+  background: var(--bg-card);
+  border-radius: 20px;
+  padding: 28px 24px 24px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  transform: translateY(8px) scale(0.98);
+  transition: transform 0.25s ease;
+  text-align: center;
+}
+.modal-bg.show .modal { transform: translateY(0) scale(1); }
+
+.modal h2 {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+.modal .subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+
+.final-score {
+  font-size: 52px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--accent);
+  line-height: 1;
+  margin: 8px 0 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.final-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 22px 0;
+}
+.final-stat {
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 12px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.final-stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.final-stat-label {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.btn {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  height: 44px;
+  padding: 0 22px;
+  border-radius: 22px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.12s ease;
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn:active { transform: scale(0.97); }
+.btn.full { width: 100%; }
+.btn.secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
+}
+.btn.secondary:hover { background: var(--accent-soft); }
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  flex-direction: column;
+}
+
+footer {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  text-align: center;
+  margin-top: 2px;
+}
+
+@media (max-width: 380px) {
+  body { padding: 18px 14px 24px; }
+  .wrap { gap: 16px; }
+  .card { padding: 18px 16px 16px; }
+  .choice { font-size: 14.5px; padding: 11px 14px; }
+  .hud-value { font-size: 18px; }
+}
+</style>
+</head>
+<body>
+
+<a class="back" href="../"><span class="arrow">‹</span> Back</a>
+
+<div class="wrap">
+  <header>
+    <h1>Trivia Quiz</h1>
+    <div class="tagline">Ten questions. Beat the clock.</div>
+    <button class="rules-toggle" onclick="this.nextElementSibling.classList.toggle('open')">How to Play ▾</button>
+    <div class="rules-panel">
+      <ul>
+        <li>Answer ten multiple-choice questions across science, history, geography, and pop culture.</li>
+        <li>You have 15 seconds per question — the faster you answer, the more points you earn.</li>
+        <li>Each correct answer is worth up to 100 points. Leftover seconds become bonus points.</li>
+        <li>Build a streak of correct answers for a multiplier bonus on each question.</li>
+        <li>Running out of time counts as a wrong answer and breaks your streak.</li>
+      </ul>
+    </div>
+  </header>
+
+  <div class="hud">
+    <div class="hud-item">
+      <div class="hud-label">Q</div>
+      <div class="hud-value" id="hudQ">1/10</div>
+    </div>
+    <div class="hud-item">
+      <div class="hud-label">Score</div>
+      <div class="hud-value" id="hudScore">0</div>
+    </div>
+    <div class="hud-item">
+      <div class="hud-label">Streak</div>
+      <div class="hud-value streak" id="hudStreak">0</div>
+    </div>
+    <div class="hud-item">
+      <div class="hud-label">Time</div>
+      <div class="hud-value timer" id="hudTime">15</div>
+    </div>
+  </div>
+
+  <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+
+  <div class="card">
+    <div class="category" id="category">Category</div>
+    <div class="question" id="question">Loading…</div>
+    <div class="choices" id="choices"></div>
+    <div class="feedback" id="feedback"></div>
+    <button class="next-btn" id="nextBtn" disabled>Next →</button>
+  </div>
+
+  <footer>Best score is saved locally on this device.</footer>
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal" id="modal"></div>
+</div>
+
+<script>
+/* ---------- Question Bank (50+ questions) ---------- */
+const QUESTIONS = [
+  // Science
+  { cat: "Science", q: "What is the chemical symbol for gold?", choices: ["Go", "Gd", "Au", "Ag"], answer: 2 },
+  { cat: "Science", q: "How many bones are in the adult human body?", choices: ["196", "206", "216", "186"], answer: 1 },
+  { cat: "Science", q: "Which planet has the most moons?", choices: ["Jupiter", "Saturn", "Uranus", "Neptune"], answer: 1 },
+  { cat: "Science", q: "What gas do plants absorb from the atmosphere?", choices: ["Oxygen", "Nitrogen", "Hydrogen", "Carbon dioxide"], answer: 3 },
+  { cat: "Science", q: "What is the hardest natural substance on Earth?", choices: ["Quartz", "Diamond", "Steel", "Titanium"], answer: 1 },
+  { cat: "Science", q: "The speed of light is approximately:", choices: ["3,000 km/s", "30,000 km/s", "300,000 km/s", "3,000,000 km/s"], answer: 2 },
+  { cat: "Science", q: "Which element has the atomic number 1?", choices: ["Helium", "Hydrogen", "Oxygen", "Carbon"], answer: 1 },
+  { cat: "Science", q: "What part of the cell contains the genetic material?", choices: ["Nucleus", "Ribosome", "Mitochondria", "Cytoplasm"], answer: 0 },
+  { cat: "Science", q: "What blood type is known as the universal donor?", choices: ["A+", "B-", "AB+", "O-"], answer: 3 },
+  { cat: "Science", q: "Which scientist proposed the theory of general relativity?", choices: ["Isaac Newton", "Albert Einstein", "Niels Bohr", "Stephen Hawking"], answer: 1 },
+  { cat: "Science", q: "What is the largest organ in the human body?", choices: ["Liver", "Brain", "Skin", "Lungs"], answer: 2 },
+  { cat: "Science", q: "Sound travels fastest through which medium?", choices: ["Air", "Water", "Steel", "Vacuum"], answer: 2 },
+  { cat: "Science", q: "Which planet is known as the Red Planet?", choices: ["Venus", "Mars", "Jupiter", "Mercury"], answer: 1 },
+
+  // History
+  { cat: "History", q: "In what year did World War II end?", choices: ["1943", "1944", "1945", "1946"], answer: 2 },
+  { cat: "History", q: "Who was the first President of the United States?", choices: ["Thomas Jefferson", "John Adams", "George Washington", "Benjamin Franklin"], answer: 2 },
+  { cat: "History", q: "The Great Wall of China was primarily built to defend against which group?", choices: ["The Mongols", "The Japanese", "The Russians", "The Koreans"], answer: 0 },
+  { cat: "History", q: "Which ancient civilization built Machu Picchu?", choices: ["Aztec", "Maya", "Inca", "Olmec"], answer: 2 },
+  { cat: "History", q: "The Berlin Wall fell in which year?", choices: ["1987", "1989", "1991", "1993"], answer: 1 },
+  { cat: "History", q: "Who wrote the Declaration of Independence?", choices: ["George Washington", "Thomas Jefferson", "John Adams", "Benjamin Franklin"], answer: 1 },
+  { cat: "History", q: "In which year did humans first land on the Moon?", choices: ["1965", "1967", "1969", "1971"], answer: 2 },
+  { cat: "History", q: "Who was known as the 'Iron Lady'?", choices: ["Angela Merkel", "Margaret Thatcher", "Indira Gandhi", "Queen Victoria"], answer: 1 },
+  { cat: "History", q: "The Titanic sank in which year?", choices: ["1905", "1912", "1918", "1923"], answer: 1 },
+  { cat: "History", q: "Who painted the ceiling of the Sistine Chapel?", choices: ["Leonardo da Vinci", "Raphael", "Michelangelo", "Donatello"], answer: 2 },
+  { cat: "History", q: "Which empire was ruled by Julius Caesar?", choices: ["Greek", "Roman", "Persian", "Ottoman"], answer: 1 },
+  { cat: "History", q: "In what year did the French Revolution begin?", choices: ["1776", "1789", "1804", "1815"], answer: 1 },
+
+  // Geography
+  { cat: "Geography", q: "What is the longest river in the world?", choices: ["Amazon", "Nile", "Yangtze", "Mississippi"], answer: 1 },
+  { cat: "Geography", q: "Which country has the most natural lakes?", choices: ["USA", "Russia", "Canada", "Finland"], answer: 2 },
+  { cat: "Geography", q: "Mount Everest is located on the border of Nepal and which country?", choices: ["India", "China", "Bhutan", "Pakistan"], answer: 1 },
+  { cat: "Geography", q: "What is the capital of Australia?", choices: ["Sydney", "Melbourne", "Canberra", "Brisbane"], answer: 2 },
+  { cat: "Geography", q: "Which is the smallest country in the world by area?", choices: ["Monaco", "Vatican City", "San Marino", "Liechtenstein"], answer: 1 },
+  { cat: "Geography", q: "The Sahara Desert is located primarily on which continent?", choices: ["Asia", "Australia", "Africa", "South America"], answer: 2 },
+  { cat: "Geography", q: "Which ocean is the largest?", choices: ["Atlantic", "Indian", "Arctic", "Pacific"], answer: 3 },
+  { cat: "Geography", q: "What is the capital of Japan?", choices: ["Seoul", "Beijing", "Tokyo", "Bangkok"], answer: 2 },
+  { cat: "Geography", q: "Which country is shaped like a boot?", choices: ["Spain", "Italy", "Greece", "Portugal"], answer: 1 },
+  { cat: "Geography", q: "The Amazon Rainforest is mostly in which country?", choices: ["Colombia", "Peru", "Brazil", "Venezuela"], answer: 2 },
+  { cat: "Geography", q: "What is the largest country by area?", choices: ["USA", "China", "Canada", "Russia"], answer: 3 },
+  { cat: "Geography", q: "Which African country was formerly known as Abyssinia?", choices: ["Ethiopia", "Kenya", "Sudan", "Somalia"], answer: 0 },
+  { cat: "Geography", q: "The Great Barrier Reef is located off the coast of which country?", choices: ["Indonesia", "Philippines", "Australia", "Thailand"], answer: 2 },
+
+  // Pop Culture
+  { cat: "Pop Culture", q: "Who played Jack in the movie Titanic?", choices: ["Brad Pitt", "Leonardo DiCaprio", "Tom Cruise", "Matt Damon"], answer: 1 },
+  { cat: "Pop Culture", q: "Which band released the album 'Abbey Road'?", choices: ["The Rolling Stones", "The Beatles", "Led Zeppelin", "Pink Floyd"], answer: 1 },
+  { cat: "Pop Culture", q: "What is the name of the coffee shop in the TV show Friends?", choices: ["Central Perk", "Java Joe's", "The Grind", "Cup o' Joe"], answer: 0 },
+  { cat: "Pop Culture", q: "Who wrote the Harry Potter series?", choices: ["J.R.R. Tolkien", "Stephen King", "J.K. Rowling", "Roald Dahl"], answer: 2 },
+  { cat: "Pop Culture", q: "Which movie features the character Forrest Gump?", choices: ["Cast Away", "Big", "Forrest Gump", "The Green Mile"], answer: 2 },
+  { cat: "Pop Culture", q: "What is the highest-grossing film of all time (unadjusted)?", choices: ["Titanic", "Avengers: Endgame", "Avatar", "Star Wars: The Force Awakens"], answer: 2 },
+  { cat: "Pop Culture", q: "Who is the author of 'A Song of Ice and Fire'?", choices: ["George R.R. Martin", "Brandon Sanderson", "Patrick Rothfuss", "Robert Jordan"], answer: 0 },
+  { cat: "Pop Culture", q: "Which artist painted the Mona Lisa?", choices: ["Vincent van Gogh", "Pablo Picasso", "Leonardo da Vinci", "Claude Monet"], answer: 2 },
+  { cat: "Pop Culture", q: "What is Batman's real name?", choices: ["Peter Parker", "Bruce Wayne", "Clark Kent", "Tony Stark"], answer: 1 },
+  { cat: "Pop Culture", q: "Which streaming show featured characters Eleven and Mike?", choices: ["The Witcher", "Stranger Things", "Dark", "Wednesday"], answer: 1 },
+  { cat: "Pop Culture", q: "Who sang the hit song 'Rolling in the Deep'?", choices: ["Beyoncé", "Adele", "Rihanna", "Taylor Swift"], answer: 1 },
+  { cat: "Pop Culture", q: "What is the name of Harry Potter's pet owl?", choices: ["Hedwig", "Errol", "Pigwidgeon", "Crookshanks"], answer: 0 },
+  { cat: "Pop Culture", q: "Which company created the iPhone?", choices: ["Microsoft", "Samsung", "Apple", "Google"], answer: 2 }
+];
+
+/* ---------- Config ---------- */
+const QUESTIONS_PER_GAME = 10;
+const TIME_PER_QUESTION = 15;
+const POINTS_CORRECT = 100;
+const POINTS_PER_SECOND = 10;
+const STREAK_BONUS = 20;
+const STORAGE_KEY = "trivia-stats-v1";
+
+/* ---------- State ---------- */
+let quiz = [];
+let qIndex = 0;
+let score = 0;
+let streak = 0;
+let maxStreak = 0;
+let correctCount = 0;
+let timer = null;
+let timeLeft = TIME_PER_QUESTION;
+let answering = false;
+let selectedIdx = -1;
+
+/* ---------- DOM ---------- */
+const hudQ = document.getElementById("hudQ");
+const hudScore = document.getElementById("hudScore");
+const hudStreak = document.getElementById("hudStreak");
+const hudTime = document.getElementById("hudTime");
+const progressFill = document.getElementById("progressFill");
+const categoryEl = document.getElementById("category");
+const questionEl = document.getElementById("question");
+const choicesEl = document.getElementById("choices");
+const feedbackEl = document.getElementById("feedback");
+const nextBtn = document.getElementById("nextBtn");
+const modalBg = document.getElementById("modalBg");
+const modalEl = document.getElementById("modal");
+
+/* ---------- Utility ---------- */
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function buildQuiz() {
+  // pick questions weighted to cover all categories
+  const byCat = {};
+  QUESTIONS.forEach(q => {
+    (byCat[q.cat] = byCat[q.cat] || []).push(q);
+  });
+  const cats = Object.keys(byCat);
+  const picks = [];
+  // round-robin across categories, then shuffle
+  let i = 0;
+  const pools = cats.map(c => shuffle(byCat[c]));
+  while (picks.length < QUESTIONS_PER_GAME) {
+    const pool = pools[i % pools.length];
+    if (pool.length) picks.push(pool.shift());
+    i++;
+    if (i > 200) break;
+  }
+  return shuffle(picks).slice(0, QUESTIONS_PER_GAME).map(q => {
+    // shuffle choices but track correct index
+    const indexed = q.choices.map((c, idx) => ({ c, correct: idx === q.answer }));
+    const mixed = shuffle(indexed);
+    return {
+      cat: q.cat,
+      q: q.q,
+      choices: mixed.map(x => x.c),
+      answer: mixed.findIndex(x => x.correct)
+    };
+  });
+}
+
+/* ---------- Game flow ---------- */
+function startGame() {
+  quiz = buildQuiz();
+  qIndex = 0;
+  score = 0;
+  streak = 0;
+  maxStreak = 0;
+  correctCount = 0;
+  hudScore.textContent = "0";
+  hudStreak.textContent = "0";
+  hudStreak.classList.remove("active");
+  renderQuestion();
+}
+
+function renderQuestion() {
+  clearTimer();
+  answering = true;
+  selectedIdx = -1;
+  const item = quiz[qIndex];
+  hudQ.textContent = `${qIndex + 1}/${QUESTIONS_PER_GAME}`;
+  categoryEl.textContent = item.cat;
+  questionEl.textContent = item.q;
+
+  choicesEl.innerHTML = "";
+  item.choices.forEach((text, i) => {
+    const btn = document.createElement("button");
+    btn.className = "choice";
+    btn.type = "button";
+    const letter = String.fromCharCode(65 + i);
+    btn.innerHTML = `<span class="choice-letter">${letter}</span><span class="choice-text"></span>`;
+    btn.querySelector(".choice-text").textContent = text;
+    btn.addEventListener("click", () => chooseAnswer(i));
+    choicesEl.appendChild(btn);
+  });
+
+  feedbackEl.className = "feedback";
+  feedbackEl.textContent = "";
+  nextBtn.disabled = true;
+  nextBtn.textContent = qIndex === QUESTIONS_PER_GAME - 1 ? "See results →" : "Next →";
+
+  timeLeft = TIME_PER_QUESTION;
+  updateTimerUI();
+  timer = setInterval(tick, 100);
+}
+
+function tick() {
+  timeLeft -= 0.1;
+  if (timeLeft <= 0) {
+    timeLeft = 0;
+    updateTimerUI();
+    clearTimer();
+    timeout();
+    return;
+  }
+  updateTimerUI();
+}
+
+function updateTimerUI() {
+  const whole = Math.ceil(timeLeft);
+  hudTime.textContent = whole;
+  const pct = Math.max(0, (timeLeft / TIME_PER_QUESTION) * 100);
+  progressFill.style.width = pct + "%";
+  if (timeLeft <= 5) {
+    hudTime.classList.add("low");
+    progressFill.classList.add("low");
+  } else {
+    hudTime.classList.remove("low");
+    progressFill.classList.remove("low");
+  }
+}
+
+function clearTimer() {
+  if (timer) { clearInterval(timer); timer = null; }
+}
+
+function chooseAnswer(idx) {
+  if (!answering) return;
+  answering = false;
+  clearTimer();
+  selectedIdx = idx;
+  const item = quiz[qIndex];
+  const isCorrect = idx === item.answer;
+
+  const buttons = choicesEl.querySelectorAll(".choice");
+  buttons.forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === item.answer) btn.classList.add("correct");
+    else if (i === idx) btn.classList.add("wrong");
+    else btn.classList.add("dimmed");
+  });
+
+  if (isCorrect) {
+    const timeBonus = Math.round(timeLeft * POINTS_PER_SECOND);
+    const streakBonus = streak * STREAK_BONUS;
+    const gained = POINTS_CORRECT + timeBonus + streakBonus;
+    score += gained;
+    streak += 1;
+    if (streak > maxStreak) maxStreak = streak;
+    correctCount += 1;
+    showFeedback(true, gained, streakBonus);
+  } else {
+    streak = 0;
+    showFeedback(false, 0, 0);
+  }
+  updateHUD();
+  nextBtn.disabled = false;
+}
+
+function timeout() {
+  if (!answering) return;
+  answering = false;
+  const item = quiz[qIndex];
+  const buttons = choicesEl.querySelectorAll(".choice");
+  buttons.forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === item.answer) btn.classList.add("correct");
+    else btn.classList.add("dimmed");
+  });
+  streak = 0;
+  updateHUD();
+  showFeedback(false, 0, 0, true);
+  nextBtn.disabled = false;
+}
+
+function showFeedback(good, points, streakBonus, timedOut) {
+  feedbackEl.classList.remove("good", "bad");
+  if (good) {
+    feedbackEl.classList.add("good", "show");
+    const bonusNote = streakBonus > 0 ? ` · +${streakBonus} streak` : "";
+    feedbackEl.textContent = `Correct! +${points}${bonusNote}`;
+  } else {
+    feedbackEl.classList.add("bad", "show");
+    feedbackEl.textContent = timedOut ? "Time's up!" : "Not quite.";
+  }
+}
+
+function updateHUD() {
+  hudScore.textContent = score.toLocaleString();
+  hudStreak.textContent = streak;
+  if (streak >= 2) hudStreak.classList.add("active");
+  else hudStreak.classList.remove("active");
+}
+
+function nextQuestion() {
+  qIndex += 1;
+  if (qIndex >= QUESTIONS_PER_GAME) {
+    endGame();
+  } else {
+    renderQuestion();
+  }
+}
+
+/* ---------- Stats persistence ---------- */
+function loadStats() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return { best: 0, played: 0, bestCorrect: 0, bestStreak: 0 };
+}
+function saveStats(stats) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(stats)); } catch {}
+}
+
+/* ---------- End game ---------- */
+function endGame() {
+  clearTimer();
+  const stats = loadStats();
+  stats.played += 1;
+  const newBest = score > stats.best;
+  if (newBest) stats.best = score;
+  if (correctCount > stats.bestCorrect) stats.bestCorrect = correctCount;
+  if (maxStreak > stats.bestStreak) stats.bestStreak = maxStreak;
+  saveStats(stats);
+
+  if (window.Leaderboard && Leaderboard.submitScore) {
+    Leaderboard.submitScore(score);
+  }
+
+  const accuracy = Math.round((correctCount / QUESTIONS_PER_GAME) * 100);
+  const title = accuracy === 100 ? "Perfect!" : accuracy >= 70 ? "Well done." : accuracy >= 40 ? "Nice try." : "Keep going.";
+  const subtitle = newBest ? "New personal best." : `Best: ${stats.best.toLocaleString()}`;
+
+  modalEl.innerHTML = `
+    <h2>${title}</h2>
+    <div class="subtitle">${subtitle}</div>
+    <div class="final-score">${score.toLocaleString()}</div>
+    <div class="final-grid">
+      <div class="final-stat"><div class="final-stat-value">${correctCount}/${QUESTIONS_PER_GAME}</div><div class="final-stat-label">Correct</div></div>
+      <div class="final-stat"><div class="final-stat-value">${accuracy}%</div><div class="final-stat-label">Accuracy</div></div>
+      <div class="final-stat"><div class="final-stat-value">${maxStreak}</div><div class="final-stat-label">Best Streak</div></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn full" id="playAgain">Play Again</button>
+    </div>
+  `;
+  modalBg.classList.add("show");
+  document.getElementById("playAgain").addEventListener("click", () => {
+    modalBg.classList.remove("show");
+    startGame();
+  });
+}
+
+/* ---------- Input ---------- */
+nextBtn.addEventListener("click", () => {
+  if (!nextBtn.disabled) nextQuestion();
+});
+
+document.addEventListener("keydown", (e) => {
+  if (modalBg.classList.contains("show")) {
+    if (e.key === "Enter" && document.getElementById("playAgain")) {
+      document.getElementById("playAgain").click();
+    }
+    return;
+  }
+  if (answering) {
+    const k = e.key;
+    const map = { "1": 0, "2": 1, "3": 2, "4": 3, "a": 0, "b": 1, "c": 2, "d": 3, "A": 0, "B": 1, "C": 2, "D": 3 };
+    if (map[k] !== undefined) {
+      const buttons = choicesEl.querySelectorAll(".choice");
+      if (buttons[map[k]]) buttons[map[k]].click();
+    }
+  } else if (!nextBtn.disabled && (e.key === "Enter" || e.key === " ")) {
+    e.preventDefault();
+    nextQuestion();
+  }
+});
+
+/* ---------- Boot ---------- */
+startGame();
+</script>
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

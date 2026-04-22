@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Hangman — FindPicked Games</title>
+<meta name="description" content="Play Hangman free — guess the word before the stick figure is complete. 500+ words across 10 categories.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ctext x='16' y='22' font-size='14' fill='white' text-anchor='middle' font-family='system-ui' font-weight='700'%3EH%3C/text%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --good: #34c759;
+  --bad: #ff3b30;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.06);
+  --radius: 16px;
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  padding: 20px 16px 40px;
+  display: flex;
+  justify-content: center;
+}
+
+.wrap {
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 10px 0;
+  min-height: 44px;
+  align-self: flex-start;
+}
+.back:hover { opacity: 0.8; }
+.back .arrow { font-size: 18px; line-height: 1; }
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+h1 {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.scores {
+  display: flex;
+  gap: 8px;
+}
+
+.score-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px 14px;
+  min-width: 72px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.score-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+.score-value {
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.rules-toggle {
+  display: inline-block;
+  font-size: 13px;
+  color: var(--accent);
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+  padding: 6px 0;
+  min-height: 44px;
+  align-self: center;
+}
+.rules-toggle:hover { text-decoration: underline; }
+
+.rules-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  text-align: left;
+}
+.rules-panel.open { max-height: 400px; }
+.rules-panel ul { margin: 8px 0 0 20px; }
+.rules-panel li { margin-bottom: 4px; }
+
+.game-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.category {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.category strong {
+  color: var(--text-primary);
+  font-weight: 600;
+  margin-left: 4px;
+}
+.lives {
+  font-variant-numeric: tabular-nums;
+}
+
+.stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 0;
+}
+.stage svg {
+  width: 100%;
+  max-width: 220px;
+  height: auto;
+}
+.stage svg .gallow { stroke: var(--text-primary); stroke-width: 4; stroke-linecap: round; fill: none; }
+.stage svg .figure { stroke: var(--text-primary); stroke-width: 3.5; stroke-linecap: round; fill: none;
+  stroke-dasharray: 200; stroke-dashoffset: 200;
+  transition: stroke-dashoffset 0.5s ease; }
+.stage svg .figure.show { stroke-dashoffset: 0; }
+.stage svg .figure.lost { stroke: var(--bad); }
+
+.word {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 8px;
+  font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+}
+.letter {
+  min-width: 22px;
+  height: 36px;
+  border-bottom: 3px solid var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  padding: 0 2px;
+}
+.letter.space { border: none; width: 12px; }
+.letter.reveal { color: var(--bad); }
+
+.keyboard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.kb-row {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+.key {
+  flex: 1 1 0;
+  min-width: 28px;
+  max-width: 42px;
+  height: 44px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, opacity 0.15s, transform 0.08s;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.key:hover:not(:disabled) { background: #f0f0f3; }
+.key:active:not(:disabled) { transform: scale(0.95); }
+.key:disabled { cursor: default; opacity: 1; }
+.key.correct { background: var(--good); border-color: var(--good); color: #fff; }
+.key.wrong { background: #f0f0f3; color: var(--text-tertiary); text-decoration: line-through; }
+
+.btn {
+  appearance: none;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--accent);
+  color: #fff;
+  min-height: 44px;
+  transition: background 0.15s, transform 0.08s, opacity 0.15s;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn:active { transform: scale(0.97); }
+.btn.secondary {
+  background: #f0f0f3;
+  color: var(--text-primary);
+}
+.btn.secondary:hover { background: #e6e6eb; }
+
+.controls {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  padding: 20px;
+}
+.overlay.show { display: flex; }
+.overlay-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 32px 28px;
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+.overlay-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.overlay-title.win { color: var(--good); }
+.overlay-title.lose { color: var(--bad); }
+.overlay-text {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+.overlay-word {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.overlay-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+footer {
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+@media (max-width: 460px) {
+  body { padding: 14px 10px 30px; }
+  h1 { font-size: 28px; }
+  .game-card { padding: 16px 14px; }
+  .letter { min-width: 18px; height: 32px; font-size: 20px; }
+  .key { min-width: 24px; font-size: 14px; height: 44px; border-radius: 8px; }
+  .kb-row { gap: 4px; }
+  .stage svg { max-width: 180px; }
+}
+@media (max-width: 360px) {
+  .key { font-size: 13px; max-width: 32px; }
+  .letter { min-width: 14px; font-size: 18px; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="back" href="../" aria-label="Back to games">
+    <span class="arrow">←</span>
+    <span>Games</span>
+  </a>
+
+  <header>
+    <h1>Hangman</h1>
+    <div class="scores">
+      <div class="score-box">
+        <div class="score-label">Score</div>
+        <div class="score-value" id="score">0</div>
+      </div>
+      <div class="score-box">
+        <div class="score-label">Best</div>
+        <div class="score-value" id="best">0</div>
+      </div>
+    </div>
+  </header>
+
+  <div style="text-align:center">
+    <button class="rules-toggle" onclick="this.nextElementSibling.classList.toggle('open')">How to Play ▾</button>
+    <div class="rules-panel">
+      <ul>
+        <li>Guess the hidden word one letter at a time</li>
+        <li>Each wrong letter draws another part of the stick figure</li>
+        <li>Six wrong guesses and the game ends</li>
+        <li>Use the category hint to narrow down the word</li>
+        <li>Win rounds to grow your streak — each win adds to your score</li>
+        <li>Tap the keyboard or type letters directly</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="game-card">
+    <div class="category">
+      <div>Category:<strong id="category">Animals</strong></div>
+      <div class="lives">Lives: <strong id="lives">6</strong></div>
+    </div>
+
+    <div class="stage" aria-hidden="true">
+      <svg viewBox="0 0 200 240" role="img" aria-label="Hangman gallows">
+        <!-- Gallows -->
+        <line class="gallow" x1="20" y1="230" x2="120" y2="230"/>
+        <line class="gallow" x1="50" y1="230" x2="50" y2="20"/>
+        <line class="gallow" x1="50" y1="20"  x2="140" y2="20"/>
+        <line class="gallow" x1="140" y1="20" x2="140" y2="45"/>
+        <!-- Figure parts (drawn as wrong guesses accumulate) -->
+        <circle class="figure" id="p-head" cx="140" cy="65" r="20"/>
+        <line   class="figure" id="p-body" x1="140" y1="85"  x2="140" y2="150"/>
+        <line   class="figure" id="p-larm" x1="140" y1="100" x2="115" y2="125"/>
+        <line   class="figure" id="p-rarm" x1="140" y1="100" x2="165" y2="125"/>
+        <line   class="figure" id="p-lleg" x1="140" y1="150" x2="115" y2="185"/>
+        <line   class="figure" id="p-rleg" x1="140" y1="150" x2="165" y2="185"/>
+      </svg>
+    </div>
+
+    <div class="word" id="word" aria-label="Word to guess"></div>
+
+    <div class="keyboard" id="keyboard" aria-label="Letter keyboard"></div>
+
+    <div class="controls">
+      <button class="btn secondary" id="skip">Skip Word</button>
+      <button class="btn" id="newgame">New Game</button>
+    </div>
+  </div>
+
+  <footer>
+    Tap keys or type A–Z · Enter to start a new round
+  </footer>
+</div>
+
+<div class="overlay" id="overlay" aria-live="polite">
+  <div class="overlay-card">
+    <div class="overlay-title" id="overlay-title">Round Over</div>
+    <div class="overlay-word" id="overlay-word"></div>
+    <div class="overlay-text" id="overlay-text"></div>
+    <div class="overlay-row">
+      <button class="btn secondary" id="overlay-end">End Game</button>
+      <button class="btn" id="overlay-next">Play Again</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const WORDS = {
+    'Animals': [
+      'elephant','giraffe','kangaroo','dolphin','penguin','octopus','cheetah','panther','crocodile','alligator',
+      'rhinoceros','hippopotamus','zebra','gorilla','chimpanzee','orangutan','butterfly','mosquito','hedgehog','squirrel',
+      'rabbit','hamster','turtle','lizard','snake','eagle','falcon','sparrow','pigeon','flamingo',
+      'peacock','ostrich','leopard','jaguar','lion','tiger','wolf','fox','bear','moose',
+      'reindeer','antelope','buffalo','camel','donkey','horse','cattle','sheep','goat','pig',
+      'duck','goose','turkey','chicken','rooster','swan','owl','parrot','raven','crow',
+      'shark','whale','salmon','trout','lobster','crab','starfish','jellyfish','seahorse','stingray'
+    ],
+    'Food': [
+      'spaghetti','pancake','waffle','croissant','cheeseburger','dumpling','noodle','sushi','burrito','taco',
+      'pizza','lasagna','ravioli','risotto','paella','gnocchi','macaroni','sandwich','baguette','bagel',
+      'muffin','cupcake','brownie','cookie','donut','pastry','pudding','custard','yogurt','cheese',
+      'avocado','broccoli','cauliflower','cucumber','tomato','potato','carrot','spinach','lettuce','cabbage',
+      'pumpkin','eggplant','asparagus','artichoke','onion','garlic','ginger','mushroom','pepper','chili',
+      'strawberry','raspberry','blueberry','blackberry','cranberry','pineapple','watermelon','cantaloupe','mango','papaya',
+      'banana','orange','grape','lemon','apple','peach','plum','apricot','coconut','almond',
+      'walnut','cashew','peanut','pistachio','caramel','chocolate','vanilla','cinnamon','honey','butter'
+    ],
+    'Countries': [
+      'argentina','australia','austria','belgium','brazil','bulgaria','cambodia','canada','chile','china',
+      'colombia','croatia','denmark','ecuador','egypt','ethiopia','finland','france','germany','greece',
+      'hungary','iceland','india','indonesia','ireland','israel','italy','jamaica','japan','jordan',
+      'kenya','korea','laos','lebanon','libya','malaysia','mexico','mongolia','morocco','nepal',
+      'netherlands','norway','pakistan','panama','paraguay','peru','philippines','poland','portugal','romania',
+      'russia','senegal','singapore','slovakia','slovenia','spain','sweden','switzerland','thailand','turkey',
+      'uganda','ukraine','uruguay','venezuela','vietnam','yemen','zambia','zimbabwe','bolivia','bahrain'
+    ],
+    'Sports': [
+      'basketball','baseball','football','volleyball','tennis','cricket','hockey','rugby','boxing','wrestling',
+      'cycling','running','swimming','surfing','skating','skiing','snowboarding','climbing','fencing','archery',
+      'golf','bowling','curling','rowing','sailing','kayaking','canoeing','fishing','diving','skateboarding',
+      'gymnastics','judo','karate','taekwondo','badminton','handball','softball','lacrosse','polo','triathlon',
+      'marathon','paragliding','parkour','weightlifting','bodybuilding','yoga','pilates','dodgeball','billiards','darts'
+    ],
+    'Movies': [
+      'inception','gladiator','titanic','avatar','casablanca','jaws','psycho','vertigo','matrix','rocky',
+      'frozen','cinderella','pinocchio','aladdin','tangled','mulan','bambi','dumbo','shrek','coco',
+      'pulpfiction','goodfellas','scarface','braveheart','interstellar','predator','alien','jurassic','ghostbusters','spiderman',
+      'batman','superman','aquaman','thor','ironman','wakanda','skyfall','goldfinger','spectre','quantum',
+      'terminator','robocop','rambo','memento','django','unforgiven','fargo','zodiac','amadeus','platoon'
+    ],
+    'Music': [
+      'guitar','violin','piano','drums','trumpet','trombone','saxophone','clarinet','flute','harp',
+      'accordion','harmonica','ukulele','banjo','cello','mandolin','xylophone','tambourine','maracas','triangle',
+      'symphony','orchestra','concerto','sonata','rhapsody','melody','harmony','rhythm','tempo','chord',
+      'lyrics','ballad','chorus','verse','bridge','opera','jazz','blues','reggae','country',
+      'classical','techno','electronic','acoustic','unplugged','karaoke','soundtrack','album','single','playlist',
+      'conductor','composer','musician','vocalist','drummer','guitarist','pianist','violinist','soloist','bassist'
+    ],
+    'Science': [
+      'chemistry','physics','biology','geology','astronomy','ecology','zoology','botany','anatomy','psychology',
+      'neutron','proton','electron','molecule','atom','element','compound','reaction','catalyst','solution',
+      'velocity','acceleration','gravity','momentum','friction','magnetism','radiation','quantum','relativity','entropy',
+      'evolution','mutation','genetics','chromosome','protein','bacteria','virus','cell','tissue','organism',
+      'ecosystem','habitat','climate','weather','ocean','glacier','volcano','earthquake','tsunami','hurricane',
+      'planet','galaxy','nebula','asteroid','comet','meteor','eclipse','satellite','telescope','microscope'
+    ],
+    'Technology': [
+      'keyboard','monitor','printer','scanner','router','modem','processor','memory','harddrive','motherboard',
+      'laptop','desktop','tablet','smartphone','smartwatch','headphone','earbuds','speaker','microphone','camera',
+      'internet','browser','website','database','software','hardware','firmware','program','application','algorithm',
+      'javascript','python','compiler','debugger','variable','function','library','framework','module','package',
+      'encryption','password','firewall','malware','virus','phishing','hacker','network','server','client',
+      'blockchain','bitcoin','cryptocurrency','artificial','machine','learning','robotics','automation','satellite','pixel'
+    ],
+    'Nature': [
+      'mountain','valley','canyon','plateau','desert','forest','jungle','prairie','savanna','tundra',
+      'waterfall','stream','brook','lagoon','swamp','marsh','meadow','garden','orchard','vineyard',
+      'sunrise','sunset','twilight','rainbow','lightning','thunder','blizzard','tornado','drought','monsoon',
+      'maple','oak','willow','birch','cedar','pine','cypress','redwood','bamboo','cactus',
+      'daffodil','tulip','orchid','sunflower','dandelion','lavender','jasmine','hibiscus','magnolia','lotus',
+      'pebble','boulder','quartz','granite','marble','diamond','emerald','sapphire','amethyst','obsidian'
+    ],
+    'Objects': [
+      'umbrella','scissors','calendar','envelope','notebook','backpack','suitcase','wallet','mirror','pillow',
+      'blanket','curtain','carpet','lantern','candle','telescope','binoculars','compass','magnet','thermometer',
+      'hammer','screwdriver','wrench','pliers','drill','ladder','toolbox','shovel','rake','hose',
+      'bicycle','motorcycle','helicopter','airplane','submarine','skateboard','scooter','wagon','trolley','canoe',
+      'toothbrush','hairbrush','razor','soap','shampoo','towel','bathtub','fountain','chandelier','fireplace',
+      'trophy','medal','banner','poster','postcard','diary','journal','dictionary','magazine','newspaper'
+    ]
+  };
+
+  // Flatten categories into an array for iteration
+  const CATEGORIES = Object.keys(WORDS);
+
+  // State
+  const STORE_BEST = 'findpicked:hangman:best';
+  const MAX_WRONG = 6;
+  const PARTS = ['p-head','p-body','p-larm','p-rarm','p-lleg','p-rleg'];
+
+  let currentWord = '';
+  let currentCategory = '';
+  let guessed = new Set();
+  let wrong = 0;
+  let revealed = new Set();
+  let score = 0;
+  let best = parseInt(localStorage.getItem(STORE_BEST) || '0', 10);
+  let roundOver = false;
+  let gameOver = false;
+  let submitted = false;
+
+  // Elements
+  const $ = id => document.getElementById(id);
+  const scoreEl = $('score');
+  const bestEl = $('best');
+  const categoryEl = $('category');
+  const livesEl = $('lives');
+  const wordEl = $('word');
+  const keyboardEl = $('keyboard');
+  const skipBtn = $('skip');
+  const newBtn = $('newgame');
+  const overlay = $('overlay');
+  const overlayTitle = $('overlay-title');
+  const overlayWord = $('overlay-word');
+  const overlayText = $('overlay-text');
+  const overlayNext = $('overlay-next');
+  const overlayEnd = $('overlay-end');
+
+  bestEl.textContent = best;
+
+  // Build keyboard once
+  const LAYOUT = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
+  function buildKeyboard() {
+    keyboardEl.innerHTML = '';
+    for (const row of LAYOUT) {
+      const rowEl = document.createElement('div');
+      rowEl.className = 'kb-row';
+      for (const ch of row) {
+        const btn = document.createElement('button');
+        btn.className = 'key';
+        btn.type = 'button';
+        btn.textContent = ch;
+        btn.dataset.letter = ch.toLowerCase();
+        btn.addEventListener('click', () => guess(ch.toLowerCase()));
+        rowEl.appendChild(btn);
+      }
+      keyboardEl.appendChild(rowEl);
+    }
+  }
+
+  function resetFigure() {
+    for (const id of PARTS) {
+      const el = document.getElementById(id);
+      el.classList.remove('show', 'lost');
+    }
+  }
+
+  function pickWord() {
+    const cat = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
+    const list = WORDS[cat];
+    const word = list[Math.floor(Math.random() * list.length)];
+    return { cat, word: word.toLowerCase() };
+  }
+
+  function renderWord() {
+    wordEl.innerHTML = '';
+    for (const ch of currentWord) {
+      const span = document.createElement('span');
+      if (ch === ' ' || ch === '-') {
+        span.className = 'letter space';
+        span.textContent = ch === '-' ? '-' : '';
+      } else {
+        span.className = 'letter';
+        const isGuessed = guessed.has(ch);
+        const isRevealed = revealed.has(ch);
+        if (isGuessed) span.textContent = ch.toUpperCase();
+        else if (isRevealed) { span.textContent = ch.toUpperCase(); span.classList.add('reveal'); }
+        else span.textContent = '';
+      }
+      wordEl.appendChild(span);
+    }
+  }
+
+  function renderLives() {
+    livesEl.textContent = MAX_WRONG - wrong;
+  }
+
+  function renderKeyboard() {
+    for (const btn of keyboardEl.querySelectorAll('.key')) {
+      const l = btn.dataset.letter;
+      btn.classList.remove('correct', 'wrong');
+      btn.disabled = false;
+      if (guessed.has(l)) {
+        if (currentWord.includes(l)) btn.classList.add('correct');
+        else btn.classList.add('wrong');
+        btn.disabled = true;
+      }
+      if (roundOver) btn.disabled = true;
+    }
+  }
+
+  function renderFigure() {
+    for (let i = 0; i < PARTS.length; i++) {
+      const el = document.getElementById(PARTS[i]);
+      if (i < wrong) el.classList.add('show');
+      else el.classList.remove('show');
+    }
+  }
+
+  function allRevealed() {
+    for (const ch of currentWord) {
+      if (ch === ' ' || ch === '-') continue;
+      if (!guessed.has(ch)) return false;
+    }
+    return true;
+  }
+
+  function startRound() {
+    const pick = pickWord();
+    currentCategory = pick.cat;
+    currentWord = pick.word;
+    guessed = new Set();
+    revealed = new Set();
+    wrong = 0;
+    roundOver = false;
+    categoryEl.textContent = currentCategory;
+    renderWord();
+    renderLives();
+    renderKeyboard();
+    resetFigure();
+    hideOverlay();
+  }
+
+  function endRound(won) {
+    roundOver = true;
+    renderKeyboard();
+
+    if (won) {
+      const gained = 10 + (MAX_WRONG - wrong) * 5 + currentWord.replace(/[^a-z]/g, '').length * 2;
+      score += gained;
+      scoreEl.textContent = score;
+      if (score > best) {
+        best = score;
+        bestEl.textContent = best;
+        localStorage.setItem(STORE_BEST, String(best));
+      }
+      showOverlay({
+        title: 'You got it!',
+        titleClass: 'win',
+        word: currentWord,
+        text: `+${gained} points · ${MAX_WRONG - wrong} lives remaining. Keep the streak going?`,
+        nextLabel: 'Next Word',
+        endLabel: 'End Game',
+      });
+    } else {
+      // Reveal remaining letters
+      for (const ch of currentWord) {
+        if (ch !== ' ' && ch !== '-' && !guessed.has(ch)) revealed.add(ch);
+      }
+      renderWord();
+      for (const id of PARTS) document.getElementById(id).classList.add('lost');
+      gameOver = true;
+      if (!submitted && score > 0) {
+        submitted = true;
+        setTimeout(() => {
+          if (window.Leaderboard && Leaderboard.submitScore) Leaderboard.submitScore(score);
+        }, 400);
+      }
+      showOverlay({
+        title: 'Game Over',
+        titleClass: 'lose',
+        word: currentWord,
+        text: score > 0
+          ? `Final score: ${score}. The word was above.`
+          : `Better luck next round. The word was above.`,
+        nextLabel: 'Play Again',
+        endLabel: null,
+      });
+    }
+  }
+
+  function guess(letter) {
+    if (roundOver) return;
+    if (!/^[a-z]$/.test(letter)) return;
+    if (guessed.has(letter)) return;
+
+    guessed.add(letter);
+    if (currentWord.includes(letter)) {
+      renderWord();
+      renderKeyboard();
+      if (allRevealed()) endRound(true);
+    } else {
+      wrong++;
+      renderLives();
+      renderKeyboard();
+      renderFigure();
+      if (wrong >= MAX_WRONG) endRound(false);
+    }
+  }
+
+  function showOverlay({ title, titleClass, word, text, nextLabel, endLabel }) {
+    overlayTitle.textContent = title;
+    overlayTitle.classList.remove('win', 'lose');
+    if (titleClass) overlayTitle.classList.add(titleClass);
+    overlayWord.textContent = word;
+    overlayText.textContent = text;
+    overlayNext.textContent = nextLabel;
+    if (endLabel) {
+      overlayEnd.style.display = '';
+      overlayEnd.textContent = endLabel;
+    } else {
+      overlayEnd.style.display = 'none';
+    }
+    overlay.classList.add('show');
+  }
+
+  function hideOverlay() {
+    overlay.classList.remove('show');
+  }
+
+  function newGame() {
+    score = 0;
+    gameOver = false;
+    submitted = false;
+    scoreEl.textContent = score;
+    startRound();
+  }
+
+  function nextAfterOverlay() {
+    if (gameOver) {
+      newGame();
+    } else {
+      startRound();
+    }
+  }
+
+  function endGameNow() {
+    if (!submitted && score > 0) {
+      submitted = true;
+      if (window.Leaderboard && Leaderboard.submitScore) Leaderboard.submitScore(score);
+    }
+    gameOver = true;
+    score = 0;
+    scoreEl.textContent = score;
+    hideOverlay();
+    startRound();
+    submitted = false;
+  }
+
+  // Button wiring
+  skipBtn.addEventListener('click', () => {
+    if (roundOver) return;
+    endRound(false);
+  });
+  newBtn.addEventListener('click', () => {
+    if (score > 0 && !gameOver && !submitted) {
+      submitted = true;
+      if (window.Leaderboard && Leaderboard.submitScore) Leaderboard.submitScore(score);
+    }
+    submitted = false;
+    newGame();
+  });
+  overlayNext.addEventListener('click', nextAfterOverlay);
+  overlayEnd.addEventListener('click', endGameNow);
+
+  // Keyboard input
+  window.addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === 'Enter') {
+      if (overlay.classList.contains('show')) {
+        e.preventDefault();
+        nextAfterOverlay();
+      }
+      return;
+    }
+    if (overlay.classList.contains('show')) return;
+    const k = e.key.toLowerCase();
+    if (/^[a-z]$/.test(k)) {
+      e.preventDefault();
+      guess(k);
+    }
+  });
+
+  // Boot
+  buildKeyboard();
+  startRound();
+})();
+</script>
+
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

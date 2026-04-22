@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>KenKen — FindPicked Games</title>
+<meta name="description" content="Play KenKen free in your browser. Math puzzle with cages, operations, and Latin-square rules. Clean minimal design, no downloads.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ctext x='16' y='22' font-size='16' fill='white' text-anchor='middle' font-family='system-ui' font-weight='700'%3EK%3C/text%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-hover: #f5f5f7;
+  --bg-subtle: #f5f5f7;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --accent-soft: rgba(0,113,227,0.08);
+  --accent-fill: rgba(0,113,227,0.12);
+  --danger: #ff3b30;
+  --danger-soft: rgba(255,59,48,0.12);
+  --success: #34c759;
+  --border: rgba(0,0,0,0.08);
+  --cage-thin: rgba(0,0,0,0.12);
+  --cage-thick: #1d1d1f;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+}
+
+html, body {
+  height: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  min-height: 100vh;
+}
+
+a { color: inherit; text-decoration: none; }
+
+.back {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 20px;
+  box-shadow: var(--shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  z-index: 100;
+}
+.back:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+.back:active { transform: translateY(0); }
+
+.app {
+  max-width: 540px;
+  margin: 0 auto;
+  padding: 72px 16px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+header.title { text-align: center; }
+header.title h1 {
+  font-size: clamp(28px, 5vw, 36px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+header.title p {
+  margin-top: 6px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+/* size selector pill */
+.size {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-card);
+  padding: 5px;
+  border-radius: 100px;
+  box-shadow: var(--shadow);
+}
+.size button {
+  background: transparent;
+  border: 0;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-radius: 100px;
+  cursor: pointer;
+  min-height: 40px;
+  transition: background 0.2s, color 0.2s;
+  font-family: inherit;
+}
+.size button.active {
+  background: var(--accent);
+  color: #fff;
+}
+.size button:not(.active):hover { background: var(--bg-hover); color: var(--text-primary); }
+
+/* stats */
+.stats {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 420px;
+  padding: 0 4px;
+  font-variant-numeric: tabular-nums;
+}
+.stat { text-align: center; flex: 1; }
+.stat .label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.stat .value {
+  margin-top: 2px;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* board */
+.board-wrap {
+  width: 100%;
+  max-width: 420px;
+  aspect-ratio: 1 / 1;
+  background: var(--bg-card);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 6px;
+}
+.board {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  background: var(--cage-thick);
+  border: 2.5px solid var(--cage-thick);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.cell {
+  position: relative;
+  background: var(--bg-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(18px, 5vw, 26px);
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+  min-width: 44px;
+  min-height: 44px;
+  /* each seam drawn once by the bottom-right neighbour, so cells only carry
+     left and top borders (grid's outer border covers the outside edges) */
+  border-top: 1px solid var(--cage-thin);
+  border-left: 1px solid var(--cage-thin);
+  border-right: 0;
+  border-bottom: 0;
+}
+/* thick dividers between cages (only on top/left of each cell) */
+.cell.bt { border-top: 2.5px solid var(--cage-thick); }
+.cell.bl { border-left: 2.5px solid var(--cage-thick); }
+
+.cell.selected { background: var(--accent-fill); }
+.cell.peer { background: var(--accent-soft); }
+.cell.conflict { color: var(--danger); }
+.cell.given { color: var(--text-secondary); }
+
+.cell .cage-label {
+  position: absolute;
+  top: 3px;
+  left: 5px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  pointer-events: none;
+}
+.cell .notes {
+  position: absolute;
+  inset: 0;
+  padding: 14px 4px 2px;
+  display: grid;
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  pointer-events: none;
+  line-height: 1;
+}
+.cell .notes span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.size-4 .cell .notes { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
+.size-6 .cell .notes { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); font-size: 8px; }
+
+/* keypad */
+.keypad {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  max-width: 420px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.key {
+  flex: 1;
+  min-width: 44px;
+  min-height: 48px;
+  background: var(--bg-card);
+  border: 0;
+  border-radius: 12px;
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  font-family: inherit;
+  transition: transform 0.1s, background 0.15s;
+}
+.key:active { transform: scale(0.96); background: var(--bg-hover); }
+.key.wide { flex: 1.4; }
+.key.accent { background: var(--accent); color: #fff; }
+.key.toggle.active { background: var(--accent); color: #fff; }
+
+/* controls */
+.controls {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 420px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.btn {
+  flex: 1;
+  min-height: 44px;
+  padding: 0 14px;
+  background: var(--bg-card);
+  border: 0;
+  border-radius: 100px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  font-family: inherit;
+  transition: transform 0.1s, background 0.15s;
+}
+.btn:active { transform: scale(0.98); background: var(--bg-hover); }
+.btn.primary { background: var(--accent); color: #fff; }
+.btn.primary:active { background: var(--accent-hover); }
+
+/* rules panel */
+.rules-toggle {
+  margin-top: 8px;
+  background: transparent;
+  border: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 10px 16px;
+  font-family: inherit;
+  min-height: 44px;
+}
+.rules-toggle:hover { color: var(--text-primary); }
+.rules-panel {
+  max-width: 460px;
+  margin: 0 auto;
+  background: var(--bg-card);
+  border-radius: 14px;
+  padding: 0 22px;
+  box-shadow: var(--shadow);
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+}
+.rules-panel.open { max-height: 600px; padding: 18px 22px; }
+.rules-panel h3 {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+}
+.rules-panel ul {
+  list-style: none;
+  padding: 0;
+}
+.rules-panel li {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  padding: 4px 0 4px 18px;
+  position: relative;
+}
+.rules-panel li::before {
+  content: "•";
+  position: absolute;
+  left: 4px;
+  color: var(--accent);
+}
+
+/* modal */
+.modal-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.modal-bg.show { display: flex; opacity: 1; }
+.modal {
+  background: #fff;
+  border-radius: 20px;
+  padding: 32px 28px;
+  width: min(340px, 88vw);
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  transform: scale(0.9);
+  transition: transform 0.3s cubic-bezier(0.25, 1.5, 0.5, 1);
+}
+.modal-bg.show .modal { transform: scale(1); }
+.modal h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+}
+.modal .sub {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 18px;
+}
+.modal .big {
+  font-size: 44px;
+  font-weight: 700;
+  color: var(--accent);
+  margin: 8px 0 6px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.modal .row {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
+  font-variant-numeric: tabular-nums;
+}
+.modal .row .label {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+.modal .row .val {
+  font-size: 20px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+.modal-btn {
+  width: 100%;
+  min-height: 48px;
+  background: var(--accent);
+  color: #fff;
+  border: 0;
+  border-radius: 100px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.modal-btn:hover { background: var(--accent-hover); }
+
+.msg {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%) translateY(12px);
+  background: var(--text-primary);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 150;
+}
+.msg.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+@media (max-width: 420px) {
+  .app { padding: 68px 10px 28px; gap: 14px; }
+  .size button { padding: 9px 14px; font-size: 13px; }
+  .stat .value { font-size: 20px; }
+  .key { font-size: 18px; }
+}
+</style>
+</head>
+<body>
+<a class="back" href="../" aria-label="Back to games">←</a>
+
+<main class="app">
+  <header class="title">
+    <h1>KenKen</h1>
+    <p>Math puzzles with cages and operations</p>
+  </header>
+
+  <div class="size" role="tablist" aria-label="Grid size">
+    <button class="active" data-size="4" role="tab">4 × 4</button>
+    <button data-size="6" role="tab">6 × 6</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="label">Time</div>
+      <div class="value" id="time">0:00</div>
+    </div>
+    <div class="stat">
+      <div class="label">Mistakes</div>
+      <div class="value" id="mistakes">0</div>
+    </div>
+    <div class="stat">
+      <div class="label">Best</div>
+      <div class="value" id="best">—</div>
+    </div>
+  </div>
+
+  <div class="board-wrap">
+    <div class="board size-4" id="board" aria-label="KenKen board"></div>
+  </div>
+
+  <div class="keypad" id="keypad"></div>
+
+  <div class="controls">
+    <button class="btn" id="notesBtn">✎ Notes</button>
+    <button class="btn" id="checkBtn">Check</button>
+    <button class="btn primary" id="newBtn">New</button>
+  </div>
+
+  <div style="text-align:center;width:100%">
+    <button class="rules-toggle" onclick="this.nextElementSibling.classList.toggle('open')">How to Play ▾</button>
+    <div class="rules-panel">
+      <h3>How to Play</h3>
+      <ul>
+        <li>Fill the grid so every row and every column contains each number exactly once (1–4 for a 4×4 grid, 1–6 for a 6×6 grid).</li>
+        <li>Heavy-outlined regions are <strong>cages</strong>. Numbers in a cage must combine — using the operation shown — to produce the target in the cage's top-left corner.</li>
+        <li>Operations: <strong>+</strong> add, <strong>−</strong> subtract, <strong>×</strong> multiply, <strong>÷</strong> divide. For − and ÷ the order of numbers doesn't matter.</li>
+        <li>A cage with a single cell and no operation is just the given value — write it in.</li>
+        <li>Tap a cell, then tap a number on the keypad to place it. Tap ⌫ to clear.</li>
+        <li>Turn on <strong>Notes</strong> to pencil in possible candidates for a cell.</li>
+        <li>Tap <strong>Check</strong> to verify your progress. <strong>New</strong> generates a fresh puzzle.</li>
+        <li>Solve faster for a higher score — your best result is saved on this device.</li>
+      </ul>
+    </div>
+  </div>
+</main>
+
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <h2 id="modalTitle">Solved!</h2>
+    <div class="sub" id="modalSub">Nicely done</div>
+    <div class="big" id="modalScore">0</div>
+    <div class="row">
+      <div>
+        <div class="label">Time</div>
+        <div class="val" id="modalTime">0:00</div>
+      </div>
+      <div>
+        <div class="label">Mistakes</div>
+        <div class="val" id="modalMistakes">0</div>
+      </div>
+    </div>
+    <button class="modal-btn" id="playAgain">Play Again</button>
+  </div>
+</div>
+
+<div class="msg" id="msg"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------- state ----------
+  const state = {
+    size: 4,
+    solution: null,       // N×N target values
+    cageIds: null,        // N×N cage ids
+    cages: [],            // [{id, cells:[[r,c]...], op, target, anchor:[r,c]}]
+    cageOfCell: null,     // N×N -> cage object
+    board: null,          // user values (0 = empty)
+    notes: null,          // N×N -> Set of numbers
+    notesMode: false,
+    selected: null,       // [r, c]
+    startedAt: 0,
+    timerId: null,
+    mistakes: 0,
+    finished: false,
+  };
+
+  // ---------- DOM ----------
+  const boardEl   = document.getElementById('board');
+  const keypadEl  = document.getElementById('keypad');
+  const timeEl    = document.getElementById('time');
+  const mistakesEl= document.getElementById('mistakes');
+  const bestEl    = document.getElementById('best');
+  const modal     = document.getElementById('modal');
+  const modalTitle= document.getElementById('modalTitle');
+  const modalSub  = document.getElementById('modalSub');
+  const modalScore= document.getElementById('modalScore');
+  const modalTime = document.getElementById('modalTime');
+  const modalMistakes = document.getElementById('modalMistakes');
+  const msgEl     = document.getElementById('msg');
+
+  // ---------- helpers ----------
+  const rnd = (n) => Math.floor(Math.random() * n);
+  const shuffle = (arr) => {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = rnd(i + 1);
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+  const key = (r, c) => r + ',' + c;
+
+  function formatTime(sec) {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  function showMsg(text, ms) {
+    msgEl.textContent = text;
+    msgEl.classList.add('show');
+    clearTimeout(showMsg._t);
+    showMsg._t = setTimeout(() => msgEl.classList.remove('show'), ms || 1600);
+  }
+
+  // ---------- puzzle generation ----------
+  function makeLatinSquare(n) {
+    // start canonical: grid[i][j] = ((i + j) % n) + 1
+    const grid = [];
+    for (let i = 0; i < n; i++) {
+      const row = [];
+      for (let j = 0; j < n; j++) row.push(((i + j) % n) + 1);
+      grid.push(row);
+    }
+    // permute rows + columns
+    const rowOrder = shuffle([...Array(n).keys()]);
+    const colOrder = shuffle([...Array(n).keys()]);
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const row = [];
+      for (let j = 0; j < n; j++) row.push(grid[rowOrder[i]][colOrder[j]]);
+      out.push(row);
+    }
+    // remap values by a random permutation of 1..n (keeps it a Latin square)
+    const valOrder = shuffle([...Array(n).keys()]).map(v => v + 1);
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n; j++) out[i][j] = valOrder[out[i][j] - 1];
+    }
+    return out;
+  }
+
+  function partitionCages(n) {
+    const ids = Array.from({ length: n }, () => new Array(n).fill(-1));
+    let next = 0;
+    // preferred cage size distribution — larger grids get a few bigger cages
+    const sizePicks = n === 4
+      ? [1, 2, 2, 2, 2, 3]
+      : [1, 2, 2, 2, 2, 3, 3, 4];
+    for (let r = 0; r < n; r++) {
+      for (let c = 0; c < n; c++) {
+        if (ids[r][c] !== -1) continue;
+        const id = next++;
+        const cells = [[r, c]];
+        ids[r][c] = id;
+        const targetSize = sizePicks[rnd(sizePicks.length)];
+        while (cells.length < targetSize) {
+          const neigh = [];
+          for (const [cr, cc] of cells) {
+            const cand = [[cr - 1, cc], [cr + 1, cc], [cr, cc - 1], [cr, cc + 1]];
+            for (const [nr, nc] of cand) {
+              if (nr < 0 || nr >= n || nc < 0 || nc >= n) continue;
+              if (ids[nr][nc] !== -1) continue;
+              neigh.push([nr, nc]);
+            }
+          }
+          if (neigh.length === 0) break;
+          const [nr, nc] = neigh[rnd(neigh.length)];
+          ids[nr][nc] = id;
+          cells.push([nr, nc]);
+        }
+      }
+    }
+    return ids;
+  }
+
+  function buildCages(sol, ids) {
+    const n = sol.length;
+    const map = {};
+    for (let r = 0; r < n; r++) {
+      for (let c = 0; c < n; c++) {
+        const id = ids[r][c];
+        if (!map[id]) map[id] = { id, cells: [], values: [] };
+        map[id].cells.push([r, c]);
+        map[id].values.push(sol[r][c]);
+      }
+    }
+    const cages = [];
+    for (const id in map) {
+      const { cells, values } = map[id];
+      // anchor = top-left (min row, then min col)
+      const anchor = cells.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1])[0];
+
+      let op, target;
+      if (cells.length === 1) {
+        op = '';
+        target = values[0];
+      } else if (cells.length === 2) {
+        const [hi, lo] = values[0] >= values[1] ? values : [values[1], values[0]];
+        const choices = ['+', '×'];
+        if (hi - lo > 0) choices.push('−');
+        if (hi % lo === 0 && hi / lo !== 1) choices.push('÷');
+        op = choices[rnd(choices.length)];
+        target = op === '+' ? hi + lo
+               : op === '−' ? hi - lo
+               : op === '×' ? hi * lo
+               : hi / lo;
+      } else {
+        // 3+ cells: + or ×
+        op = Math.random() < 0.55 ? '+' : '×';
+        target = op === '+'
+          ? values.reduce((s, v) => s + v, 0)
+          : values.reduce((p, v) => p * v, 1);
+      }
+      cages.push({ id: +id, cells, op, target, anchor });
+    }
+    return cages;
+  }
+
+  function generatePuzzle(n) {
+    const sol = makeLatinSquare(n);
+    const ids = partitionCages(n);
+    const cages = buildCages(sol, ids);
+    const cageOfCell = Array.from({ length: n }, () => new Array(n));
+    for (const cage of cages) {
+      for (const [r, c] of cage.cells) cageOfCell[r][c] = cage;
+    }
+    return { solution: sol, cageIds: ids, cages, cageOfCell };
+  }
+
+  // ---------- render ----------
+  function render() {
+    const n = state.size;
+    boardEl.className = 'board size-' + n;
+    boardEl.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
+    boardEl.style.gridTemplateRows    = `repeat(${n}, 1fr)`;
+    boardEl.innerHTML = '';
+
+    for (let r = 0; r < n; r++) {
+      for (let c = 0; c < n; c++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.r = r;
+        cell.dataset.c = c;
+
+        const id = state.cageIds[r][c];
+        // thick borders where top/left neighbour is in a different cage
+        // (right/bottom edges are drawn by the neighbour's top/left border, or
+        // by the board's outer border on the grid's perimeter)
+        if (r === 0 || state.cageIds[r - 1][c] !== id) cell.classList.add('bt');
+        if (c === 0 || state.cageIds[r][c - 1] !== id) cell.classList.add('bl');
+
+        const cage = state.cageOfCell[r][c];
+        if (cage.anchor[0] === r && cage.anchor[1] === c) {
+          const lbl = document.createElement('div');
+          lbl.className = 'cage-label';
+          lbl.textContent = cage.op ? (cage.target + cage.op) : cage.target;
+          cell.appendChild(lbl);
+        }
+
+        const notes = document.createElement('div');
+        notes.className = 'notes';
+        for (let k = 1; k <= n; k++) {
+          const s = document.createElement('span');
+          s.dataset.n = k;
+          notes.appendChild(s);
+        }
+        cell.appendChild(notes);
+
+        const val = document.createElement('div');
+        val.className = 'val';
+        cell.appendChild(val);
+
+        cell.addEventListener('click', () => selectCell(r, c));
+        boardEl.appendChild(cell);
+      }
+    }
+    refresh();
+  }
+
+  function refresh() {
+    const n = state.size;
+    const cells = boardEl.children;
+    const rowHas = Array.from({ length: n }, () => new Set());
+    const colHas = Array.from({ length: n }, () => new Set());
+    const rowDup = Array.from({ length: n }, () => new Set());
+    const colDup = Array.from({ length: n }, () => new Set());
+    for (let r = 0; r < n; r++) {
+      for (let c = 0; c < n; c++) {
+        const v = state.board[r][c];
+        if (!v) continue;
+        if (rowHas[r].has(v)) rowDup[r].add(v);
+        else rowHas[r].add(v);
+        if (colHas[c].has(v)) colDup[c].add(v);
+        else colHas[c].add(v);
+      }
+    }
+
+    for (let i = 0; i < cells.length; i++) {
+      const cell = cells[i];
+      const r = +cell.dataset.r, c = +cell.dataset.c;
+      const v = state.board[r][c];
+      const valEl = cell.querySelector('.val');
+      const notesEl = cell.querySelector('.notes');
+      cell.classList.remove('selected', 'peer', 'conflict');
+
+      if (v) {
+        valEl.textContent = v;
+        notesEl.style.display = 'none';
+        if (rowDup[r].has(v) || colDup[c].has(v)) cell.classList.add('conflict');
+      } else {
+        valEl.textContent = '';
+        notesEl.style.display = '';
+        const set = state.notes[r][c];
+        for (const span of notesEl.children) {
+          const nn = +span.dataset.n;
+          span.textContent = set.has(nn) ? nn : '';
+        }
+      }
+
+      if (state.selected && state.selected[0] === r && state.selected[1] === c) {
+        cell.classList.add('selected');
+      } else if (state.selected && (state.selected[0] === r || state.selected[1] === c)) {
+        cell.classList.add('peer');
+      }
+    }
+  }
+
+  function selectCell(r, c) {
+    state.selected = [r, c];
+    refresh();
+  }
+
+  // ---------- keypad ----------
+  function buildKeypad() {
+    keypadEl.innerHTML = '';
+    for (let k = 1; k <= state.size; k++) {
+      const b = document.createElement('button');
+      b.className = 'key';
+      b.textContent = k;
+      b.addEventListener('click', () => inputNumber(k));
+      keypadEl.appendChild(b);
+    }
+    const clr = document.createElement('button');
+    clr.className = 'key wide';
+    clr.textContent = '⌫';
+    clr.setAttribute('aria-label', 'Clear cell');
+    clr.addEventListener('click', () => inputNumber(0));
+    keypadEl.appendChild(clr);
+  }
+
+  function inputNumber(n) {
+    if (state.finished) return;
+    if (!state.selected) { showMsg('Tap a cell first'); return; }
+    const [r, c] = state.selected;
+
+    if (n === 0) {
+      state.board[r][c] = 0;
+      state.notes[r][c].clear();
+      refresh();
+      return;
+    }
+
+    if (state.notesMode) {
+      const set = state.notes[r][c];
+      if (set.has(n)) set.delete(n); else set.add(n);
+      state.board[r][c] = 0;
+      refresh();
+      return;
+    }
+
+    state.board[r][c] = n;
+    state.notes[r][c].clear();
+    refresh();
+    if (isBoardFull()) {
+      const res = evaluate();
+      if (res.ok) finish();
+    }
+  }
+
+  // ---------- evaluation ----------
+  function isBoardFull() {
+    const n = state.size;
+    for (let r = 0; r < n; r++)
+      for (let c = 0; c < n; c++)
+        if (!state.board[r][c]) return false;
+    return true;
+  }
+
+  function evaluate() {
+    const n = state.size;
+    // rows + cols unique and complete
+    for (let i = 0; i < n; i++) {
+      const rs = new Set(), cs = new Set();
+      for (let j = 0; j < n; j++) {
+        const rv = state.board[i][j];
+        const cv = state.board[j][i];
+        if (!rv || !cv) return { ok: false, reason: 'incomplete' };
+        rs.add(rv); cs.add(cv);
+      }
+      if (rs.size !== n || cs.size !== n) return { ok: false, reason: 'duplicate' };
+    }
+    // cages
+    for (const cage of state.cages) {
+      const vals = cage.cells.map(([r, c]) => state.board[r][c]);
+      if (vals.some(v => !v)) return { ok: false, reason: 'incomplete' };
+      let val;
+      if (!cage.op) {
+        val = vals[0];
+      } else if (cage.op === '+') {
+        val = vals.reduce((s, v) => s + v, 0);
+      } else if (cage.op === '×') {
+        val = vals.reduce((p, v) => p * v, 1);
+      } else if (cage.op === '−') {
+        const [hi, lo] = vals[0] >= vals[1] ? vals : [vals[1], vals[0]];
+        val = hi - lo;
+      } else if (cage.op === '÷') {
+        const [hi, lo] = vals[0] >= vals[1] ? vals : [vals[1], vals[0]];
+        if (lo === 0 || hi % lo !== 0) return { ok: false, reason: 'cage' };
+        val = hi / lo;
+      }
+      if (val !== cage.target) return { ok: false, reason: 'cage' };
+    }
+    return { ok: true };
+  }
+
+  function onCheck() {
+    if (!isBoardFull()) {
+      // highlight wrong cells relative to a valid Latin-square answer using current values' row/col conflicts only
+      const n = state.size;
+      let bad = 0;
+      for (let r = 0; r < n; r++) {
+        for (let c = 0; c < n; c++) {
+          const v = state.board[r][c];
+          if (!v) continue;
+          for (let k = 0; k < n; k++) {
+            if (k !== c && state.board[r][k] === v) { bad++; break; }
+            if (k !== r && state.board[k][c] === v) { bad++; break; }
+          }
+        }
+      }
+      showMsg(bad ? `${bad} conflicts — keep going` : 'Looking good — keep going');
+      return;
+    }
+    const res = evaluate();
+    if (res.ok) finish();
+    else {
+      state.mistakes++;
+      updateStats();
+      showMsg('Not quite — check cages and rows');
+    }
+  }
+
+  // ---------- timer + stats ----------
+  function startTimer() {
+    stopTimer();
+    state.startedAt = Date.now();
+    timeEl.textContent = '0:00';
+    state.timerId = setInterval(() => {
+      if (state.finished) return;
+      timeEl.textContent = formatTime(Math.floor((Date.now() - state.startedAt) / 1000));
+    }, 500);
+  }
+  function stopTimer() {
+    if (state.timerId) { clearInterval(state.timerId); state.timerId = null; }
+  }
+  function elapsedSec() {
+    return Math.floor((Date.now() - state.startedAt) / 1000);
+  }
+  function updateStats() {
+    mistakesEl.textContent = state.mistakes;
+  }
+  function computeScore(size, seconds, mistakes) {
+    const base = size === 4 ? 600 : 2000;
+    const rate = size === 4 ? 1 : 2;
+    const raw = base - seconds * rate - mistakes * 20;
+    return Math.max(1, Math.floor(raw));
+  }
+
+  // ---------- persistence ----------
+  function bestKey() { return `kenken-best-${state.size}`; }
+  function loadBest() {
+    try {
+      const v = JSON.parse(localStorage.getItem(bestKey()));
+      if (v && typeof v.score === 'number') {
+        bestEl.textContent = v.score;
+      } else {
+        bestEl.textContent = '—';
+      }
+    } catch { bestEl.textContent = '—'; }
+  }
+  function saveBest(entry) {
+    try {
+      const prev = JSON.parse(localStorage.getItem(bestKey()));
+      if (!prev || entry.score > prev.score) {
+        localStorage.setItem(bestKey(), JSON.stringify(entry));
+      }
+    } catch {}
+  }
+
+  // ---------- game flow ----------
+  function newGame() {
+    const p = generatePuzzle(state.size);
+    state.solution = p.solution;
+    state.cageIds = p.cageIds;
+    state.cages = p.cages;
+    state.cageOfCell = p.cageOfCell;
+    state.board = Array.from({ length: state.size }, () => new Array(state.size).fill(0));
+    state.notes = Array.from({ length: state.size }, () =>
+      Array.from({ length: state.size }, () => new Set())
+    );
+    state.selected = null;
+    state.mistakes = 0;
+    state.finished = false;
+    state.notesMode = false;
+    document.getElementById('notesBtn').classList.remove('active', 'toggle');
+    updateStats();
+    buildKeypad();
+    render();
+    startTimer();
+    loadBest();
+  }
+
+  function finish() {
+    if (state.finished) return;
+    state.finished = true;
+    stopTimer();
+    const secs = elapsedSec();
+    const score = computeScore(state.size, secs, state.mistakes);
+
+    modalTitle.textContent = 'Solved!';
+    modalSub.textContent = state.size + '×' + state.size + ' KenKen';
+    modalScore.textContent = score;
+    modalTime.textContent = formatTime(secs);
+    modalMistakes.textContent = state.mistakes;
+
+    saveBest({ score, time: secs, mistakes: state.mistakes, at: Date.now() });
+    loadBest();
+
+    setTimeout(() => modal.classList.add('show'), 250);
+
+    // submit to leaderboard — guarded
+    setTimeout(() => {
+      try {
+        if (window.Leaderboard && typeof Leaderboard.submitScore === 'function') {
+          Leaderboard.submitScore(score);
+        }
+      } catch (e) {}
+    }, 500);
+  }
+
+  // ---------- events ----------
+  document.querySelectorAll('.size button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.classList.contains('active')) return;
+      document.querySelectorAll('.size button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.size = +btn.dataset.size;
+      newGame();
+    });
+  });
+
+  document.getElementById('newBtn').addEventListener('click', newGame);
+  document.getElementById('checkBtn').addEventListener('click', onCheck);
+
+  const notesBtn = document.getElementById('notesBtn');
+  notesBtn.classList.add('toggle');
+  notesBtn.addEventListener('click', () => {
+    state.notesMode = !state.notesMode;
+    notesBtn.classList.toggle('active', state.notesMode);
+  });
+
+  document.getElementById('playAgain').addEventListener('click', () => {
+    modal.classList.remove('show');
+    newGame();
+  });
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.classList.remove('show');
+  });
+
+  // keyboard input
+  document.addEventListener('keydown', (e) => {
+    if (state.finished) return;
+    if (e.key >= '1' && e.key <= '9') {
+      const n = +e.key;
+      if (n <= state.size) inputNumber(n);
+    } else if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') {
+      inputNumber(0);
+    } else if (e.key === 'ArrowUp'    && state.selected) { state.selected[0] = (state.selected[0] + state.size - 1) % state.size; refresh(); }
+    else if   (e.key === 'ArrowDown'  && state.selected) { state.selected[0] = (state.selected[0] + 1) % state.size; refresh(); }
+    else if   (e.key === 'ArrowLeft'  && state.selected) { state.selected[1] = (state.selected[1] + state.size - 1) % state.size; refresh(); }
+    else if   (e.key === 'ArrowRight' && state.selected) { state.selected[1] = (state.selected[1] + 1) % state.size; refresh(); }
+    else if   (e.key === 'n' || e.key === 'N') { notesBtn.click(); }
+  });
+
+  // ---------- boot ----------
+  newGame();
+})();
+</script>
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

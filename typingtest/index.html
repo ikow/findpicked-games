@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Typing Test · FindPicked Games</title>
+<meta name="description" content="Test your typing speed and accuracy. WPM, errors, 30/60/120s modes.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ctext x='16' y='22' font-size='18' fill='white' text-anchor='middle' font-family='system-ui'%3ET%3C/text%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-hover: #f5f5f7;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --text-pending: #c7c7cc;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --error: #ff3b30;
+  --error-bg: rgba(255, 59, 48, 0.15);
+  --success: #34c759;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+
+html, body {
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+.app {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 12px 16px 24px;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 44px;
+  flex-shrink: 0;
+}
+
+.back {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: background 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.back:hover, .back:active { background: var(--bg-hover); }
+
+.title {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.modes {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 16px;
+  flex-shrink: 0;
+}
+
+.mode-btn {
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 22px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.mode-btn:hover { background: var(--bg-hover); }
+.mode-btn.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.stats {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  flex-shrink: 0;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  box-shadow: var(--shadow);
+  border-radius: 14px;
+  padding: 12px 16px;
+  flex: 1;
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+}
+
+.stat-value {
+  font-size: 26px;
+  font-weight: 700;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.stat-value.warn { color: var(--error); }
+
+.text-wrap {
+  margin-top: 20px;
+  background: var(--bg-card);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  padding: 24px;
+  position: relative;
+}
+
+.text-display {
+  font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: 22px;
+  line-height: 1.7;
+  letter-spacing: 0.01em;
+  color: var(--text-pending);
+  user-select: none;
+  min-height: 180px;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.char {
+  transition: color 0.05s ease, background 0.05s ease;
+  border-radius: 3px;
+}
+.char.correct { color: var(--text-primary); }
+.char.incorrect { color: var(--error); background: var(--error-bg); }
+.char.current {
+  background: var(--accent);
+  color: white;
+  animation: blink 1s ease-in-out infinite;
+}
+.char.space-error {
+  background: var(--error-bg);
+  border-bottom: 2px solid var(--error);
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.65; }
+}
+
+.input-hidden {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  resize: none;
+  cursor: text;
+}
+
+.hint {
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--text-tertiary);
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 16px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.btn {
+  min-height: 44px;
+  padding: 0 24px;
+  border-radius: 22px;
+  border: none;
+  background: var(--accent);
+  color: white;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease, transform 0.1s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn:active { transform: scale(0.97); }
+.btn.secondary {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+.btn.secondary:hover { background: var(--bg-hover); }
+
+.results {
+  margin-top: 20px;
+  background: var(--bg-card);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  padding: 28px 24px;
+  text-align: center;
+  display: none;
+}
+.results.visible { display: block; }
+
+.results h2 {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+
+.results-sub {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.result-item {
+  padding: 16px 8px;
+  background: var(--bg-hover);
+  border-radius: 14px;
+}
+.result-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+}
+.result-value {
+  font-size: 32px;
+  font-weight: 700;
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--accent);
+}
+.result-value.red { color: var(--error); }
+
+.rules-toggle {
+  display: inline-block;
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--accent);
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+  padding: 0;
+}
+.rules-toggle:hover { text-decoration: underline; }
+
+.rules-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  text-align: left;
+  max-width: 560px;
+  margin: 8px auto 0;
+}
+.rules-panel.open { max-height: 600px; }
+.rules-panel ul { margin: 8px 0 0 18px; }
+.rules-panel li { margin-bottom: 6px; }
+
+.rules-footer {
+  margin-top: 12px;
+  padding-top: 20px;
+  text-align: center;
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 520px) {
+  .text-display { font-size: 18px; line-height: 1.7; min-height: 160px; }
+  .text-wrap { padding: 20px; }
+  .stat-value { font-size: 22px; }
+  .results-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .result-value { font-size: 24px; }
+  .mode-btn { padding: 0 14px; font-size: 14px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="nav">
+    <a class="back" href="../" aria-label="Back to games">←</a>
+    <div class="title">Typing Test</div>
+  </nav>
+
+  <div class="modes" role="radiogroup" aria-label="Test duration">
+    <button class="mode-btn active" data-duration="30" role="radio" aria-checked="true">30s</button>
+    <button class="mode-btn" data-duration="60" role="radio" aria-checked="false">60s</button>
+    <button class="mode-btn" data-duration="120" role="radio" aria-checked="false">120s</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">Time</div>
+      <div class="stat-value" id="time">30</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">WPM</div>
+      <div class="stat-value" id="wpm">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Accuracy</div>
+      <div class="stat-value" id="accuracy">100%</div>
+    </div>
+  </div>
+
+  <div class="text-wrap" id="text-wrap">
+    <div class="text-display" id="text-display" aria-live="polite"></div>
+    <textarea class="input-hidden" id="input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Type here"></textarea>
+  </div>
+
+  <p class="hint" id="hint">Click the text and start typing to begin</p>
+
+  <div class="controls">
+    <button class="btn secondary" id="restart-btn">Restart</button>
+    <button class="btn secondary" id="new-text-btn">New Text</button>
+  </div>
+
+  <div class="results" id="results" aria-live="polite">
+    <h2>Time's Up!</h2>
+    <div class="results-sub" id="results-sub">Here's how you did</div>
+    <div class="results-grid">
+      <div class="result-item">
+        <div class="result-label">WPM</div>
+        <div class="result-value" id="r-wpm">0</div>
+      </div>
+      <div class="result-item">
+        <div class="result-label">Accuracy</div>
+        <div class="result-value" id="r-accuracy">0%</div>
+      </div>
+      <div class="result-item">
+        <div class="result-label">Errors</div>
+        <div class="result-value red" id="r-errors">0</div>
+      </div>
+    </div>
+    <button class="btn" id="play-again-btn">Play Again</button>
+  </div>
+
+  <div class="rules-footer">
+    <button class="rules-toggle" onclick="this.nextElementSibling.classList.toggle('open')">How to Play ▾</button>
+    <div class="rules-panel">
+      <ul>
+        <li><strong>Goal:</strong> Type the displayed text as accurately and quickly as possible within the time limit.</li>
+        <li><strong>Choose duration:</strong> 30, 60, or 120 seconds. Changing the mode starts a fresh test.</li>
+        <li><strong>Start typing</strong> on the text — the timer begins with your first keystroke.</li>
+        <li><strong>Correct letters</strong> turn black. <strong>Incorrect letters</strong> turn red and highlight in real time.</li>
+        <li><strong>Backspace</strong> to fix mistakes — uncorrected errors count against your accuracy.</li>
+        <li><strong>WPM</strong> = (correctly typed characters ÷ 5) ÷ minutes elapsed — the standard formula.</li>
+        <li><strong>Accuracy</strong> = correct characters ÷ total characters typed.</li>
+        <li><strong>Best WPM</strong> is saved locally and submitted to the leaderboard.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const PASSAGES = [
+    "The quick brown fox jumps over the lazy dog. A simple sentence that contains every letter of the alphabet at least once. Practice typing it carefully to improve your speed and accuracy over time. Good habits make great typists.",
+    "Technology has transformed how we communicate, learn, and work. A fast, accurate typist can save hours each week, turning small gains into real productivity. Start slow, build muscle memory, and let speed follow naturally.",
+    "The best way to predict the future is to invent it. Creative minds see problems as puzzles waiting for fresh solutions. Every line of code, every sentence written, and every idea shared pushes the conversation forward a little.",
+    "Small daily habits compound into remarkable results. Reading for twenty minutes a day, writing a few paragraphs, or practicing typing for just a few minutes can transform your skills over the course of a single year.",
+    "Nature is full of patterns that repeat at every scale, from the branches of a tree to the veins in a leaf. Mathematicians have spent centuries trying to describe these elegant structures with simple equations and formulas.",
+    "Coffee, tea, and quiet mornings share a certain magic. They create small pockets of calm in an otherwise busy day. Take a moment to breathe, notice the room around you, and let your thoughts settle before the rush begins.",
+    "A good book can transport you to another world in just a few sentences. The best stories feel less like escapes and more like mirrors, reflecting parts of ourselves we had not quite noticed until someone else gave them words.",
+    "The ocean is vast and mostly unexplored, hiding wonders beneath its surface that rival any found on land. Strange fish, ancient shipwrecks, and glowing creatures drift through the dark in waters deeper than mountains are tall.",
+    "Learning a new skill can feel slow at first, but progress rarely looks like a straight line. Plateaus are often followed by sudden jumps in ability, as long as you keep showing up and pushing yourself just a little further.",
+    "Kindness costs nothing but is worth more than gold. A small gesture, a patient word, or a moment of genuine attention can change the course of someone's day, and sometimes the course of their life entirely without warning.",
+    "The stars you see at night are windows into the past. Their light traveled for years, sometimes thousands of them, before reaching your eyes. To look up at the sky is to look backwards through time at a universe long gone by.",
+    "A garden teaches patience, attention, and humility. You cannot rush a seed into a flower any more than you can argue with the weather. You can only prepare the soil, water it regularly, and trust the slow work of growth.",
+    "Music has a way of reaching places that language cannot. A familiar tune can pull a memory from decades ago as vividly as if it happened this morning. The right song at the right moment is a small, quiet kind of time travel."
+  ];
+
+  const textDisplay = document.getElementById('text-display');
+  const input = document.getElementById('input');
+  const textWrap = document.getElementById('text-wrap');
+  const timeEl = document.getElementById('time');
+  const wpmEl = document.getElementById('wpm');
+  const accEl = document.getElementById('accuracy');
+  const hintEl = document.getElementById('hint');
+  const restartBtn = document.getElementById('restart-btn');
+  const newTextBtn = document.getElementById('new-text-btn');
+  const playAgainBtn = document.getElementById('play-again-btn');
+  const resultsEl = document.getElementById('results');
+  const rWpm = document.getElementById('r-wpm');
+  const rAcc = document.getElementById('r-accuracy');
+  const rErr = document.getElementById('r-errors');
+  const resultsSub = document.getElementById('results-sub');
+  const modeButtons = document.querySelectorAll('.mode-btn');
+
+  let duration = 30;
+  let passage = '';
+  let charEls = [];
+  let state = 'idle'; // idle | running | done
+  let startedAt = 0;
+  let timerInterval = null;
+  let currentIndex = 0;
+  let correctCount = 0;
+  let errorCount = 0;
+  let typedCount = 0;
+  let finalErrors = 0;
+
+  const BEST_KEY = 'typingtest-best-wpm';
+
+  function pickPassage() {
+    const prev = passage;
+    let p;
+    do { p = PASSAGES[Math.floor(Math.random() * PASSAGES.length)]; }
+    while (PASSAGES.length > 1 && p === prev);
+    return p;
+  }
+
+  function renderPassage() {
+    textDisplay.innerHTML = '';
+    charEls = [];
+    for (let i = 0; i < passage.length; i++) {
+      const span = document.createElement('span');
+      span.className = 'char';
+      span.textContent = passage[i];
+      textDisplay.appendChild(span);
+      charEls.push(span);
+    }
+    if (charEls[0]) charEls[0].classList.add('current');
+  }
+
+  function reset(newText) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    state = 'idle';
+    currentIndex = 0;
+    correctCount = 0;
+    errorCount = 0;
+    typedCount = 0;
+    finalErrors = 0;
+    input.value = '';
+    if (newText || !passage) passage = pickPassage();
+    renderPassage();
+    timeEl.textContent = duration;
+    timeEl.classList.remove('warn');
+    wpmEl.textContent = '0';
+    accEl.textContent = '100%';
+    resultsEl.classList.remove('visible');
+    hintEl.textContent = 'Click the text and start typing to begin';
+    input.focus();
+  }
+
+  function startTimer() {
+    startedAt = Date.now();
+    state = 'running';
+    hintEl.textContent = 'Typing… stay focused.';
+    updateLiveStats();
+    timerInterval = setInterval(() => {
+      const elapsed = (Date.now() - startedAt) / 1000;
+      const remaining = Math.max(0, duration - elapsed);
+      const rInt = Math.ceil(remaining);
+      timeEl.textContent = rInt;
+      if (rInt <= 5) timeEl.classList.add('warn');
+      updateLiveStats();
+      if (remaining <= 0) finish();
+    }, 100);
+  }
+
+  function updateLiveStats() {
+    const elapsed = state === 'running' ? (Date.now() - startedAt) / 1000 : 0;
+    const minutes = Math.max(elapsed / 60, 1 / 60);
+    const wpm = Math.round((correctCount / 5) / minutes);
+    wpmEl.textContent = isFinite(wpm) && wpm >= 0 ? wpm : 0;
+    const acc = typedCount === 0 ? 100 : Math.round((correctCount / typedCount) * 100);
+    accEl.textContent = acc + '%';
+  }
+
+  function finish() {
+    if (state === 'done') return;
+    clearInterval(timerInterval);
+    timerInterval = null;
+    state = 'done';
+    input.blur();
+
+    const elapsed = (Date.now() - startedAt) / 1000;
+    const minutes = Math.max(elapsed / 60, 1 / 60);
+    const wpm = Math.max(0, Math.round((correctCount / 5) / minutes));
+    const acc = typedCount === 0 ? 0 : Math.round((correctCount / typedCount) * 100);
+    finalErrors = Math.max(0, typedCount - correctCount);
+
+    rWpm.textContent = wpm;
+    rAcc.textContent = acc + '%';
+    rErr.textContent = finalErrors;
+
+    let best = parseInt(localStorage.getItem(BEST_KEY) || '0', 10);
+    const isNewBest = wpm > best;
+    if (isNewBest) {
+      try { localStorage.setItem(BEST_KEY, String(wpm)); } catch {}
+      resultsSub.textContent = 'New personal best!';
+    } else {
+      resultsSub.textContent = best > 0 ? ('Personal best: ' + best + ' WPM') : "Here's how you did";
+    }
+
+    hintEl.textContent = 'Click Play Again or choose a new mode.';
+    resultsEl.classList.add('visible');
+
+    setTimeout(() => {
+      if (window.Leaderboard && typeof window.Leaderboard.submitScore === 'function') {
+        window.Leaderboard.submitScore(wpm);
+      }
+    }, 500);
+  }
+
+  function handleInput() {
+    if (state === 'done') { input.value = ''; return; }
+    const value = input.value;
+
+    if (state === 'idle' && value.length > 0) startTimer();
+
+    const len = Math.min(value.length, passage.length);
+
+    correctCount = 0;
+    errorCount = 0;
+    for (let i = 0; i < len; i++) {
+      const span = charEls[i];
+      span.classList.remove('correct', 'incorrect', 'current', 'space-error');
+      if (value[i] === passage[i]) {
+        span.classList.add('correct');
+        correctCount++;
+      } else {
+        if (passage[i] === ' ') span.classList.add('space-error');
+        else span.classList.add('incorrect');
+        errorCount++;
+      }
+    }
+    for (let i = len; i < charEls.length; i++) {
+      charEls[i].classList.remove('correct', 'incorrect', 'current', 'space-error');
+    }
+    typedCount = len;
+    currentIndex = len;
+    if (charEls[currentIndex]) charEls[currentIndex].classList.add('current');
+
+    updateLiveStats();
+
+    if (value.length >= passage.length) {
+      passage = passage + ' ' + pickPassage();
+      appendPassage();
+    }
+  }
+
+  function appendPassage() {
+    const startFrom = charEls.length;
+    const extra = passage.slice(startFrom);
+    for (let i = 0; i < extra.length; i++) {
+      const span = document.createElement('span');
+      span.className = 'char';
+      span.textContent = extra[i];
+      textDisplay.appendChild(span);
+      charEls.push(span);
+    }
+  }
+
+  input.addEventListener('input', handleInput);
+
+  input.addEventListener('keydown', (e) => {
+    if (state === 'done') { e.preventDefault(); return; }
+    if (e.key === 'Tab') e.preventDefault();
+  });
+
+  textWrap.addEventListener('click', () => {
+    if (state !== 'done') input.focus();
+  });
+
+  restartBtn.addEventListener('click', () => {
+    reset(false);
+  });
+
+  newTextBtn.addEventListener('click', () => {
+    reset(true);
+  });
+
+  playAgainBtn.addEventListener('click', () => {
+    reset(true);
+  });
+
+  modeButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      modeButtons.forEach(b => { b.classList.remove('active'); b.setAttribute('aria-checked', 'false'); });
+      btn.classList.add('active');
+      btn.setAttribute('aria-checked', 'true');
+      duration = parseInt(btn.dataset.duration, 10);
+      reset(true);
+    });
+  });
+
+  passage = pickPassage();
+  reset(false);
+})();
+</script>
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

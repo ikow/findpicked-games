@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Reversi — FindPicked Games</title>
+<meta name="description" content="Play Reversi / Othello free. 8x8 board, flip opponent pieces. vs AI or 2-player. No downloads, no sign-ups.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23076d3a'/%3E%3Ccircle cx='11' cy='16' r='5' fill='%23111'/%3E%3Ccircle cx='21' cy='16' r='5' fill='%23fff'/%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --board-bg: #0b7a42;
+  --board-line: rgba(0,0,0,0.35);
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-card: 0 4px 14px rgba(0,0,0,0.10);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+  --radius: 16px;
+  --black-disc: #111;
+  --white-disc: #fafafa;
+}
+
+html, body { height: 100%; overscroll-behavior: none; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px 20px 40px;
+  touch-action: manipulation;
+}
+
+.back {
+  align-self: flex-start;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 400;
+  padding: 8px 4px;
+  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.back:hover { color: var(--text-primary); }
+.back .arrow { font-size: 18px; line-height: 1; }
+
+.wrap {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-bottom: 6px;
+}
+
+header p {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.scoreboard {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.score-box {
+  flex: 1;
+  background: var(--bg-card);
+  border-radius: 14px;
+  padding: 12px 16px;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.score-box.turn {
+  box-shadow: 0 0 0 2px var(--accent), var(--shadow);
+}
+
+.disc-chip {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.disc-chip.black {
+  background: radial-gradient(circle at 35% 30%, #444 0%, #111 60%, #000 100%);
+  box-shadow: inset 0 -1px 2px rgba(255,255,255,0.08);
+}
+.disc-chip.white {
+  background: radial-gradient(circle at 35% 30%, #fff 0%, #ddd 70%, #bbb 100%);
+  box-shadow: inset 0 -1px 2px rgba(0,0,0,0.12);
+}
+
+.score-meta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  min-width: 0;
+}
+.score-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.score-value {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.rules-row {
+  text-align: center;
+}
+.rules-toggle {
+  display: inline-block;
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--accent);
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+  padding: 4px 6px;
+  min-height: 28px;
+}
+.rules-toggle:hover { text-decoration: underline; }
+.rules-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  text-align: left;
+  margin: 8px auto 0;
+}
+.rules-panel.open { max-height: 800px; }
+.rules-panel ul { margin: 8px 0 0 18px; }
+.rules-panel li { margin-bottom: 4px; }
+
+.mode-row {
+  display: flex;
+  gap: 8px;
+  background: var(--bg-card);
+  padding: 6px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+.mode-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  min-height: 40px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.mode-btn.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.status {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  min-height: 20px;
+  transition: color 0.2s ease;
+}
+.status.highlight { color: var(--text-primary); }
+
+.board-wrap {
+  background: var(--board-bg);
+  padding: 10px;
+  border-radius: 14px;
+  box-shadow: var(--shadow-card);
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  position: relative;
+}
+
+.board {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  gap: 2px;
+  background: var(--board-line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.cell {
+  background: var(--board-bg);
+  position: relative;
+  cursor: default;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cell.playable {
+  cursor: pointer;
+}
+.cell.playable::after {
+  content: "";
+  position: absolute;
+  width: 22%;
+  height: 22%;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.18);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+.cell.playable:hover::after {
+  background: rgba(255,255,255,0.35);
+  transform: scale(1.35);
+}
+
+.disc {
+  width: 78%;
+  height: 78%;
+  border-radius: 50%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.45s cubic-bezier(0.4, 0.0, 0.2, 1);
+  will-change: transform;
+}
+
+.disc::before,
+.disc::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.disc::before {
+  background: radial-gradient(circle at 35% 30%, #555 0%, #111 60%, #000 100%);
+  box-shadow: inset 0 -2px 3px rgba(255,255,255,0.06), 0 2px 4px rgba(0,0,0,0.3);
+  transform: rotateY(0deg);
+}
+.disc::after {
+  background: radial-gradient(circle at 35% 30%, #fff 0%, #e6e6e6 70%, #bcbcbc 100%);
+  box-shadow: inset 0 -2px 3px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.2);
+  transform: rotateY(180deg);
+}
+
+.disc.black { transform: rotateY(0deg); }
+.disc.white { transform: rotateY(180deg); }
+
+.disc.pop {
+  animation: pop 0.35s ease;
+}
+@keyframes pop {
+  0%   { transform: scale(0) rotateY(0deg); }
+  60%  { transform: scale(1.12) rotateY(0deg); }
+  100% { transform: scale(1) rotateY(0deg); }
+}
+.disc.white.pop {
+  animation: popW 0.35s ease;
+}
+@keyframes popW {
+  0%   { transform: scale(0) rotateY(180deg); }
+  60%  { transform: scale(1.12) rotateY(180deg); }
+  100% { transform: scale(1) rotateY(180deg); }
+}
+
+.last-move {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.8);
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.btn {
+  border: none;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 22px;
+  border-radius: 999px;
+  cursor: pointer;
+  min-height: 44px;
+  min-width: 120px;
+  background: var(--accent);
+  color: #fff;
+  transition: background 0.2s ease, transform 0.1s ease;
+  letter-spacing: -0.01em;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn:active { transform: scale(0.98); }
+.btn.secondary {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  box-shadow: var(--shadow);
+}
+.btn.secondary:hover { background: #f1f1f3; }
+.btn.ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  box-shadow: none;
+}
+.btn.ghost:hover { color: var(--text-primary); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 100;
+}
+.overlay.show { opacity: 1; pointer-events: auto; }
+.overlay-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 32px 28px;
+  box-shadow: var(--shadow-hover);
+  text-align: center;
+  max-width: 380px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.overlay-card h2 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.overlay-card p {
+  font-size: 15px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.overlay-card .tally {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin: 4px 0 2px;
+}
+.overlay-card .tally-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: #f5f5f7;
+  border-radius: 12px;
+  min-width: 96px;
+}
+.overlay-card .tally-box .disc-chip { width: 24px; height: 24px; }
+.overlay-card .tally-box .num { font-size: 20px; font-weight: 700; }
+.overlay-card .row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+footer {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  text-align: center;
+  margin-top: 4px;
+  line-height: 1.6;
+}
+
+@media (max-width: 480px) {
+  body { padding: 16px 14px 32px; }
+  .wrap { gap: 14px; }
+  header h1 { font-size: 26px; }
+  .score-value { font-size: 18px; }
+  .disc-chip { width: 24px; height: 24px; }
+  .board-wrap { padding: 6px; }
+  .btn { min-width: 100px; padding: 11px 18px; font-size: 13px; }
+  .mode-btn { font-size: 12px; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="back" href="../" aria-label="Back to games">
+    <span class="arrow">←</span>
+    <span>Games</span>
+  </a>
+
+  <header>
+    <h1>Reversi</h1>
+    <p>Flip your way to the bigger score on an 8×8 board.</p>
+  </header>
+
+  <div class="mode-row" role="tablist" aria-label="Game mode">
+    <button class="mode-btn active" id="mode-ai" type="button" role="tab" aria-selected="true">vs Computer</button>
+    <button class="mode-btn" id="mode-2p" type="button" role="tab" aria-selected="false">2 Players</button>
+  </div>
+
+  <div class="scoreboard">
+    <div class="score-box turn" id="sb-black">
+      <div class="disc-chip black"></div>
+      <div class="score-meta">
+        <div class="score-label" id="lbl-black">Black (You)</div>
+        <div class="score-value" id="score-black">2</div>
+      </div>
+    </div>
+    <div class="score-box" id="sb-white">
+      <div class="disc-chip white"></div>
+      <div class="score-meta">
+        <div class="score-label" id="lbl-white">White (CPU)</div>
+        <div class="score-value" id="score-white">2</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rules-row">
+    <button class="rules-toggle" onclick="this.nextElementSibling.classList.toggle('open')">How to Play ▾</button>
+    <div class="rules-panel">
+      <ul>
+        <li><strong>Goal:</strong> End the game with more discs of your color on the board than your opponent.</li>
+        <li><strong>Start:</strong> Four discs are pre-placed in the center. Black moves first.</li>
+        <li><strong>Placing a disc:</strong> You must place on an empty square so that one or more of the opponent's discs sit in a straight line (horizontal, vertical, or diagonal) between your new disc and another of your discs.</li>
+        <li><strong>Flipping:</strong> All opponent discs in that line flip to your color.</li>
+        <li><strong>Valid moves</strong> are shown as dots. Tap one to place.</li>
+        <li><strong>No moves?</strong> Your turn is skipped. If neither player can move, the game ends.</li>
+        <li><strong>Game over:</strong> The player with the most discs wins. Ties are possible.</li>
+        <li>Choose <strong>vs Computer</strong> to play against the AI (you are Black), or <strong>2 Players</strong> to share a device.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="status" id="status">Black to move.</div>
+
+  <div class="board-wrap">
+    <div class="board" id="board" role="grid" aria-label="Reversi board"></div>
+  </div>
+
+  <div class="actions">
+    <button class="btn secondary" id="new-game" type="button">New Game</button>
+    <button class="btn ghost" id="pass-btn" type="button" hidden>Pass Turn</button>
+  </div>
+
+  <footer>
+    <kbd>N</kbd> new game · tap a highlighted square to play
+  </footer>
+</div>
+
+<div class="overlay" id="overlay" aria-hidden="true">
+  <div class="overlay-card">
+    <h2 id="overlay-title">Game Over</h2>
+    <p id="overlay-text">—</p>
+    <div class="tally">
+      <div class="tally-box">
+        <div class="disc-chip black"></div>
+        <div class="num" id="final-black">0</div>
+      </div>
+      <div class="tally-box">
+        <div class="disc-chip white"></div>
+        <div class="num" id="final-white">0</div>
+      </div>
+    </div>
+    <div class="row">
+      <button class="btn" id="overlay-again" type="button">Play Again</button>
+      <button class="btn ghost" id="overlay-close" type="button">Close</button>
+    </div>
+  </div>
+</div>
+
+<style>
+kbd {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+}
+</style>
+
+<script>
+(() => {
+  const SIZE = 8;
+  const EMPTY = 0, BLACK = 1, WHITE = 2;
+  const DIRS = [
+    [-1,-1],[-1,0],[-1,1],
+    [ 0,-1],       [ 0,1],
+    [ 1,-1],[ 1,0],[ 1,1],
+  ];
+
+  const STORE_MODE  = 'findpicked:reversi:mode';
+  const STORE_STATS = 'findpicked:reversi:stats';
+  const STORE_BEST  = 'findpicked:reversi:best';
+
+  let board = [];
+  let turn = BLACK;
+  let mode = 'ai';          // 'ai' | '2p'
+  let aiColor = WHITE;      // CPU plays white
+  let lastMove = null;      // {r,c}
+  let gameOver = false;
+  let busy = false;         // disable input during AI / animations
+
+  // Stats
+  let stats = { wins: 0, losses: 0, draws: 0, games: 0 };
+  let best = 0;
+
+  const $ = id => document.getElementById(id);
+  const boardEl = $('board');
+  const statusEl = $('status');
+  const scoreBlackEl = $('score-black');
+  const scoreWhiteEl = $('score-white');
+  const sbBlack = $('sb-black');
+  const sbWhite = $('sb-white');
+  const lblBlack = $('lbl-black');
+  const lblWhite = $('lbl-white');
+  const modeAiBtn = $('mode-ai');
+  const mode2pBtn = $('mode-2p');
+  const newGameBtn = $('new-game');
+  const passBtn = $('pass-btn');
+  const overlay = $('overlay');
+  const overlayTitle = $('overlay-title');
+  const overlayText = $('overlay-text');
+  const overlayAgain = $('overlay-again');
+  const overlayClose = $('overlay-close');
+  const finalBlack = $('final-black');
+  const finalWhite = $('final-white');
+
+  // ---- Storage ----
+  function loadPrefs() {
+    try {
+      const m = localStorage.getItem(STORE_MODE);
+      if (m === 'ai' || m === '2p') mode = m;
+      const s = localStorage.getItem(STORE_STATS);
+      if (s) { const o = JSON.parse(s); if (o && typeof o === 'object') stats = Object.assign(stats, o); }
+      const b = parseInt(localStorage.getItem(STORE_BEST) || '0', 10);
+      if (!isNaN(b)) best = b;
+    } catch (e) {}
+  }
+  function savePrefs() {
+    try {
+      localStorage.setItem(STORE_MODE, mode);
+      localStorage.setItem(STORE_STATS, JSON.stringify(stats));
+      localStorage.setItem(STORE_BEST, String(best));
+    } catch (e) {}
+  }
+
+  // ---- Board helpers ----
+  function newBoard() {
+    const b = Array.from({length: SIZE}, () => new Array(SIZE).fill(EMPTY));
+    const m = SIZE / 2;
+    b[m-1][m-1] = WHITE;
+    b[m][m]     = WHITE;
+    b[m-1][m]   = BLACK;
+    b[m][m-1]   = BLACK;
+    return b;
+  }
+
+  function opp(c) { return c === BLACK ? WHITE : BLACK; }
+
+  function inBounds(r, c) { return r >= 0 && r < SIZE && c >= 0 && c < SIZE; }
+
+  // Returns array of discs that would flip if `color` plays at (r,c). Empty if illegal.
+  function flipsFor(b, r, c, color) {
+    if (b[r][c] !== EMPTY) return [];
+    const other = opp(color);
+    const out = [];
+    for (const [dr, dc] of DIRS) {
+      let rr = r + dr, cc = c + dc;
+      const line = [];
+      while (inBounds(rr, cc) && b[rr][cc] === other) {
+        line.push([rr, cc]);
+        rr += dr; cc += dc;
+      }
+      if (line.length > 0 && inBounds(rr, cc) && b[rr][cc] === color) {
+        for (const p of line) out.push(p);
+      }
+    }
+    return out;
+  }
+
+  function validMoves(b, color) {
+    const moves = [];
+    for (let r = 0; r < SIZE; r++) {
+      for (let c = 0; c < SIZE; c++) {
+        const f = flipsFor(b, r, c, color);
+        if (f.length > 0) moves.push({ r, c, flips: f });
+      }
+    }
+    return moves;
+  }
+
+  function applyMove(b, r, c, color, flips) {
+    b[r][c] = color;
+    for (const [fr, fc] of flips) b[fr][fc] = color;
+  }
+
+  function countDiscs(b) {
+    let bl = 0, wh = 0;
+    for (let r = 0; r < SIZE; r++) {
+      for (let c = 0; c < SIZE; c++) {
+        if (b[r][c] === BLACK) bl++;
+        else if (b[r][c] === WHITE) wh++;
+      }
+    }
+    return { black: bl, white: wh };
+  }
+
+  // ---- Rendering ----
+  function buildCells() {
+    boardEl.innerHTML = '';
+    for (let r = 0; r < SIZE; r++) {
+      for (let c = 0; c < SIZE; c++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.r = r;
+        cell.dataset.c = c;
+        cell.setAttribute('role', 'gridcell');
+        cell.addEventListener('click', onCellClick);
+        boardEl.appendChild(cell);
+      }
+    }
+  }
+
+  function renderBoard(animateFlips = null, placedAt = null) {
+    // animateFlips: Set of "r,c" strings to mark as pending flip targets
+    // placedAt: {r,c} — disc to pop in
+    const cells = boardEl.children;
+    const moves = (!gameOver && !busy) ? validMoves(board, turn) : [];
+    const playableSet = new Set(moves.map(m => m.r + ',' + m.c));
+    // Only show playable hints for human turns
+    const humanTurn = !gameOver && !busy && (mode === '2p' || turn !== aiColor);
+
+    for (let r = 0; r < SIZE; r++) {
+      for (let c = 0; c < SIZE; c++) {
+        const cell = cells[r * SIZE + c];
+        cell.classList.toggle('playable', humanTurn && playableSet.has(r + ',' + c));
+        // aria
+        if (humanTurn && playableSet.has(r + ',' + c)) {
+          cell.setAttribute('aria-label', 'Row ' + (r+1) + ' col ' + (c+1) + ', valid move');
+        } else {
+          cell.removeAttribute('aria-label');
+        }
+
+        const existing = cell.querySelector('.disc');
+        const v = board[r][c];
+        if (v === EMPTY) {
+          if (existing) existing.remove();
+        } else {
+          const colorClass = v === BLACK ? 'black' : 'white';
+          if (!existing) {
+            const disc = document.createElement('div');
+            disc.className = 'disc ' + colorClass;
+            if (placedAt && placedAt.r === r && placedAt.c === c) {
+              disc.classList.add('pop');
+              disc.addEventListener('animationend', () => disc.classList.remove('pop'), { once: true });
+            }
+            cell.appendChild(disc);
+          } else {
+            // Change only the color class; preserve existing transition
+            if (!existing.classList.contains(colorClass)) {
+              existing.classList.remove('black', 'white');
+              existing.classList.add(colorClass);
+            }
+          }
+        }
+
+        // last-move marker
+        const prevMarker = cell.querySelector('.last-move');
+        if (prevMarker) prevMarker.remove();
+        if (lastMove && lastMove.r === r && lastMove.c === c && v !== EMPTY) {
+          const m = document.createElement('div');
+          m.className = 'last-move';
+          cell.appendChild(m);
+        }
+      }
+    }
+  }
+
+  function renderScores() {
+    const { black, white } = countDiscs(board);
+    scoreBlackEl.textContent = black;
+    scoreWhiteEl.textContent = white;
+    sbBlack.classList.toggle('turn', !gameOver && turn === BLACK);
+    sbWhite.classList.toggle('turn', !gameOver && turn === WHITE);
+  }
+
+  function renderLabels() {
+    if (mode === 'ai') {
+      lblBlack.textContent = 'Black (You)';
+      lblWhite.textContent = 'White (CPU)';
+    } else {
+      lblBlack.textContent = 'Black';
+      lblWhite.textContent = 'White';
+    }
+    modeAiBtn.classList.toggle('active', mode === 'ai');
+    mode2pBtn.classList.toggle('active', mode === '2p');
+    modeAiBtn.setAttribute('aria-selected', mode === 'ai');
+    mode2pBtn.setAttribute('aria-selected', mode === '2p');
+  }
+
+  function setStatus(msg, highlight) {
+    statusEl.textContent = msg;
+    statusEl.classList.toggle('highlight', !!highlight);
+  }
+
+  // ---- Turn flow ----
+  function turnName(color) {
+    if (mode === 'ai') {
+      return color === BLACK ? 'Your' : 'Computer’s';
+    }
+    return color === BLACK ? 'Black’s' : 'White’s';
+  }
+
+  function updateStatusForTurn() {
+    if (gameOver) return;
+    const moves = validMoves(board, turn);
+    if (moves.length === 0) {
+      setStatus(turnName(turn) + ' turn — no valid moves, must pass.', true);
+      passBtn.hidden = false;
+    } else {
+      passBtn.hidden = true;
+      setStatus(turnName(turn) + ' turn.', false);
+    }
+  }
+
+  function onCellClick(e) {
+    if (busy || gameOver) return;
+    const r = parseInt(e.currentTarget.dataset.r, 10);
+    const c = parseInt(e.currentTarget.dataset.c, 10);
+    // Only allow human to click during their turn
+    if (mode === 'ai' && turn === aiColor) return;
+    const flips = flipsFor(board, r, c, turn);
+    if (flips.length === 0) return;
+    playMove(r, c, flips);
+  }
+
+  function playMove(r, c, flips) {
+    applyMove(board, r, c, turn, flips);
+    lastMove = { r, c };
+    renderBoard(null, { r, c });
+    renderScores();
+    endTurn();
+  }
+
+  function endTurn() {
+    const next = opp(turn);
+    const nextMoves = validMoves(board, next);
+    const curMoves  = validMoves(board, turn);
+
+    if (nextMoves.length > 0) {
+      turn = next;
+    } else if (curMoves.length > 0) {
+      // Opponent must pass; current player continues
+      setStatus(turnName(next) + ' has no moves — skipped.', true);
+      // Keep turn the same
+    } else {
+      // Neither can move — game over
+      finishGame();
+      return;
+    }
+
+    renderBoard();
+    renderScores();
+    updateStatusForTurn();
+    maybeAIMove();
+  }
+
+  function maybeAIMove() {
+    if (gameOver) return;
+    if (mode !== 'ai' || turn !== aiColor) return;
+    busy = true;
+    renderBoard(); // removes playable dots while AI thinks
+    setTimeout(() => {
+      const move = chooseAIMove(board, aiColor);
+      busy = false;
+      if (!move) {
+        // AI cannot move
+        endTurn();
+        return;
+      }
+      playMove(move.r, move.c, move.flips);
+    }, 420);
+  }
+
+  function finishGame() {
+    gameOver = true;
+    const { black, white } = countDiscs(board);
+    renderBoard();
+    renderScores();
+    passBtn.hidden = true;
+
+    let resultMsg;
+    if (black > white) resultMsg = 'Black wins ' + black + '–' + white + '.';
+    else if (white > black) resultMsg = 'White wins ' + white + '–' + black + '.';
+    else resultMsg = 'Draw — ' + black + '–' + white + '.';
+    setStatus('Game over. ' + resultMsg, true);
+
+    // Update stats
+    stats.games = (stats.games || 0) + 1;
+    if (mode === 'ai') {
+      if (black > white) stats.wins = (stats.wins || 0) + 1;
+      else if (white > black) stats.losses = (stats.losses || 0) + 1;
+      else stats.draws = (stats.draws || 0) + 1;
+      if (black > best) best = black;
+    } else {
+      const top = Math.max(black, white);
+      if (top > best) best = top;
+    }
+    savePrefs();
+
+    // Leaderboard (guarded) — submit best disc count achieved
+    if (window.Leaderboard && Leaderboard.submitScore) {
+      try { Leaderboard.submitScore(best); } catch (e) {}
+    }
+
+    showOverlay(black, white);
+  }
+
+  function showOverlay(black, white) {
+    finalBlack.textContent = black;
+    finalWhite.textContent = white;
+    let title, text;
+    if (mode === 'ai') {
+      if (black > white) { title = 'You win!'; text = 'Final score ' + black + '–' + white + '. Nicely flipped.'; }
+      else if (white > black) { title = 'CPU wins'; text = 'Final score ' + white + '–' + black + '. Try again.'; }
+      else { title = 'Draw'; text = 'You tied the computer at ' + black + '–' + white + '.'; }
+    } else {
+      if (black > white) { title = 'Black wins!'; text = 'Final score ' + black + '–' + white + '.'; }
+      else if (white > black) { title = 'White wins!'; text = 'Final score ' + white + '–' + black + '.'; }
+      else { title = 'Draw'; text = 'Tied at ' + black + '–' + white + '.'; }
+    }
+    overlayTitle.textContent = title;
+    overlayText.textContent = text;
+    overlay.classList.add('show');
+    overlay.setAttribute('aria-hidden', 'false');
+  }
+
+  function hideOverlay() {
+    overlay.classList.remove('show');
+    overlay.setAttribute('aria-hidden', 'true');
+  }
+
+  // ---- AI ----
+  // Position weights (classic Othello weighted map). Higher = better for the side moving there.
+  const WEIGHTS = [
+    [120, -20,  20,   5,   5,  20, -20, 120],
+    [-20, -40,  -5,  -5,  -5,  -5, -40, -20],
+    [ 20,  -5,  15,   3,   3,  15,  -5,  20],
+    [  5,  -5,   3,   3,   3,   3,  -5,   5],
+    [  5,  -5,   3,   3,   3,   3,  -5,   5],
+    [ 20,  -5,  15,   3,   3,  15,  -5,  20],
+    [-20, -40,  -5,  -5,  -5,  -5, -40, -20],
+    [120, -20,  20,   5,   5,  20, -20, 120],
+  ];
+
+  function evaluate(b, color) {
+    // Weighted position + mobility + disc difference (lightly).
+    let score = 0;
+    const me = color, them = opp(color);
+    let myDiscs = 0, theirDiscs = 0;
+    for (let r = 0; r < SIZE; r++) {
+      for (let c = 0; c < SIZE; c++) {
+        if (b[r][c] === me) { score += WEIGHTS[r][c]; myDiscs++; }
+        else if (b[r][c] === them) { score -= WEIGHTS[r][c]; theirDiscs++; }
+      }
+    }
+    // Mobility
+    const myMoves = validMoves(b, me).length;
+    const theirMoves = validMoves(b, them).length;
+    if (myMoves + theirMoves !== 0) {
+      score += 10 * (myMoves - theirMoves) / (myMoves + theirMoves) * 8;
+    }
+    // Disc count matters more late game
+    const total = myDiscs + theirDiscs;
+    if (total > 52) {
+      score += 10 * (myDiscs - theirDiscs);
+    }
+    return score;
+  }
+
+  function cloneBoard(b) {
+    const out = new Array(SIZE);
+    for (let i = 0; i < SIZE; i++) out[i] = b[i].slice();
+    return out;
+  }
+
+  // Minimax with alpha-beta. Depth 3 keeps things snappy on phones.
+  function search(b, color, depth, alpha, beta, rootColor) {
+    if (depth === 0) return { score: evaluate(b, rootColor), move: null };
+    const moves = validMoves(b, color);
+    if (moves.length === 0) {
+      const otherMoves = validMoves(b, opp(color));
+      if (otherMoves.length === 0) {
+        // Terminal
+        const { black, white } = countDiscs(b);
+        const diff = (rootColor === BLACK) ? (black - white) : (white - black);
+        return { score: diff * 1000, move: null };
+      }
+      // Pass
+      const r = search(b, opp(color), depth - 1, alpha, beta, rootColor);
+      return { score: r.score, move: null };
+    }
+
+    // Move ordering: try corners / high-weight squares first
+    moves.sort((a, b2) => WEIGHTS[b2.r][b2.c] - WEIGHTS[a.r][a.c]);
+
+    let bestMove = null;
+    if (color === rootColor) {
+      let value = -Infinity;
+      for (const mv of moves) {
+        const nb = cloneBoard(b);
+        applyMove(nb, mv.r, mv.c, color, mv.flips);
+        const r = search(nb, opp(color), depth - 1, alpha, beta, rootColor);
+        if (r.score > value) { value = r.score; bestMove = mv; }
+        if (value > alpha) alpha = value;
+        if (alpha >= beta) break;
+      }
+      return { score: value, move: bestMove };
+    } else {
+      let value = Infinity;
+      for (const mv of moves) {
+        const nb = cloneBoard(b);
+        applyMove(nb, mv.r, mv.c, color, mv.flips);
+        const r = search(nb, opp(color), depth - 1, alpha, beta, rootColor);
+        if (r.score < value) { value = r.score; bestMove = mv; }
+        if (value < beta) beta = value;
+        if (alpha >= beta) break;
+      }
+      return { score: value, move: bestMove };
+    }
+  }
+
+  function chooseAIMove(b, color) {
+    const moves = validMoves(b, color);
+    if (moves.length === 0) return null;
+    // Count filled squares to pick depth
+    let filled = 0;
+    for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) if (b[r][c] !== EMPTY) filled++;
+    const remaining = 64 - filled;
+    let depth = 3;
+    if (remaining <= 10) depth = 6;
+    else if (remaining <= 16) depth = 5;
+    else if (remaining <= 26) depth = 4;
+    const { move } = search(b, color, depth, -Infinity, Infinity, color);
+    return move || moves[0];
+  }
+
+  // ---- Game control ----
+  function newGame(preserveMode) {
+    board = newBoard();
+    turn = BLACK;
+    lastMove = null;
+    gameOver = false;
+    busy = false;
+    hideOverlay();
+    renderLabels();
+    renderBoard();
+    renderScores();
+    updateStatusForTurn();
+    maybeAIMove();
+  }
+
+  function setMode(newMode) {
+    if (mode === newMode) return;
+    mode = newMode;
+    savePrefs();
+    newGame();
+  }
+
+  // ---- Events ----
+  modeAiBtn.addEventListener('click', () => setMode('ai'));
+  mode2pBtn.addEventListener('click', () => setMode('2p'));
+  newGameBtn.addEventListener('click', () => newGame());
+  overlayAgain.addEventListener('click', () => newGame());
+  overlayClose.addEventListener('click', () => hideOverlay());
+
+  passBtn.addEventListener('click', () => {
+    if (busy || gameOver) return;
+    // Pass is allowed only if current player really has no moves
+    if (validMoves(board, turn).length > 0) return;
+    const next = opp(turn);
+    const nextMoves = validMoves(board, next);
+    if (nextMoves.length === 0) {
+      finishGame();
+      return;
+    }
+    turn = next;
+    renderBoard();
+    renderScores();
+    updateStatusForTurn();
+    maybeAIMove();
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    const k = e.key.toLowerCase();
+    if (k === 'n') { e.preventDefault(); newGame(); }
+    else if (k === 'escape') { hideOverlay(); }
+  });
+
+  // ---- Init ----
+  loadPrefs();
+  buildCells();
+  newGame();
+})();
+</script>
+
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

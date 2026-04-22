@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Video Poker — FindPicked Games</title>
+<meta name="description" content="Play Video Poker (Jacks or Better) free — five cards, hold and draw, classic payout table. No downloads.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ctext x='16' y='22' font-size='13' fill='white' text-anchor='middle' font-family='system-ui' font-weight='700'%3EVP%3C/text%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-felt: #f0ebe3;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --red: #d72d2d;
+  --green: #00875a;
+  --gold: #d4a637;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-card: 0 4px 14px rgba(0,0,0,0.10);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+  --radius: 16px;
+}
+
+html, body { height: 100%; overscroll-behavior: none; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px 20px 40px;
+  touch-action: manipulation;
+}
+
+.back {
+  align-self: flex-start;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 400;
+  padding: 8px 4px;
+  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.back:hover { color: var(--text-primary); }
+.back .arrow { font-size: 18px; line-height: 1; }
+
+.wrap {
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-bottom: 4px;
+}
+
+header p {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.scores {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.score-box {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 10px 14px;
+  text-align: center;
+  box-shadow: var(--shadow);
+  flex: 1;
+  min-width: 72px;
+}
+
+.score-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  margin-bottom: 2px;
+}
+
+.score-value {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  transition: transform 0.2s ease;
+}
+.score-value.bump { transform: scale(1.14); }
+.score-value.gold { color: var(--gold); }
+.score-value.green { color: var(--green); }
+.score-value.red { color: var(--red); }
+
+.btn {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  height: 44px;
+  padding: 0 22px;
+  border-radius: 22px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease, opacity 0.2s ease;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  min-width: 44px;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn:active { transform: scale(0.97); }
+.btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn.secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
+}
+.btn.secondary:hover { background: rgba(0, 113, 227, 0.06); }
+.btn.secondary:disabled {
+  color: var(--text-tertiary);
+  border-color: var(--border);
+  background: transparent;
+}
+
+.btn.ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1.5px solid var(--border);
+}
+.btn.ghost:hover { color: var(--text-primary); border-color: var(--text-tertiary); }
+
+.paytable {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.paytable-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.paytable-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+}
+.paytable-note {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+.paytable-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  row-gap: 4px;
+  column-gap: 12px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.paytable-row {
+  display: contents;
+}
+.paytable-name {
+  color: var(--text-secondary);
+  padding: 4px 0;
+  transition: color 0.2s ease;
+}
+.paytable-pay {
+  color: var(--text-primary);
+  font-weight: 600;
+  padding: 4px 0;
+  text-align: right;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+.paytable-row.lit .paytable-name,
+.paytable-row.lit .paytable-pay {
+  color: var(--gold);
+}
+.paytable-row.lit .paytable-pay {
+  transform: scale(1.1);
+}
+
+.table {
+  background: var(--bg-felt);
+  border-radius: var(--radius);
+  padding: 20px 14px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.result {
+  text-align: center;
+  min-height: 28px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+.result.win { color: var(--green); }
+.result.big { color: var(--gold); transform: scale(1.04); }
+.result.lose { color: var(--text-tertiary); font-weight: 500; }
+
+.hand {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.card-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  max-width: 96px;
+  min-width: 44px;
+}
+
+.card {
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: var(--shadow-card);
+  position: relative;
+  padding: 6px 7px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, outline 0.15s ease;
+  animation: deal 0.3s ease-out both;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+.card.red { color: var(--red); }
+.card.black { color: #1d1d1f; }
+.card:hover:not(.back):not(.disabled) { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+.card.held {
+  outline-color: var(--accent);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+}
+.card.disabled { cursor: default; }
+
+.card .corner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1;
+  position: absolute;
+  top: 6px;
+  left: 7px;
+}
+.card .corner .rank {
+  font-size: clamp(14px, 4.5vw, 22px);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+.card .corner .suit {
+  font-size: clamp(11px, 3.2vw, 15px);
+  margin-top: 1px;
+}
+.card .corner.bottom {
+  top: auto; left: auto;
+  bottom: 6px; right: 7px;
+  align-items: flex-end;
+  transform: rotate(180deg);
+}
+.card .center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(24px, 8vw, 40px);
+  pointer-events: none;
+}
+
+.card.back {
+  background:
+    repeating-linear-gradient(45deg, rgba(255,255,255,0.14) 0 4px, transparent 4px 8px),
+    linear-gradient(135deg, var(--accent) 0%, #0058b8 100%);
+  border: 2px solid #fff;
+  cursor: default;
+}
+.card.back .corner, .card.back .center { display: none; }
+
+@keyframes deal {
+  0% { opacity: 0; transform: translateY(-16px) scale(0.92); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.hold-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  background: rgba(0, 113, 227, 0.1);
+  padding: 3px 10px;
+  border-radius: 10px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.card-slot.held .hold-label { opacity: 1; }
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
+
+.bet-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-card);
+  padding: 4px 4px 4px 14px;
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+}
+.bet-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+}
+.bet-value {
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  min-width: 18px;
+  text-align: center;
+}
+.bet-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 18px;
+  border: none;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.bet-btn:hover { background: #ececec; }
+.bet-btn:active { transform: scale(0.94); }
+.bet-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.main-btns {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.how {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  box-shadow: var(--shadow);
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+.how summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 15px;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.how summary::-webkit-details-marker { display: none; }
+.how summary::after {
+  content: '+';
+  font-size: 20px;
+  color: var(--text-tertiary);
+  font-weight: 400;
+  transition: transform 0.2s ease;
+}
+.how[open] summary::after { transform: rotate(45deg); }
+.how-body { margin-top: 10px; }
+.how-body p { margin-bottom: 8px; }
+.how-body ul { padding-left: 20px; margin-bottom: 8px; }
+.how-body li { margin-bottom: 3px; }
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(29, 29, 31, 0.95);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 22px;
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  z-index: 2000;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.leaderboard-btn {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1.5px solid var(--border);
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 22px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  align-self: center;
+  font-family: inherit;
+  transition: color 0.2s ease, border-color 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.leaderboard-btn:hover { color: var(--text-primary); border-color: var(--text-tertiary); }
+
+@media (max-width: 480px) {
+  body { padding: 16px 14px 32px; }
+  header h1 { font-size: 26px; }
+  .table { padding: 14px 10px; }
+  .hand { gap: 4px; }
+  .card-slot { gap: 4px; }
+  .card .corner { top: 4px; left: 5px; }
+  .card .corner.bottom { bottom: 4px; right: 5px; }
+  .paytable { padding: 12px 14px; }
+  .paytable-grid { font-size: 12px; column-gap: 8px; }
+  .hold-label { padding: 2px 7px; font-size: 9px; }
+  .bet-group { padding: 4px 4px 4px 12px; gap: 6px; }
+}
+</style>
+</head>
+<body>
+<a class="back" href="../"><span class="arrow">‹</span> All Games</a>
+
+<div class="wrap">
+  <header>
+    <h1>Video Poker</h1>
+    <p>Jacks or Better — hold the cards you want, draw the rest.</p>
+  </header>
+
+  <div class="scores">
+    <div class="score-box">
+      <div class="score-label">Credits</div>
+      <div class="score-value" id="credits">200</div>
+    </div>
+    <div class="score-box">
+      <div class="score-label">Bet</div>
+      <div class="score-value" id="betDisplay">1</div>
+    </div>
+    <div class="score-box">
+      <div class="score-label">Last Win</div>
+      <div class="score-value" id="lastWin">0</div>
+    </div>
+    <div class="score-box">
+      <div class="score-label">Best</div>
+      <div class="score-value gold" id="best">0</div>
+    </div>
+  </div>
+
+  <div class="paytable" id="paytable">
+    <div class="paytable-head">
+      <span class="paytable-title">Payouts</span>
+      <span class="paytable-note" id="paytableNote">× 1 credit</span>
+    </div>
+    <div class="paytable-grid" id="paytableGrid"></div>
+  </div>
+
+  <div class="table">
+    <div class="result" id="result">Place your bet and deal.</div>
+    <div class="hand" id="hand"></div>
+    <div class="controls">
+      <div class="bet-group">
+        <span class="bet-label">Bet</span>
+        <button class="bet-btn" id="betDown" aria-label="Decrease bet">−</button>
+        <span class="bet-value" id="betNum">1</span>
+        <button class="bet-btn" id="betUp" aria-label="Increase bet">+</button>
+      </div>
+      <div class="main-btns">
+        <button class="btn secondary" id="betMax">Bet Max</button>
+        <button class="btn" id="action">Deal</button>
+      </div>
+    </div>
+  </div>
+
+  <button class="leaderboard-btn" id="lbBtn">View Leaderboard</button>
+
+  <details class="how">
+    <summary>How to Play</summary>
+    <div class="how-body">
+      <p>Classic <strong>Jacks or Better</strong> video poker. You're dealt five cards — choose which ones to <em>hold</em>, then draw replacements for the rest. Winning hands pay based on the payout table above.</p>
+      <ul>
+        <li><strong>Set your bet</strong> (1–5 credits) and press <strong>Deal</strong>.</li>
+        <li><strong>Tap a card</strong> to hold it (tap again to release).</li>
+        <li>Press <strong>Draw</strong> to replace the un-held cards.</li>
+        <li>Any winning hand pays out credits based on your bet.</li>
+      </ul>
+      <p><strong>Royal Flush bonus:</strong> betting max (5) boosts the Royal Flush from 250 to 4,000 credits.</p>
+      <p>Winning hands (low to high): Jacks or Better · Two Pair · Three of a Kind · Straight · Flush · Full House · Four of a Kind · Straight Flush · Royal Flush.</p>
+      <p>Start with 200 credits. Your best credit total is saved locally and can be submitted to the leaderboard.</p>
+    </div>
+  </details>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function() {
+  const SUITS = [
+    { s: '♠', c: 'black' },
+    { s: '♥', c: 'red' },
+    { s: '♦', c: 'red' },
+    { s: '♣', c: 'black' },
+  ];
+  const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+  const RANK_VAL = { 'A':14, '2':2, '3':3, '4':4, '5':5, '6':6, '7':7, '8':8, '9':9, '10':10, 'J':11, 'Q':12, 'K':13 };
+
+  const PAYOUTS = [
+    { key: 'royal',     name: 'Royal Flush',      base: [250, 500, 750, 1000, 4000] },
+    { key: 'stflush',   name: 'Straight Flush',   base: [50, 100, 150, 200, 250] },
+    { key: 'quads',     name: 'Four of a Kind',   base: [25, 50, 75, 100, 125] },
+    { key: 'full',      name: 'Full House',       base: [9, 18, 27, 36, 45] },
+    { key: 'flush',     name: 'Flush',            base: [6, 12, 18, 24, 30] },
+    { key: 'straight',  name: 'Straight',         base: [4, 8, 12, 16, 20] },
+    { key: 'trips',     name: 'Three of a Kind',  base: [3, 6, 9, 12, 15] },
+    { key: 'twopair',   name: 'Two Pair',         base: [2, 4, 6, 8, 10] },
+    { key: 'jacks',     name: 'Jacks or Better',  base: [1, 2, 3, 4, 5] },
+  ];
+
+  const START_CREDITS = 200;
+  const LS_CREDITS = 'videopoker-credits';
+  const LS_BEST = 'videopoker-best';
+
+  let deck = [];
+  let hand = [];
+  let held = [false, false, false, false, false];
+  let phase = 'deal'; // 'deal' or 'draw'
+  let credits = loadCredits();
+  let best = loadBest();
+  let bet = 1;
+  let lastWin = 0;
+
+  const el = {
+    credits: document.getElementById('credits'),
+    betDisplay: document.getElementById('betDisplay'),
+    betNum: document.getElementById('betNum'),
+    lastWin: document.getElementById('lastWin'),
+    best: document.getElementById('best'),
+    hand: document.getElementById('hand'),
+    result: document.getElementById('result'),
+    action: document.getElementById('action'),
+    betUp: document.getElementById('betUp'),
+    betDown: document.getElementById('betDown'),
+    betMax: document.getElementById('betMax'),
+    paytableGrid: document.getElementById('paytableGrid'),
+    paytableNote: document.getElementById('paytableNote'),
+    toast: document.getElementById('toast'),
+    lbBtn: document.getElementById('lbBtn'),
+  };
+
+  function loadCredits() {
+    try {
+      const v = parseInt(localStorage.getItem(LS_CREDITS), 10);
+      return Number.isFinite(v) && v > 0 ? v : START_CREDITS;
+    } catch { return START_CREDITS; }
+  }
+  function saveCredits() {
+    try { localStorage.setItem(LS_CREDITS, String(credits)); } catch {}
+  }
+  function loadBest() {
+    try {
+      const v = parseInt(localStorage.getItem(LS_BEST), 10);
+      return Number.isFinite(v) && v > 0 ? v : START_CREDITS;
+    } catch { return START_CREDITS; }
+  }
+  function saveBest() {
+    try { localStorage.setItem(LS_BEST, String(best)); } catch {}
+  }
+
+  function buildDeck() {
+    const d = [];
+    for (const suit of SUITS) {
+      for (const r of RANKS) {
+        d.push({ rank: r, suit: suit.s, color: suit.c, val: RANK_VAL[r] });
+      }
+    }
+    return d;
+  }
+
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function renderPaytable(highlightKey) {
+    el.paytableGrid.innerHTML = '';
+    const idx = Math.min(bet, 5) - 1;
+    for (const row of PAYOUTS) {
+      const r = document.createElement('div');
+      r.className = 'paytable-row' + (highlightKey === row.key ? ' lit' : '');
+      r.innerHTML = `
+        <div class="paytable-name">${row.name}</div>
+        <div class="paytable-pay">${row.base[idx]}</div>
+      `;
+      el.paytableGrid.appendChild(r);
+    }
+    el.paytableNote.textContent = `× ${bet} credit${bet === 1 ? '' : 's'}`;
+  }
+
+  function renderHand() {
+    el.hand.innerHTML = '';
+    for (let i = 0; i < 5; i++) {
+      const card = hand[i];
+      const slot = document.createElement('div');
+      slot.className = 'card-slot' + (held[i] ? ' held' : '');
+
+      const c = document.createElement('div');
+      if (!card) {
+        c.className = 'card back disabled';
+      } else {
+        c.className = 'card ' + card.color + (held[i] ? ' held' : '') + (phase === 'deal' ? ' disabled' : '');
+        c.innerHTML = `
+          <div class="corner"><div class="rank">${card.rank}</div><div class="suit">${card.suit}</div></div>
+          <div class="center">${card.suit}</div>
+          <div class="corner bottom"><div class="rank">${card.rank}</div><div class="suit">${card.suit}</div></div>
+        `;
+        if (phase === 'draw') {
+          c.addEventListener('click', () => toggleHold(i));
+        }
+      }
+      c.style.animationDelay = (i * 0.05) + 's';
+      slot.appendChild(c);
+
+      const lbl = document.createElement('div');
+      lbl.className = 'hold-label';
+      lbl.textContent = 'Hold';
+      slot.appendChild(lbl);
+
+      el.hand.appendChild(slot);
+    }
+  }
+
+  function toggleHold(i) {
+    if (phase !== 'draw') return;
+    held[i] = !held[i];
+    renderHand();
+  }
+
+  function updateScores(bump) {
+    el.credits.textContent = credits;
+    el.betDisplay.textContent = bet;
+    el.betNum.textContent = bet;
+    el.lastWin.textContent = lastWin;
+    el.best.textContent = best;
+    if (bump) {
+      for (const id of bump) {
+        const node = el[id];
+        if (!node) continue;
+        node.classList.remove('bump');
+        void node.offsetWidth;
+        node.classList.add('bump');
+      }
+    }
+    el.lastWin.classList.toggle('green', lastWin > 0);
+    el.lastWin.classList.toggle('red', lastWin === 0 && phase === 'deal' && credits < START_CREDITS);
+  }
+
+  function setBet(n) {
+    bet = Math.max(1, Math.min(5, n));
+    if (bet > credits) bet = Math.max(1, credits);
+    renderPaytable();
+    updateScores();
+  }
+
+  function setResult(text, cls) {
+    el.result.textContent = text;
+    el.result.className = 'result' + (cls ? ' ' + cls : '');
+  }
+
+  function showToast(text) {
+    el.toast.textContent = text;
+    el.toast.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => el.toast.classList.remove('show'), 1600);
+  }
+
+  // --- Hand evaluation ---
+  function evaluate(h) {
+    const ranks = h.map(c => c.val).sort((a, b) => a - b);
+    const suits = h.map(c => c.suit);
+    const counts = {};
+    for (const r of ranks) counts[r] = (counts[r] || 0) + 1;
+    const countVals = Object.values(counts).sort((a, b) => b - a);
+
+    const flush = suits.every(s => s === suits[0]);
+
+    // Straight: 5 unique consecutive, plus A-2-3-4-5 wheel
+    const uniq = [...new Set(ranks)];
+    let straight = false;
+    if (uniq.length === 5) {
+      if (uniq[4] - uniq[0] === 4) straight = true;
+      // wheel: A,2,3,4,5 → [2,3,4,5,14]
+      if (uniq[0] === 2 && uniq[1] === 3 && uniq[2] === 4 && uniq[3] === 5 && uniq[4] === 14) straight = true;
+    }
+
+    if (flush && straight) {
+      // Royal: 10-J-Q-K-A → [10,11,12,13,14]
+      if (uniq[0] === 10 && uniq[4] === 14) return 'royal';
+      return 'stflush';
+    }
+    if (countVals[0] === 4) return 'quads';
+    if (countVals[0] === 3 && countVals[1] === 2) return 'full';
+    if (flush) return 'flush';
+    if (straight) return 'straight';
+    if (countVals[0] === 3) return 'trips';
+    if (countVals[0] === 2 && countVals[1] === 2) return 'twopair';
+    if (countVals[0] === 2) {
+      // Find which rank has pair
+      for (const r in counts) {
+        if (counts[r] === 2 && parseInt(r, 10) >= 11) return 'jacks';
+      }
+    }
+    return null;
+  }
+
+  function payoutFor(key, bet) {
+    const row = PAYOUTS.find(p => p.key === key);
+    if (!row) return 0;
+    return row.base[Math.min(bet, 5) - 1];
+  }
+
+  function handName(key) {
+    const row = PAYOUTS.find(p => p.key === key);
+    return row ? row.name : '';
+  }
+
+  // --- Game flow ---
+  function deal() {
+    if (credits < bet) {
+      showToast('Not enough credits');
+      return;
+    }
+    credits -= bet;
+    saveCredits();
+    deck = shuffle(buildDeck());
+    hand = [deck.pop(), deck.pop(), deck.pop(), deck.pop(), deck.pop()];
+    held = [false, false, false, false, false];
+    phase = 'draw';
+    lastWin = 0;
+    setResult('Tap cards to hold, then draw.', '');
+    el.action.textContent = 'Draw';
+    renderPaytable();
+    renderHand();
+    updateScores(['credits']);
+  }
+
+  function draw() {
+    for (let i = 0; i < 5; i++) {
+      if (!held[i]) hand[i] = deck.pop();
+    }
+    phase = 'deal';
+    el.action.textContent = 'Deal';
+
+    const key = evaluate(hand);
+    if (key) {
+      const pay = payoutFor(key, bet);
+      lastWin = pay;
+      credits += pay;
+      saveCredits();
+      renderPaytable(key);
+      const isBig = key === 'royal' || key === 'stflush' || key === 'quads';
+      setResult(`${handName(key)} — +${pay}`, isBig ? 'big' : 'win');
+      if (isBig) showToast(`${handName(key)}! +${pay}`);
+    } else {
+      lastWin = 0;
+      renderPaytable();
+      setResult('No win. Deal again.', 'lose');
+    }
+
+    if (credits > best) {
+      best = credits;
+      saveBest();
+      submitLeaderboard(best);
+    }
+
+    renderHand();
+    updateScores(['credits', 'lastWin', 'best']);
+
+    // Bet clamp if credits dropped below current bet
+    if (bet > credits && credits > 0) bet = credits;
+
+    // Game over check
+    if (credits <= 0) {
+      setTimeout(gameOver, 700);
+    }
+  }
+
+  function gameOver() {
+    setResult('Out of credits. Play again?', 'lose');
+    el.action.textContent = 'Play Again';
+    phase = 'gameover';
+  }
+
+  function resetGame() {
+    credits = START_CREDITS;
+    saveCredits();
+    bet = 1;
+    lastWin = 0;
+    hand = [];
+    held = [false, false, false, false, false];
+    phase = 'deal';
+    el.action.textContent = 'Deal';
+    setResult('Place your bet and deal.', '');
+    renderPaytable();
+    renderHand();
+    updateScores(['credits']);
+  }
+
+  function submitLeaderboard(score) {
+    if (window.Leaderboard && typeof window.Leaderboard.submitScore === 'function') {
+      try { window.Leaderboard.submitScore(score); } catch {}
+    }
+  }
+
+  // --- Events ---
+  el.action.addEventListener('click', () => {
+    if (phase === 'deal') deal();
+    else if (phase === 'draw') draw();
+    else if (phase === 'gameover') resetGame();
+  });
+
+  el.betUp.addEventListener('click', () => { if (phase !== 'draw') setBet(bet + 1); });
+  el.betDown.addEventListener('click', () => { if (phase !== 'draw') setBet(bet - 1); });
+  el.betMax.addEventListener('click', () => { if (phase !== 'draw') setBet(5); });
+
+  el.lbBtn.addEventListener('click', () => {
+    if (window.Leaderboard && typeof window.Leaderboard.show === 'function') {
+      window.Leaderboard.show();
+    } else if (window.Leaderboard && typeof window.Leaderboard.open === 'function') {
+      window.Leaderboard.open();
+    } else {
+      showToast('Leaderboard unavailable');
+    }
+  });
+
+  // Keyboard: 1-5 toggle hold, Space/Enter deal/draw
+  document.addEventListener('keydown', (e) => {
+    if (e.key >= '1' && e.key <= '5') {
+      const i = parseInt(e.key, 10) - 1;
+      toggleHold(i);
+    } else if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      el.action.click();
+    } else if (e.key === '+' || e.key === '=') {
+      el.betUp.click();
+    } else if (e.key === '-' || e.key === '_') {
+      el.betDown.click();
+    }
+  });
+
+  // Init empty placeholders (5 card backs)
+  function initEmpty() {
+    for (let i = 0; i < 5; i++) hand[i] = null;
+    renderHand();
+  }
+
+  initEmpty();
+  renderPaytable();
+  updateScores();
+})();
+</script>
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

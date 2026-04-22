@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Pipe Connect — FindPicked Games</title>
+<meta name="description" content="Rotate pipe segments to guide the flow from source to drain. Multiple levels. No downloads.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Cpath d='M10 10h12v4h-8v8h-4z' fill='white'/%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-hover: #f5f5f7;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --flow: #0071e3;
+  --flow-soft: #4c9aff;
+  --pipe: #c7c7cc;
+  --pipe-bg: #f5f5f7;
+  --drain: #34c759;
+  --danger: #ff3b30;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+}
+
+html, body {
+  height: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  min-height: 100vh;
+}
+
+.back {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 20px;
+  box-shadow: var(--shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  z-index: 100;
+}
+.back:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+.back:active { transform: translateY(0); }
+
+.app {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 80px 16px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+header.title {
+  text-align: center;
+}
+header.title h1 {
+  font-size: clamp(28px, 5vw, 40px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+header.title p {
+  margin-top: 8px;
+  color: var(--text-secondary);
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.panel {
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-card);
+  border-radius: 16px;
+  padding: 14px 18px;
+  box-shadow: var(--shadow);
+  gap: 8px;
+}
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 58px;
+}
+.stat .label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+}
+.stat .value {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+.stat.right { align-items: flex-end; text-align: right; }
+.stat .value.warn { color: var(--danger); }
+
+.reset {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, background 0.2s ease;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+.reset:hover { background: #ececef; transform: scale(1.05); }
+.reset:active { transform: scale(0.95); }
+
+.board-wrap {
+  background: var(--bg-card);
+  padding: 14px;
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  max-width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+#board {
+  display: block;
+  touch-action: manipulation;
+  border-radius: 12px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.btn {
+  border: none;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 12px 22px;
+  border-radius: 100px;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: var(--shadow);
+  -webkit-tap-highlight-color: transparent;
+  min-height: 44px;
+}
+.btn:hover { background: var(--bg-hover); transform: translateY(-1px); box-shadow: var(--shadow-hover); }
+.btn:active { transform: translateY(0); }
+.btn.primary { background: var(--accent); color: #fff; }
+.btn.primary:hover { background: var(--accent-hover); }
+.btn.ghost { background: transparent; box-shadow: none; color: var(--text-secondary); }
+.btn.ghost:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+.message {
+  text-align: center;
+  font-size: 15px;
+  color: var(--text-secondary);
+  min-height: 22px;
+  line-height: 1.4;
+}
+.message strong { color: var(--text-primary); font-weight: 600; }
+.message .win { color: var(--accent); font-weight: 600; }
+.message .lose { color: var(--danger); font-weight: 600; }
+
+.best-times {
+  width: 100%;
+  max-width: 560px;
+  background: var(--bg-card);
+  border-radius: 16px;
+  padding: 18px 24px;
+  box-shadow: var(--shadow);
+}
+.best-times h2 {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  margin-bottom: 12px;
+}
+.best-times .row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-size: 15px;
+  border-bottom: 1px solid var(--border);
+}
+.best-times .row:last-child { border-bottom: none; }
+.best-times .row .name { color: var(--text-primary); font-weight: 500; }
+.best-times .row .time { color: var(--text-secondary); font-variant-numeric: tabular-nums; font-weight: 500; }
+
+/* Game over overlay */
+.overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  padding: 20px;
+}
+.overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+.modal {
+  background: var(--bg-card);
+  border-radius: 20px;
+  padding: 32px 28px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  transform: translateY(8px) scale(0.98);
+  transition: transform 0.25s ease;
+}
+.overlay.show .modal { transform: translateY(0) scale(1); }
+.modal h2 {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+}
+.modal .sub {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+.modal .bignum {
+  font-size: 48px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--accent);
+  margin: 6px 0 4px;
+  font-variant-numeric: tabular-nums;
+}
+.modal .numline {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+.modal .inline-stats {
+  display: flex;
+  justify-content: space-around;
+  margin: 18px 0 22px;
+  gap: 10px;
+}
+.modal .inline-stats .cell {
+  flex: 1;
+  padding: 10px 8px;
+  background: var(--bg-hover);
+  border-radius: 12px;
+}
+.modal .inline-stats .cell .v {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.modal .inline-stats .cell .l {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  font-weight: 600;
+  margin-top: 2px;
+}
+.modal .actions { margin-top: 8px; }
+
+@media (max-width: 560px) {
+  .app { padding: 70px 12px 32px; gap: 18px; }
+  .panel { padding: 12px 14px; }
+  .stat .value { font-size: 18px; }
+  .stat { min-width: 50px; }
+  .board-wrap { padding: 10px; border-radius: 16px; }
+  .btn { padding: 11px 18px; font-size: 14px; }
+  .best-times { padding: 16px 18px; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.app > * { animation: fade-in 0.5s ease both; }
+.app > *:nth-child(1) { animation-delay: 0s; }
+.app > *:nth-child(2) { animation-delay: 0.05s; }
+.app > *:nth-child(3) { animation-delay: 0.1s; }
+.app > *:nth-child(4) { animation-delay: 0.15s; }
+.app > *:nth-child(5) { animation-delay: 0.2s; }
+.app > *:nth-child(6) { animation-delay: 0.25s; }
+
+.rules-toggle {
+  display: inline-block;
+  margin-top: 12px;
+  font-size: 13px;
+  color: #0071e3;
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+  padding: 0;
+}
+.rules-toggle:hover { text-decoration: underline; }
+.rules-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  font-size: 13px;
+  color: #6e6e73;
+  line-height: 1.6;
+  text-align: left;
+  max-width: 480px;
+  margin: 8px auto 0;
+}
+.rules-panel.open { max-height: 500px; }
+.rules-panel ul { margin: 8px 0 0 16px; }
+.rules-panel li { margin-bottom: 4px; }
+</style>
+</head>
+<body>
+
+<a class="back" href="../" aria-label="Back to games">←</a>
+
+<div class="app">
+
+  <header class="title">
+    <h1>Pipe Connect</h1>
+    <div style="text-align:center">
+      <button class="rules-toggle" onclick="this.nextElementSibling.classList.toggle('open')">How to Play ▾</button>
+      <div class="rules-panel">
+        <ul>
+          <li>Tap or click a pipe segment to rotate it 90° clockwise</li>
+          <li>Connect the blue source to the green drain — watch the water flow when solved</li>
+          <li>Keep the timer alive: each solve adds time; run out and it's game over</li>
+          <li>Fewer moves per level = more bonus points</li>
+          <li>Levels progress from a 4×4 grid up to 6×6 with new layouts</li>
+        </ul>
+      </div>
+    </div>
+    <p>Rotate pipes. Make the water flow.</p>
+  </header>
+
+  <div class="panel">
+    <div class="stat">
+      <span class="label">Level</span>
+      <span class="value" id="lvl">1</span>
+    </div>
+    <div class="stat">
+      <span class="label">Moves</span>
+      <span class="value" id="moves">0</span>
+    </div>
+    <button class="reset" id="reset-btn" aria-label="Restart level" title="Restart level">↻</button>
+    <div class="stat right">
+      <span class="label">Time</span>
+      <span class="value" id="timer">1:00</span>
+    </div>
+    <div class="stat right">
+      <span class="label">Score</span>
+      <span class="value" id="score">0</span>
+    </div>
+  </div>
+
+  <div class="board-wrap">
+    <canvas id="board" width="560" height="560"></canvas>
+  </div>
+
+  <div class="actions">
+    <button class="btn" id="shuffle-btn">Shuffle</button>
+    <button class="btn ghost" id="end-btn">End Game</button>
+  </div>
+
+  <div class="message" id="message">Rotate pipes to connect the flow.</div>
+
+  <div class="best-times">
+    <h2>Best</h2>
+    <div class="row"><span class="name">High Score</span><span class="time" id="best-score">—</span></div>
+    <div class="row"><span class="name">Highest Level</span><span class="time" id="best-level">—</span></div>
+  </div>
+
+</div>
+
+<div class="overlay" id="gameover">
+  <div class="modal">
+    <h2 id="go-title">Game Over</h2>
+    <div class="sub" id="go-sub">The pipes ran dry.</div>
+    <div class="numline">Final Score</div>
+    <div class="bignum" id="go-score">0</div>
+    <div class="inline-stats">
+      <div class="cell"><div class="v" id="go-level">1</div><div class="l">Levels</div></div>
+      <div class="cell"><div class="v" id="go-moves">0</div><div class="l">Moves</div></div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="play-again-btn">Play Again</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // Direction bits: N=1, E=2, S=4, W=8
+  const N = 1, E = 2, S = 4, W = 8;
+  const DIRS = [
+    { bit: N, dr: -1, dc: 0, opp: S },
+    { bit: E, dr: 0,  dc: 1, opp: W },
+    { bit: S, dr: 1,  dc: 0, opp: N },
+    { bit: W, dr: 0,  dc: -1, opp: E }
+  ];
+
+  function rotateCW(m) { return ((m << 1) | (m >> 3)) & 0xF; }
+  function popcount(m) { let n = 0; while (m) { n += m & 1; m >>= 1; } return n; }
+
+  const state = {
+    level: 1,
+    rows: 4, cols: 4,
+    masks: [],
+    cells: [], // [r][c]: { animFrom: ms | null, anim: 0..1, filled: bool }
+    source: null,
+    drain: null,
+    moves: 0,
+    totalMoves: 0,
+    levelsCleared: 0,
+    score: 0,
+    timeLeft: 60, // seconds
+    timerId: null,
+    solved: false,
+    flowAnim: null, // { order: [...], start: ms }
+    cssSize: 400,
+    ended: false,
+    pendingSolveTimer: null
+  };
+
+  const els = {
+    canvas: document.getElementById('board'),
+    lvl: document.getElementById('lvl'),
+    moves: document.getElementById('moves'),
+    score: document.getElementById('score'),
+    timer: document.getElementById('timer'),
+    reset: document.getElementById('reset-btn'),
+    shuffle: document.getElementById('shuffle-btn'),
+    endBtn: document.getElementById('end-btn'),
+    message: document.getElementById('message'),
+    bestScore: document.getElementById('best-score'),
+    bestLevel: document.getElementById('best-level'),
+    overlay: document.getElementById('gameover'),
+    goTitle: document.getElementById('go-title'),
+    goSub: document.getElementById('go-sub'),
+    goScore: document.getElementById('go-score'),
+    goLevel: document.getElementById('go-level'),
+    goMoves: document.getElementById('go-moves'),
+    playAgain: document.getElementById('play-again-btn')
+  };
+
+  const ctx = els.canvas.getContext('2d');
+
+  // -------- Level generation --------
+
+  function gridForLevel(lvl) {
+    if (lvl <= 2) return 4;
+    if (lvl <= 4) return 5;
+    return 6;
+  }
+
+  function timeForLevel(lvl) {
+    // Starting pool for the run; used only at first level.
+    return 60;
+  }
+
+  function bonusTimeForSolve(lvl) {
+    // Time awarded per level solved
+    return Math.max(20, 35 - lvl); // more generous early, tighter later
+  }
+
+  function generateLevel(rows, cols) {
+    const masks = Array.from({ length: rows }, () => new Array(cols).fill(0));
+    const visited = Array.from({ length: rows }, () => new Array(cols).fill(false));
+
+    // Randomized DFS spanning tree
+    const sr = (Math.random() * rows) | 0;
+    const sc = (Math.random() * cols) | 0;
+    const stack = [{ r: sr, c: sc }];
+    visited[sr][sc] = true;
+
+    while (stack.length > 0) {
+      const cur = stack[stack.length - 1];
+      const choices = [];
+      for (const d of DIRS) {
+        const nr = cur.r + d.dr, nc = cur.c + d.dc;
+        if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && !visited[nr][nc]) {
+          choices.push({ nr, nc, bit: d.bit, opp: d.opp });
+        }
+      }
+      if (choices.length === 0) { stack.pop(); continue; }
+      const pick = choices[(Math.random() * choices.length) | 0];
+      masks[cur.r][cur.c] |= pick.bit;
+      masks[pick.nr][pick.nc] |= pick.opp;
+      visited[pick.nr][pick.nc] = true;
+      stack.push({ r: pick.nr, c: pick.nc });
+    }
+
+    // Pick source and drain at two far-apart leaves using BFS diameter
+    const leaves = [];
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        if (popcount(masks[r][c]) === 1) leaves.push({ r, c });
+      }
+    }
+    const startLeaf = leaves[0] || { r: 0, c: 0 };
+    const far1 = bfsFurthest(masks, rows, cols, startLeaf);
+    const far2 = bfsFurthest(masks, rows, cols, far1);
+
+    // Ensure both endpoints are single-connection pipes
+    let source = popcount(masks[far1.r][far1.c]) === 1 ? far1 : findNearestLeaf(masks, leaves, far1);
+    let drain = popcount(masks[far2.r][far2.c]) === 1 ? far2 : findNearestLeaf(masks, leaves, far2);
+    if (source.r === drain.r && source.c === drain.c && leaves.length > 1) {
+      drain = leaves.find(p => p.r !== source.r || p.c !== source.c) || drain;
+    }
+
+    // Scramble each cell (random 0-3 rotations).
+    // Rotation-invariant pipes (cross) are skipped; straight-2 also invariant.
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const rots = (Math.random() * 4) | 0;
+        for (let i = 0; i < rots; i++) masks[r][c] = rotateCW(masks[r][c]);
+      }
+    }
+
+    return { masks, source, drain };
+  }
+
+  function bfsFurthest(masks, rows, cols, start) {
+    const dist = Array.from({ length: rows }, () => new Array(cols).fill(-1));
+    dist[start.r][start.c] = 0;
+    const q = [start];
+    let best = { r: start.r, c: start.c, d: 0 };
+    while (q.length) {
+      const cur = q.shift();
+      const m = masks[cur.r][cur.c];
+      for (const d of DIRS) {
+        if (!(m & d.bit)) continue;
+        const nr = cur.r + d.dr, nc = cur.c + d.dc;
+        if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) continue;
+        if (dist[nr][nc] !== -1) continue;
+        if (!(masks[nr][nc] & d.opp)) continue;
+        dist[nr][nc] = dist[cur.r][cur.c] + 1;
+        if (dist[nr][nc] > best.d) best = { r: nr, c: nc, d: dist[nr][nc] };
+        q.push({ r: nr, c: nc });
+      }
+    }
+    return { r: best.r, c: best.c };
+  }
+
+  function findNearestLeaf(masks, leaves, pos) {
+    let best = leaves[0];
+    let bd = Infinity;
+    for (const l of leaves) {
+      const d = Math.abs(l.r - pos.r) + Math.abs(l.c - pos.c);
+      if (d < bd) { bd = d; best = l; }
+    }
+    return best;
+  }
+
+  // -------- Win check --------
+
+  function isSolved() {
+    const { masks, source, drain } = state;
+    const rows = state.rows, cols = state.cols;
+    const visited = Array.from({ length: rows }, () => new Array(cols).fill(false));
+    const q = [source];
+    visited[source.r][source.c] = true;
+    while (q.length) {
+      const cur = q.shift();
+      const m = masks[cur.r][cur.c];
+      for (const d of DIRS) {
+        if (!(m & d.bit)) continue;
+        const nr = cur.r + d.dr, nc = cur.c + d.dc;
+        if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) continue;
+        if (visited[nr][nc]) continue;
+        if (!(masks[nr][nc] & d.opp)) continue;
+        visited[nr][nc] = true;
+        q.push({ r: nr, c: nc });
+      }
+    }
+    return visited[drain.r][drain.c];
+  }
+
+  function flowOrderFromSource() {
+    const { masks, source } = state;
+    const rows = state.rows, cols = state.cols;
+    const visited = Array.from({ length: rows }, () => new Array(cols).fill(false));
+    const order = [];
+    const q = [{ r: source.r, c: source.c, d: 0 }];
+    visited[source.r][source.c] = true;
+    while (q.length) {
+      const cur = q.shift();
+      order.push(cur);
+      const m = masks[cur.r][cur.c];
+      for (const d of DIRS) {
+        if (!(m & d.bit)) continue;
+        const nr = cur.r + d.dr, nc = cur.c + d.dc;
+        if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) continue;
+        if (visited[nr][nc]) continue;
+        if (!(masks[nr][nc] & d.opp)) continue;
+        visited[nr][nc] = true;
+        q.push({ r: nr, c: nc, d: cur.d + 1 });
+      }
+    }
+    return order;
+  }
+
+  // -------- Rendering --------
+
+  function sizeCanvas() {
+    const wrap = els.canvas.parentElement;
+    const max = Math.min(wrap.clientWidth - 28, 520);
+    const size = Math.max(220, Math.floor(max));
+    state.cssSize = size;
+    const dpr = window.devicePixelRatio || 1;
+    els.canvas.style.width = size + 'px';
+    els.canvas.style.height = size + 'px';
+    els.canvas.width = Math.floor(size * dpr);
+    els.canvas.height = Math.floor(size * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function cellSize() {
+    return state.cssSize / state.cols;
+  }
+
+  function draw() {
+    const size = cellSize();
+    const w = state.cssSize;
+    ctx.clearRect(0, 0, w, w);
+
+    // Update flow animation if in progress
+    let flowMaxDist = -1;
+    if (state.flowAnim) {
+      const elapsed = performance.now() - state.flowAnim.start;
+      const step = 70; // ms per BFS level
+      flowMaxDist = elapsed / step;
+      if (flowMaxDist >= state.flowAnim.order[state.flowAnim.order.length - 1].d + 1) {
+        flowMaxDist = Infinity;
+      }
+    }
+
+    // Draw each cell
+    for (let r = 0; r < state.rows; r++) {
+      for (let c = 0; c < state.cols; c++) {
+        const x = c * size;
+        const y = r * size;
+        const cell = state.cells[r][c];
+        let rot = 0;
+        if (cell.animFrom != null) {
+          const t = (performance.now() - cell.animFrom) / 160;
+          if (t >= 1) {
+            cell.animFrom = null;
+          } else {
+            // Draw current mask rotated from -90° to 0°
+            rot = -Math.PI / 2 * (1 - t);
+          }
+        }
+        let filled = false;
+        if (state.flowAnim) {
+          const info = state.flowAnim.map[r * state.cols + c];
+          if (info !== undefined && info <= flowMaxDist) filled = true;
+        }
+        drawCell(x, y, size, state.masks[r][c], rot, r === state.source.r && c === state.source.c, r === state.drain.r && c === state.drain.c, filled);
+      }
+    }
+
+    // Keep animating while anything needs redrawing
+    const anyAnim = state.flowAnim || state.cells.some(row => row.some(c => c.animFrom != null));
+    if (anyAnim) {
+      requestAnimationFrame(draw);
+    }
+  }
+
+  function drawCell(x, y, size, mask, rotation, isSource, isDrain, filled) {
+    const pad = Math.max(2, size * 0.05);
+    const rad = Math.max(4, size * 0.12);
+
+    // Cell background
+    roundRect(ctx, x + pad, y + pad, size - pad * 2, size - pad * 2, rad);
+    ctx.fillStyle = isSource ? '#e8f3ff' : isDrain ? '#eafff0' : '#f5f5f7';
+    ctx.fill();
+
+    // Subtle border
+    ctx.strokeStyle = 'rgba(0,0,0,0.04)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Draw pipe (rotated for animation if needed)
+    const cx = x + size / 2;
+    const cy = y + size / 2;
+    const pipeWidth = Math.max(8, size * 0.26);
+    const baseColor = filled ? '#0071e3' : '#c7c7cc';
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(rotation);
+
+    if (mask !== 0) {
+      ctx.strokeStyle = baseColor;
+      ctx.lineWidth = pipeWidth;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      const reach = size / 2 - pad;
+      // Draw each arm
+      if (mask & N) { ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -reach); ctx.stroke(); }
+      if (mask & E) { ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(reach, 0); ctx.stroke(); }
+      if (mask & S) { ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, reach); ctx.stroke(); }
+      if (mask & W) { ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-reach, 0); ctx.stroke(); }
+
+      // Center joint
+      ctx.fillStyle = baseColor;
+      ctx.beginPath();
+      ctx.arc(0, 0, pipeWidth * 0.55, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Inner highlight when filled
+      if (filled) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+        ctx.lineWidth = pipeWidth * 0.3;
+        if (mask & N) { ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -reach); ctx.stroke(); }
+        if (mask & E) { ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(reach, 0); ctx.stroke(); }
+        if (mask & S) { ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, reach); ctx.stroke(); }
+        if (mask & W) { ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-reach, 0); ctx.stroke(); }
+      }
+    }
+    ctx.restore();
+
+    // Source / drain badges (not rotated with the pipe)
+    if (isSource) {
+      ctx.fillStyle = '#0071e3';
+      ctx.beginPath();
+      ctx.arc(cx, cy, size * 0.17, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold ' + Math.floor(size * 0.16) + 'px -apple-system, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('◉', cx, cy + size * 0.005);
+    }
+    if (isDrain) {
+      ctx.strokeStyle = '#34c759';
+      ctx.lineWidth = Math.max(3, size * 0.04);
+      ctx.beginPath();
+      ctx.arc(cx, cy, size * 0.17, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(cx, cy, size * 0.09, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    if (w < 2 * r) r = w / 2;
+    if (h < 2 * r) r = h / 2;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  // -------- Interaction --------
+
+  function onCanvasClick(evt) {
+    if (state.solved || state.ended) return;
+    const rect = els.canvas.getBoundingClientRect();
+    const px = (evt.clientX !== undefined ? evt.clientX : evt.touches && evt.touches[0] ? evt.touches[0].clientX : 0) - rect.left;
+    const py = (evt.clientY !== undefined ? evt.clientY : evt.touches && evt.touches[0] ? evt.touches[0].clientY : 0) - rect.top;
+    const size = cellSize();
+    const c = Math.floor(px / size);
+    const r = Math.floor(py / size);
+    if (r < 0 || r >= state.rows || c < 0 || c >= state.cols) return;
+    rotateCell(r, c);
+  }
+
+  function rotateCell(r, c) {
+    state.masks[r][c] = rotateCW(state.masks[r][c]);
+    state.cells[r][c].animFrom = performance.now();
+    state.moves++;
+    state.totalMoves++;
+    updateHUD();
+    requestAnimationFrame(draw);
+    if (isSolved()) onSolve();
+  }
+
+  // -------- Game flow --------
+
+  function startRun() {
+    state.level = 1;
+    state.totalMoves = 0;
+    state.levelsCleared = 0;
+    state.score = 0;
+    state.timeLeft = timeForLevel(1);
+    state.ended = false;
+    hideOverlay();
+    startLevel();
+    startTimer();
+  }
+
+  function startLevel() {
+    state.solved = false;
+    state.moves = 0;
+    state.flowAnim = null;
+    if (state.pendingSolveTimer) { clearTimeout(state.pendingSolveTimer); state.pendingSolveTimer = null; }
+    const sz = gridForLevel(state.level);
+    state.rows = sz;
+    state.cols = sz;
+    // Regenerate until we get a non-trivially-solved puzzle
+    let attempts = 0;
+    do {
+      const lvl = generateLevel(sz, sz);
+      state.masks = lvl.masks;
+      state.source = lvl.source;
+      state.drain = lvl.drain;
+      attempts++;
+    } while (isSolved() && attempts < 6);
+
+    state.cells = Array.from({ length: sz }, () => {
+      const row = [];
+      for (let i = 0; i < sz; i++) row.push({ animFrom: null });
+      return row;
+    });
+    sizeCanvas();
+    updateHUD();
+    els.message.textContent = 'Level ' + state.level + ' — rotate pipes to connect the flow.';
+    requestAnimationFrame(draw);
+  }
+
+  function onSolve() {
+    if (state.solved) return;
+    state.solved = true;
+
+    const order = flowOrderFromSource();
+    const map = {};
+    for (const p of order) map[p.r * state.cols + p.c] = p.d;
+    state.flowAnim = { order, map, start: performance.now() };
+
+    // Score: base + per-level bonus - move penalty + time bonus
+    const moveBonus = Math.max(0, 40 - state.moves * 2);
+    const timeBonus = Math.floor(state.timeLeft);
+    const levelScore = 100 + state.level * 20 + moveBonus + timeBonus;
+    state.score += levelScore;
+    state.levelsCleared++;
+    state.timeLeft += bonusTimeForSolve(state.level);
+    updateHUD();
+    els.message.innerHTML = '<span class="win">Connected!</span> +' + levelScore + ' points. Next level in a moment…';
+
+    requestAnimationFrame(draw);
+
+    // After flow anim, advance to next level
+    const animDuration = 70 * (order[order.length - 1].d + 2) + 500;
+    state.pendingSolveTimer = setTimeout(() => {
+      state.pendingSolveTimer = null;
+      if (state.ended) return;
+      state.level++;
+      startLevel();
+    }, animDuration);
+  }
+
+  function startTimer() {
+    if (state.timerId) clearInterval(state.timerId);
+    state.timerId = setInterval(() => {
+      if (state.ended) return;
+      state.timeLeft -= 0.25;
+      if (state.timeLeft <= 0) {
+        state.timeLeft = 0;
+        updateHUD();
+        gameOver(false);
+        return;
+      }
+      updateHUD();
+    }, 250);
+  }
+
+  function gameOver(ranOut) {
+    if (state.ended) return;
+    state.ended = true;
+    if (state.timerId) { clearInterval(state.timerId); state.timerId = null; }
+    if (state.pendingSolveTimer) { clearTimeout(state.pendingSolveTimer); state.pendingSolveTimer = null; }
+
+    saveBests(state.score, state.levelsCleared);
+    renderBests();
+
+    els.goScore.textContent = state.score;
+    els.goLevel.textContent = state.levelsCleared;
+    els.goMoves.textContent = state.totalMoves;
+    if (ranOut) {
+      els.goTitle.textContent = 'Time’s Up';
+      els.goSub.textContent = 'The pipes ran dry. Great run!';
+    } else {
+      els.goTitle.textContent = 'Game Over';
+      els.goSub.textContent = 'Run submitted to the leaderboard.';
+    }
+    showOverlay();
+
+    // Submit to leaderboard
+    setTimeout(() => {
+      if (window.Leaderboard && typeof Leaderboard.submitScore === 'function') {
+        Leaderboard.submitScore(state.score);
+      }
+    }, 400);
+  }
+
+  function updateHUD() {
+    els.lvl.textContent = state.level;
+    els.moves.textContent = state.moves;
+    els.score.textContent = state.score;
+    const s = Math.max(0, Math.ceil(state.timeLeft));
+    const mm = Math.floor(s / 60);
+    const ss = s % 60;
+    els.timer.textContent = mm + ':' + (ss < 10 ? '0' + ss : ss);
+    els.timer.classList.toggle('warn', state.timeLeft <= 10);
+  }
+
+  // -------- Best scores --------
+
+  function loadBests() {
+    try {
+      const raw = localStorage.getItem('pipeconnect-best');
+      return raw ? JSON.parse(raw) : { score: 0, level: 0 };
+    } catch { return { score: 0, level: 0 }; }
+  }
+  function saveBests(score, level) {
+    const best = loadBests();
+    if (score > best.score) best.score = score;
+    if (level > best.level) best.level = level;
+    try { localStorage.setItem('pipeconnect-best', JSON.stringify(best)); } catch {}
+  }
+  function renderBests() {
+    const best = loadBests();
+    els.bestScore.textContent = best.score > 0 ? best.score : '—';
+    els.bestLevel.textContent = best.level > 0 ? best.level : '—';
+  }
+
+  // -------- Overlay --------
+
+  function showOverlay() { els.overlay.classList.add('show'); }
+  function hideOverlay() { els.overlay.classList.remove('show'); }
+
+  // -------- Events --------
+
+  let lastTouchTime = 0;
+  els.canvas.addEventListener('click', e => {
+    if (Date.now() - lastTouchTime < 500) return;
+    onCanvasClick(e);
+  });
+  els.canvas.addEventListener('touchend', e => {
+    e.preventDefault();
+    lastTouchTime = Date.now();
+    const t = e.changedTouches && e.changedTouches[0];
+    if (!t) return;
+    onCanvasClick({ clientX: t.clientX, clientY: t.clientY });
+  }, { passive: false });
+
+  els.reset.addEventListener('click', () => {
+    if (state.ended) return;
+    // Restart just this level (regenerate), preserves timer
+    state.solved = false;
+    state.flowAnim = null;
+    if (state.pendingSolveTimer) { clearTimeout(state.pendingSolveTimer); state.pendingSolveTimer = null; }
+    startLevel();
+  });
+
+  els.shuffle.addEventListener('click', () => {
+    if (state.ended || state.solved) return;
+    for (let r = 0; r < state.rows; r++) {
+      for (let c = 0; c < state.cols; c++) {
+        const rots = (Math.random() * 4) | 0;
+        for (let i = 0; i < rots; i++) state.masks[r][c] = rotateCW(state.masks[r][c]);
+        state.cells[r][c].animFrom = performance.now();
+      }
+    }
+    requestAnimationFrame(draw);
+    if (isSolved()) onSolve();
+  });
+
+  els.endBtn.addEventListener('click', () => {
+    if (state.ended) return;
+    gameOver(false);
+  });
+
+  els.playAgain.addEventListener('click', () => {
+    hideOverlay();
+    startRun();
+  });
+
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      sizeCanvas();
+      requestAnimationFrame(draw);
+    }, 100);
+  });
+
+  document.addEventListener('gesturestart', e => e.preventDefault());
+
+  // -------- Init --------
+
+  renderBests();
+  sizeCanvas();
+  startRun();
+})();
+</script>
+
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>
