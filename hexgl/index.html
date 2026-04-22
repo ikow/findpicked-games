@@ -27,7 +27,7 @@ a{color:inherit;text-decoration:none}
 /* Hero — pre-launch */
 #hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:80px 24px 60px;position:relative;transition:opacity 0.4s,transform 0.4s}
 #hero.gone{opacity:0;transform:scale(0.95);pointer-events:none;position:absolute;height:0;overflow:hidden}
-#hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,rgba(0,113,227,0.15) 0%,transparent 70%)}
+#hero::before{pointer-events:none;content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,rgba(0,113,227,0.15) 0%,transparent 70%)}
 .badge{display:inline-block;background:rgba(0,113,227,0.15);color:#0071e3;font-size:13px;font-weight:600;padding:6px 16px;border-radius:20px;margin-bottom:24px;border:1px solid rgba(0,113,227,0.3)}
 #hero h1{font-size:clamp(40px,8vw,72px);font-weight:700;letter-spacing:-0.03em;line-height:1.05;margin-bottom:16px;background:linear-gradient(135deg,#fff 0%,#0071e3 50%,#00c7be 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 #hero p.sub{font-size:clamp(16px,2.5vw,20px);color:rgba(255,255,255,0.6);max-width:560px;line-height:1.5;margin-bottom:40px}
