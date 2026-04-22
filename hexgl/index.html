@@ -10,6 +10,7 @@
 body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,sans-serif;background:#0a0a0a;color:#f5f5f7;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 body.playing{overflow:hidden}
 a{color:inherit;text-decoration:none}
+.back-home{position:fixed;top:20px;left:20px;z-index:250;color:rgba(255,255,255,0.6);font-size:14px;transition:color 0.2s,opacity 0.2s;text-decoration:none}.back-home:hover{color:#fff}.back-home.dim{opacity:0.4}
 
 /* Top bar — always visible */
 .topbar{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:rgba(10,10,10,0.85);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,0.06);transition:transform 0.3s}
@@ -80,6 +81,7 @@ a{color:inherit;text-decoration:none}
 .credits{text-align:center;padding:40px 24px 60px;border-top:1px solid rgba(255,255,255,0.06);color:rgba(255,255,255,0.3);font-size:13px;line-height:1.8}
 .credits a{color:rgba(255,255,255,0.5);text-decoration:underline}
 
+.webgl-warn{display:none;position:fixed;inset:0;z-index:999;background:#0a0a0a;align-items:center;justify-content:center;text-align:center;padding:24px}.webgl-warn.show{display:flex}.webgl-warn p{color:rgba(255,255,255,0.6);font-size:16px;max-width:400px;line-height:1.6}.webgl-warn a{color:#0071e3}
 @media(max-width:600px){
   .control-grid{grid-template-columns:1fr}
   #hero{padding:60px 20px 40px}
@@ -89,6 +91,8 @@ a{color:inherit;text-decoration:none}
 </head>
 <body>
 
+<div class="webgl-warn" id="webglWarn"><div><p style="font-size:48px;margin-bottom:16px">&#128308;</p><p>This game requires WebGL, which your browser doesn't support.</p><p style="margin-top:12px"><a href="../">Back to all games</a></p></div></div>
+<a href="../" class="back-home" id="backHome">&larr; All Games</a>
 <!-- Top bar -->
 <div class="topbar hidden" id="topbar">
   <div class="topbar-left">
@@ -157,6 +161,16 @@ a{color:inherit;text-decoration:none}
 </div>
 
 <script>
+
+// WebGL check
+try {
+  var canvas = document.createElement('canvas');
+  var gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+  if (!gl) throw 'no webgl';
+} catch(e) {
+  document.getElementById('webglWarn').classList.add('show');
+  document.getElementById('hero').style.display = 'none';
+}
 let gameLoaded = false;
 let expanded = false;
 const GAME_KEYS = new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space',' ']);
@@ -175,6 +189,7 @@ function launchGame() {
   // Hide hero, show topbar
   document.getElementById('hero').classList.add('gone');
   document.getElementById('topbar').classList.remove('hidden');
+  document.getElementById('backHome').classList.add('dim');
   document.body.classList.add('playing');
 
   // Create iframe
@@ -247,6 +262,7 @@ function toggleView() {
     btn.textContent = '⛶ Expand';
     info.classList.remove('hidden');
     document.body.classList.remove('playing');
+  document.getElementById('backHome').classList.remove('dim');
   }
   expanded = !expanded;
 
@@ -277,6 +293,7 @@ function exitGame() {
   document.getElementById('focusOverlay').classList.remove('show');
   document.getElementById('info').classList.remove('hidden');
   document.body.classList.remove('playing');
+  document.getElementById('backHome').classList.remove('dim');
 
   const container = document.getElementById('gameContainer');
   container.classList.remove('fullview');
