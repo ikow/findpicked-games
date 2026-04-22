@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Word Ladder — FindPicked Games</title>
+<meta name="description" content="Play Word Ladder free — change one letter at a time to transform the start word into the end word. Classic puzzles, hints, and a clean Apple-inspired interface.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ctext x='16' y='22' font-size='18' fill='white' text-anchor='middle' font-family='system-ui' font-weight='700'%3EL%3C/text%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-soft: #f5f5f7;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --accent-soft: rgba(0, 113, 227, 0.10);
+  --good: #30b85c;
+  --good-soft: rgba(48, 184, 92, 0.14);
+  --bad: #ff3b30;
+  --bad-soft: rgba(255, 59, 48, 0.12);
+  --hint: #ff9500;
+  --hint-soft: rgba(255, 149, 0, 0.16);
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.06);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+  --radius: 16px;
+  --tile-border: #d2d2d7;
+}
+
+html, body {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px 18px 40px;
+  touch-action: manipulation;
+}
+
+.back {
+  align-self: flex-start;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 400;
+  padding: 8px 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  transition: color 0.2s ease;
+}
+.back:hover { color: var(--text-primary); }
+.back .arrow { font-size: 18px; line-height: 1; }
+
+.wrap {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+header {
+  text-align: center;
+  margin-top: 8px;
+}
+
+h1 {
+  font-size: clamp(28px, 7vw, 36px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.tagline {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+.stat .label {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+.stat .value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.stat .value.target {
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+
+.puzzle-info {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.puzzle-info .difficulty {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.puzzle-info .difficulty.medium {
+  background: var(--hint-soft);
+  color: var(--hint);
+}
+.puzzle-info .difficulty.hard {
+  background: var(--bad-soft);
+  color: var(--bad);
+}
+
+.ladder {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 18px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 200px;
+}
+
+.row {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  animation: pop 0.25s ease;
+}
+@keyframes pop {
+  from { transform: scale(0.92); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+.row.start .tile { border-color: var(--text-tertiary); }
+.row.target .tile {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.row.target { margin-top: 6px; }
+.row.start  { margin-bottom: 6px; }
+
+.tile {
+  width: 48px;
+  height: 56px;
+  border: 2px solid var(--tile-border);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+.tile.changed {
+  background: var(--good-soft);
+  border-color: var(--good);
+  color: var(--good);
+}
+.tile.hint-tile {
+  background: var(--hint-soft);
+  border-color: var(--hint);
+  color: var(--hint);
+}
+
+.label-row {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  padding: 4px 0 2px;
+}
+
+.input-area {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+input.word-input {
+  flex: 1;
+  height: 52px;
+  border: 2px solid var(--tile-border);
+  border-radius: 14px;
+  background: var(--bg-card);
+  font-family: inherit;
+  font-size: 20px;
+  font-weight: 600;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-primary);
+  padding: 0 12px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+input.word-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+input.word-input.shake {
+  animation: shake 0.4s ease;
+  border-color: var(--bad);
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn {
+  height: 52px;
+  padding: 0 20px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: background 0.15s ease, transform 0.05s ease;
+  min-width: 44px;
+}
+.btn:hover  { background: var(--accent-hover); }
+.btn:active { transform: scale(0.97); }
+.btn:disabled { background: var(--text-tertiary); cursor: not-allowed; opacity: 0.6; }
+
+.btn.secondary {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+.btn.secondary:hover { background: var(--bg-soft); }
+
+.btn.hint {
+  background: var(--hint);
+}
+.btn.hint:hover { background: #ff8000; }
+
+.controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.controls .btn { flex: 1; min-width: 120px; }
+
+.message {
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-secondary);
+  min-height: 20px;
+  padding: 0 8px;
+  transition: color 0.2s ease;
+}
+.message.error { color: var(--bad); font-weight: 500; }
+.message.good  { color: var(--good); font-weight: 500; }
+
+.puzzle-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.puzzle-picker .picker-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-align: center;
+}
+.puzzle-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+.puzzle-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.05s ease, box-shadow 0.2s ease;
+  font-family: inherit;
+  color: var(--text-primary);
+  min-height: 76px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+.puzzle-card:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow);
+}
+.puzzle-card:active { transform: scale(0.98); }
+.puzzle-card .pair {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.puzzle-card .pair .arrow { color: var(--accent); margin: 0 4px; }
+.puzzle-card .meta {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+
+.howto {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.howto summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 14px 18px;
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 44px;
+  user-select: none;
+}
+.howto summary::-webkit-details-marker { display: none; }
+.howto summary::after {
+  content: '+';
+  font-size: 22px;
+  color: var(--text-tertiary);
+  font-weight: 400;
+  transition: transform 0.2s ease;
+}
+.howto[open] summary::after { content: '−'; }
+.howto .body {
+  padding: 0 18px 18px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+.howto .body p { margin-bottom: 8px; }
+.howto .body ul { padding-left: 18px; margin-bottom: 8px; }
+.howto .body li { margin-bottom: 4px; }
+.howto .body strong { color: var(--text-primary); }
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+  animation: fade 0.2s ease;
+}
+.modal.show { display: flex; }
+@keyframes fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.modal .panel {
+  background: var(--bg-card);
+  border-radius: 22px;
+  padding: 28px 24px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+  box-shadow: var(--shadow-hover);
+  animation: rise 0.25s ease;
+}
+@keyframes rise {
+  from { transform: translateY(12px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.modal h2 {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+.modal .sub {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 18px;
+}
+.modal .stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.modal .stat-box {
+  background: var(--bg-soft);
+  border-radius: 12px;
+  padding: 12px;
+}
+.modal .stat-box .lbl {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+.modal .stat-box .val {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+.modal .actions {
+  display: flex;
+  gap: 8px;
+  flex-direction: column;
+}
+
+@media (max-width: 380px) {
+  .tile { width: 42px; height: 50px; font-size: 20px; }
+  input.word-input { font-size: 18px; }
+  .btn { padding: 0 14px; font-size: 14px; }
+}
+</style>
+</head>
+<body>
+
+<a href="../" class="back"><span class="arrow">‹</span> Back to games</a>
+
+<div class="wrap">
+  <header>
+    <h1>Word Ladder</h1>
+    <p class="tagline">Change one letter at a time. Each step must be a real word.</p>
+  </header>
+
+  <div id="game" style="display:none;">
+    <div class="puzzle-info">
+      <span><strong id="goalText">—</strong></span>
+      <span class="difficulty" id="diffBadge">Easy</span>
+    </div>
+
+    <div class="bar" style="margin-top:14px;">
+      <div class="stat">
+        <div class="label">Moves</div>
+        <div class="value" id="moveCount">0</div>
+      </div>
+      <div class="stat">
+        <div class="label">Best</div>
+        <div class="value" id="bestCount">—</div>
+      </div>
+      <div class="stat">
+        <div class="label">Target</div>
+        <div class="value target" id="targetWord">—</div>
+      </div>
+    </div>
+
+    <div class="ladder" id="ladder" style="margin-top:14px;"></div>
+
+    <div class="input-area" style="margin-top:14px;">
+      <input class="word-input" id="wordInput" type="text" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="8" placeholder="next word">
+      <button class="btn" id="submitBtn">Add</button>
+    </div>
+
+    <div class="message" id="message">&nbsp;</div>
+
+    <div class="controls" style="margin-top:6px;">
+      <button class="btn hint" id="hintBtn">Hint</button>
+      <button class="btn secondary" id="undoBtn">Undo</button>
+      <button class="btn secondary" id="restartBtn">Restart</button>
+      <button class="btn secondary" id="newBtn">New Puzzle</button>
+    </div>
+  </div>
+
+  <div id="picker" class="puzzle-picker">
+    <p class="picker-label">Choose a puzzle</p>
+    <div class="puzzle-grid" id="puzzleGrid"></div>
+  </div>
+
+  <details class="howto">
+    <summary>How to Play</summary>
+    <div class="body">
+      <p>Transform the <strong>start word</strong> into the <strong>target word</strong> by changing <strong>one letter at a time</strong>.</p>
+      <ul>
+        <li>Each new word must differ from the previous word by exactly one letter.</li>
+        <li>Every step must be a valid English word.</li>
+        <li>Letters stay in the same position — no shuffling, no adding, no removing.</li>
+        <li>Tap <strong>Hint</strong> to reveal the next word toward the goal (small score penalty).</li>
+        <li>Tap <strong>Undo</strong> to roll back one step.</li>
+      </ul>
+      <p><strong>Scoring:</strong> Solve in fewer moves for a bigger score. Hints cost points. Your best per puzzle is saved on this device.</p>
+      <p><strong>Example:</strong> CAT → C<strong>O</strong>T → CO<strong>G</strong> → <strong>D</strong>OG.</p>
+    </div>
+  </details>
+</div>
+
+<div class="modal" id="winModal">
+  <div class="panel">
+    <h2 id="winTitle">Solved!</h2>
+    <p class="sub" id="winSub">You completed the ladder.</p>
+    <div class="stats-grid">
+      <div class="stat-box"><div class="lbl">Moves</div><div class="val" id="finalMoves">0</div></div>
+      <div class="stat-box"><div class="lbl">Score</div><div class="val" id="finalScore">0</div></div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="playAgainBtn">Play Again</button>
+      <button class="btn secondary" id="newPuzzleBtn">New Puzzle</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- Puzzles ---------- */
+const PUZZLES = [
+  { start: 'CAT',  target: 'DOG',  difficulty: 'Easy',   par: 3 },
+  { start: 'PIG',  target: 'DOG',  difficulty: 'Easy',   par: 2 },
+  { start: 'BAD',  target: 'BOY',  difficulty: 'Easy',   par: 2 },
+  { start: 'TEA',  target: 'POT',  difficulty: 'Easy',   par: 3 },
+  { start: 'COLD', target: 'WARM', difficulty: 'Medium', par: 4 },
+  { start: 'LOVE', target: 'HATE', difficulty: 'Medium', par: 4 },
+  { start: 'HEAD', target: 'TAIL', difficulty: 'Medium', par: 5 },
+  { start: 'WORD', target: 'GAME', difficulty: 'Medium', par: 5 },
+  { start: 'POOR', target: 'RICH', difficulty: 'Hard',   par: 6 },
+  { start: 'BOOK', target: 'READ', difficulty: 'Hard',   par: 5 }
+];
+
+/* ---------- Dictionary ----------
+   Curated common English 3- and 4-letter words. All puzzle solution
+   words and many neighbors are included so BFS hints work and players
+   can find their own paths.
+*/
+const DICT_RAW = `
+ACE ACT ADD AGE AID AIL AIM AIR ALE ALL AND ANT ANY APE APT ARC ARE ARK ARM ART
+ASH ASK ATE AWE AXE AYE BAD BAG BAN BAR BAT BAY BED BEE BEG BET BIB BID BIG BIN
+BIT BOA BOB BOD BOG BOO BOW BOX BOY BUB BUD BUG BUM BUN BUS BUT BUY BYE CAB CAD
+CAM CAN CAP CAR CAT CAW COB COD COG CON COO COP COT COW COX COY CRY CUB CUD CUE
+CUP CUR CUT DAB DAD DAM DAY DEN DEW DID DIE DIG DIM DIN DIP DOC DOE DOG DON DOT
+DRY DUB DUD DUE DUG DUO DYE EAR EAT EBB EEL EGG EGO ELF ELK ELL ELM EMU END EON
+ERA ERE EVE EWE EYE FAD FAN FAR FAT FAX FED FEE FEN FEW FIB FIE FIG FIN FIR FIT
+FIX FLU FLY FOB FOE FOG FOR FOX FRY FUN FUR GAB GAG GAL GAP GAS GAY GEE GEL GEM
+GET GIG GIN GOB GOD GOO GOT GUM GUN GUT GUY GYM HAD HAG HAH HAM HAS HAT HAW HAY
+HEM HEN HER HEW HEX HEY HIC HID HIM HIP HIS HIT HOB HOD HOE HOG HOP HOT HOW HUB
+HUE HUG HUH HUM HUT ICE ICK ICY ILK ILL IMP INK INN ION IRE IRK ITS IVY JAB JAG
+JAM JAR JAW JAY JET JIG JOB JOG JOT JOY JUG JUT KEG KEN KEY KID KIN KIT LAB LAD
+LAG LAP LAW LAX LAY LEA LED LEE LEG LET LID LIE LIP LIT LOB LOG LOO LOP LOT LOW
+LUG LYE MAC MAD MAN MAP MAR MAT MAX MAY MEN MET MEW MID MIL MIX MOB MOD MOM MOO
+MOP MUD MUG MUM NAB NAG NAP NAY NEE NET NEW NIB NIL NIP NIT NOB NOD NOR NOT NOW
+NUB NUN NUT OAF OAK OAR OAT ODD ODE OFF OFT OHM OIL OLD ONE OOH OPE OPT ORB ORE
+OUR OUT OWE OWL OWN PAD PAL PAN PAP PAR PAT PAW PAY PEA PEE PEG PEN PEP PER PET
+PEW PIE PIG PIN PIP PIT PLY POD POP POT POW PRO PRY PUB PUG PUN PUP PUS PUT QUA
+RAG RAH RAM RAN RAP RAT RAW RAY RED REF REM REP RET REV RIB RID RIG RIM RIP ROB
+ROC ROD ROE ROT ROW RUB RUE RUG RUM RUN RUT RYE SAC SAD SAG SAP SAT SAW SAX SAY
+SEA SEE SET SEW SEX SHE SHY SIC SIN SIP SIR SIS SIT SIX SKI SKY SLY SOB SOD SOL
+SON SOP SOT SOW SOY SPA SPY STY SUB SUE SUM SUN SUP TAB TAD TAG TAM TAN TAP TAR
+TAT TAU TAX TEA TED TEE TEN THE THO THY TIC TIE TIL TIN TIP TIT TOD TOE TOG TOM
+TON TOO TOP TOR TOT TOW TOY TRY TUB TUG TUN TUT TUX TWO UGH UMP UPS URN USE UTE
+VAN VAT VEE VET VEX VIA VIE VIM VOW WAD WAG WAN WAR WAS WAX WAY WEB WED WEE WEN
+WET WHO WHY WIG WIN WIT WOE WOK WON WOO WOW WRY WYE YAK YAM YAP YAW YEA YEH YEN
+YEP YES YET YEW YIN YIP YOU YUK YUM ZAG ZAP ZED ZIG ZIN ZIP ZIT ZOO
+ABLE ACED ACES ACID ACME ACNE ACRE ACTS ADDS AGED AGES AGOG AHEM AIDE AIDS AILS
+AIMS AIRS AIRY AJAR AKIN ALAS ALES ALLY ALMS ALOE ALSO ALTO ALUM AMID AMMO AMOK
+AMPS ANEW ANNA ANTE ANTI ANTS ANUS APED APES APEX APSE AQUA ARCH ARCS AREA ARES
+ARID ARKS ARMS ARMY ARTS ARTY ASKS ATOM ATOP AUNT AURA AUTO AVER AVID AWAY AWED
+AWES AWLS AWRY AXED AXES AXIS AXLE AYES BABE BABY BACK BADE BAGS BAIL BAIT BAKE
+BALD BALE BALL BALM BAND BANE BANG BANK BANS BARB BARD BARE BARK BARN BARS BASE
+BASH BASS BAST BATE BATH BATS BAWD BAWL BAYS BEAD BEAK BEAM BEAN BEAR BEAT BEDS
+BEEF BEEN BEEP BEER BEES BEET BEGS BELL BELT BEND BENT BERG BEST BETS BIAS BIBS
+BIDE BIDS BIER BIKE BILE BILK BILL BIND BINS BIRD BITE BITS BLAB BLAH BLED BLEW
+BLIP BLOB BLOC BLOG BLOT BLOW BLUE BLUR BOAR BOAT BODE BODY BOGS BOIL BOLD BOLT
+BOMB BOND BONE BONG BONY BOOK BOOM BOON BOOR BOOS BOOT BORE BORN BOSS BOTH BOUT
+BOWL BOWS BOXY BOYS BRAD BRAG BRAN BRAS BRAT BRAY BRED BREW BRIG BRIM BROW BUCK
+BUDS BUFF BULB BULK BULL BUMP BUMS BUNK BUNS BUOY BURG BURL BURN BURP BURR BURY
+BUSH BUSK BUST BUSY BUTS BUTT BUYS BUZZ BYES BYRE BYTE CABS CADS CAFE CAGE CAGY
+CAKE CALF CALL CALM CAME CAMP CAMS CANE CANS CANT CAPE CAPS CARD CARE CARP CARS
+CART CASE CASH CASK CAST CATS CAVE CAWS CEDE CELL CENT CHAP CHAR CHAT CHEF CHEW
+CHIC CHIN CHIP CHIT CHOP CHOW CHUG CHUM CINE CITE CITY CLAD CLAM CLAN CLAP CLAW
+CLAY CLEF CLEW CLIP CLOD CLOG CLOP CLOT CLOY CLUB CLUE COAL COAT COAX COBS COCK
+CODA CODE CODS COED COIL COIN COKE COLA COLD COLE COLT COMA COMB COME CONE CONS
+COOK COOL COOP COOS COPE COPS COPY CORD CORE CORK CORN CORP COST COTS COUP COVE
+COWL COWS COZY CRAB CRAG CRAM CRAP CREW CRIB CRIES CROC CROP CROW CRUD CUBE CUBS
+CUED CUES CUFF CULT CURB CURD CURE CURL CURS CURT CUSP CUSS CUTE CUTS CYAN CYST
+CZAR DABS DADA DADO DADS DAFT DAIS DAME DAMN DAMP DAMS DARE DARK DART DASH DATA
+DATE DAUB DAWN DAYS DAZE DEAD DEAF DEAL DEAN DEAR DEBT DECK DEED DEEM DEEP DEER
+DEFT DEFY DELI DELL DELT DEMO DENS DENT DENY DESK DEWY DIAL DICE DICY DIED DIES
+DIET DIGS DIME DIMS DINE DING DINK DINS DINT DIPS DIRE DIRT DISC DISH DISK DIVA
+DIVE DOCK DOCS DOES DOGS DOLE DOLL DOLT DOME DONE DONS DOOM DOOR DOPE DORM DOSE
+DOTE DOTH DOTS DOUR DOVE DOWN DOZE DOZY DRAB DRAG DRAM DRAW DREW DRIP DROP DRUB
+DRUG DRUM DUAL DUCK DUCT DUDE DUDS DUEL DUES DUET DUKE DULL DUMB DUMP DUNE DUNG
+DUNK DUOS DUPE DUSK DUST DUTY DYED DYES DYNE EACH EARL EARN EARS EASE EAST EASY
+EATS EBBS ECHO ECRU EDDY EDEN EDGE EDGY EDIT EELS EGGS EGOS ELAN ELKS ELLS ELMS
+ELSE EMIR EMIT EMUS ENDS ENVY EONS EPIC ERAS ERGS ERRS EURO EVEN EVER EVES EVIL
+EWER EWES EXAM EXES EXIT EYED EYES FACE FACT FADE FADS FAIL FAIN FAIR FAKE FALL
+FAME FANG FANS FARE FARM FAST FATE FATS FAUN FAWN FAZE FEAR FEAT FEED FEEL FEES
+FEET FELL FELT FEND FERN FEST FETE FEUD FIAT FIBS FIEF FIFE FIGS FILE FILL FILM
+FIND FINE FINK FINS FIRE FIRM FIRS FISH FIST FITS FIVE FIZZ FLAB FLAG FLAK FLAP
+FLAT FLAW FLAX FLED FLEE FLEW FLEX FLIP FLIT FLOE FLOG FLOP FLOW FLUB FLUE FLUX
+FOAL FOAM FOBS FOES FOGS FOIL FOLD FOLK FOND FONT FOOD FOOL FOOT FORD FORE FORK
+FORM FORT FOUL FOUR FOWL FOXY FRAY FREE FRET FROG FROM FUEL FULL FUME FUMY FUND
+FUNK FUNS FURL FURS FURY FUSE FUSS FUZE FUZZ GAFF GAGE GAGS GAIN GAIT GALA GALE
+GALL GALS GAME GANG GAOL GAPE GAPS GARB GARS GASH GASP GATE GAUL GAVE GAWK GAYS
+GAZE GEAR GEEK GELD GELS GEMS GENE GENT GERM GETS GIBE GIFT GIGA GIGS GILD GILL
+GILT GIMP GINS GIRD GIRL GIRT GIST GIVE GLAD GLEE GLEN GLIB GLOB GLOM GLOP GLOW
+GLUE GLUM GLUT GNAR GNAT GNAW GOAD GOAL GOAS GOAT GOBS GODS GOER GOES GOLD GOLF
+GONE GONG GOOD GOOF GOON GOOP GORE GORY GOSH GOUT GOWN GRAB GRAD GRAM GRAY
+GREW GREY GRID GRIM GRIN GRIP GRIT GROG GROT GROW GRUB GRUE GULF GULL GULP GUMS
+GURU GUSH GUST GUTS GUYS GYMS GYRE HACK HADJ HAFT HAGS HAIL HAIR HAKE HALE HALF
+HALL HALO HALT HAMS HAND HANG HANK HARD HARE HARK HARM HARP HART HASH HASP HAST
+HATE HATH HATS HAUL HAVE HAWK HAYS HAZE HAZY HEAD HEAL HEAP HEAR HEAT HECK HEED
+HEEL HEFT HEIR HELD HELL HELM HELP HEMP HEMS HENS HERB HERD HERE HERO HERS HEWN
+HEWS HICK HIDE HIES HIGH HIKE HILL HILT HIND HINT HIPS HIRE HISS HITS HIVE HOAR
+HOAX HOBO HOCK HODS HOES HOGS HOLD HOLE HOLT HOLY HOME HONE HONK HOOD HOOF HOOK
+HOOP HOOT HOPE HOPS HORN HOSE HOST HOTS HOUR HOWL HUBS HUED HUES HUFF HUGE HUGS
+HULA HULK HULL HUMP HUMS HUNG HUNK HUNT HURL HURT HUSH HUSK HYMN ICED ICES ICKY
+ICON IDEA IDES IDLE IDLY IDOL IFFY ILKS ILLS IMPS INCH INKS INKY INNS INTO IONS
+IOTA IRES IRIS IRKS IRON ITCH ITEM JABS JACK JADE JAGS JAIL JAMB JAMS JAPE JARS
+JAVA JAWS JAYS JAZZ JEEP JELL JERK JEST JETS JIBE JIBS JIGS JILT JINX JIVE JOBS
+JOCK JOEY JOGS JOIN JOKE JOLT JOSH JOSS JOWL JOYS JUDO JUGS JUMP JUNK JURY JUST
+JUTE JUTS KALE KAYO KEEL KEEN KEEP KEGS KEPT KEYS KICK KIDS KILL KILN KILO KILT
+KIND KING KINK KINS KISS KITE KITH KITS KIWI KNEE KNEW KNIT KNOB KNOT KNOW KOAN
+KOOK KUDO LACE LACK LACY LADE LADS LADY LAGS LAID LAIN LAIR LAKE LAMB LAME LAMP
+LAND LANE LAPS LARD LARK LASH LASS LAST LATE LATH LAVA LAWN LAWS LAYS LAZE LAZY
+LEAD LEAF LEAK LEAN LEAP LEER LEES LEFT LEGS LEND LENS LENT LESS LEST LIAR LICE
+LICK LIDS LIED LIEN LIES LIEU LIFE LIFT LIKE LILT LILY LIMB LIME LIMN LIMO LIMP
+LINE LINK LINT LION LIPS LISP LIST LITE LIVE LOAD LOAF LOAM LOAN LOBE LOBS LOCH
+LOCI LOCK LOCO LODE LOFT LOGE LOGO LOGS LOIN LOLL LONE LONG LOOK LOOM LOON LOOP
+LOOS LOOT LOPE LOPS LORD LORE LOSE LOSS LOST LOTH LOTS LOUD LOUT LOVE LOWS LUBE
+LUCK LUGE LUGS LULL LUMP LUNG LURE LURK LUSH LUST LUTE LYNX LYRE MACE MADE MAGI
+MAID MAIL MAIM MAIN MAKE MALE MALL MALT MAMA MANE MANS MANY MAPS MARE MARK MARS
+MART MASH MASK MASS MAST MATE MATH MATS MAUL MAUS MAYO MAYS MAZE MEAD MEAL MEAN
+MEAT MEEK MEET MELD MELT MEMO MEND MENU MEOW MERE MESH MESS METE METS MEWS MICE
+MICH MIEN MIFF MIKE MILD MILE MILK MILL MIME MIMI MIND MINE MINI MINK MINT MINX
+MIRE MIRY MISS MIST MITE MITT MOAN MOAT MOBS MOCK MODE MODS MOLD MOLE MOLT MOMS
+MONK MONO MONS MOOD MOON MOOR MOOS MOOT MOPE MOPS MORE MORN MOSS MOST MOTE MOTH
+MOTS MOVE MOWN MOWS MUCH MUCK MUFF MUGS MULE MULL MUMS MUSE MUSH MUSK MUSS MUST
+MUTE MUTT MYTH NABS NAGS NAIL NAME NAPE NAPS NARC NARK NARY NAVE NAVY NAYS NEAP
+NEAR NEAT NECK NEED NEON NESS NEST NETS NEWS NEWT NEXT NICE NICK NIGH NINE NIPS
+NITS NOBS NODE NODS NOEL NONE NOOK NOON NOPE NORM NOSE NOSY NOTE NOUN NUDE NUKE
+NULL NUMB NUNS NURD NUTS OAFS OAKS OARS OATH OATS OBEY OBOE ODDS ODES OFFS OGLE
+OGRE OHMS OILS OILY OINK OKAY OLDS OLEO OMEN ONCE ONES ONLY ONTO ONUS OOPS OOZE
+OOZY OPAL OPEN OPTS OPUS ORAL ORBS ORCS ORES OURS OUST OUTS OVAL OVEN OVER OWED
+OWES OWLS OWNS OXEN PACE PACK PACT PADS PAGE PAID PAIL PAIN PAIR PALE PALL PALM
+PALP PALS PANE PANG PANS PANT PAPA PAPS PARA PARE PARK PARS PART PASS PAST PATE
+PATH PATS PAVE PAWL PAWN PAWS PAYS PEAK PEAL PEAR PEAS PECK PEED PEEK PEEL PEEN
+PEEP PEER PEGS PELT PEND PENS PEON PEPS PERK PERM PERT PEST PETS PEWS PICA PICK
+PIED PIER PIES PIGS PIKE PILE PILL PIMP PINE PING PINK PINS PINT PIPE PISH PITA
+PITH PITS PITY PLAN PLAT PLAY PLEA PLED PLOD PLOP PLOT PLOW PLOY PLUG PLUM PLUS
+POCK PODS POEM POET POKE POKY POLE POLL POLO POMP POND PONY POOH POOL POOR POPE
+POPS PORE PORK PORN PORT POSE POSH POST POSY POTS POUR POUT PRAM PRAY PREP PREY
+PRIG PRIM PROD PROM PROP PROS PROW PUBS PUCE PUCK PUFF PUGS PUKE PULE PULL PULP
+PUMP PUNK PUNS PUNT PUNY PUPA PUPS PURE PURL PURR PUSH PUSS PUTS PUTT QUAD QUAY
+QUID QUIP QUIT QUIZ RACE RACK RACY RAFT RAGE RAGS RAID RAIL RAIN RAJA RAKE RAMP
+RAMS RANG RANI RANK RANT RAPE RAPS RAPT RARE RASH RASP RATE RATS RAVE RAYS RAZE
+READ REAL REAM REAP REAR REDO REDS REED REEF REEK REEL REIN RELY REND RENT REPS
+REST RIBS RICE RICH RICK RIDE RIDS RIFE RIFF RIFT RIGS RILL RIME RIND RING RINK
+RIOT RIPE RIPS RISE RISK RITE ROAD ROAM ROAR ROBE ROBS ROCK RODE RODS ROES ROIL
+ROLE ROLL ROMP ROOF ROOK ROOM ROOT ROPE ROSE ROSY ROTE ROTS ROUT ROVE ROWS RUBE
+RUBS RUBY RUDE RUED RUES RUFF RUGS RUIN RULE RUMP RUNE RUNG RUNS RUNT RUSE RUSH
+RUSK RUST RUTS RYES SACK SACS SAFE SAGA SAGE SAGS SAID SAIL SAKE SALE SALT SAME
+SAND SANE SANG SANK SAPS SARI SASH SAVE SAWN SAWS SAYS SCAB SCAM SCAN SCAR SCOT
+SCUM SEAL SEAM SEAR SEAS SEAT SECT SEED SEEK SEEM SEEN SEEP SEER SEES SELF SELL
+SEND SENT SEPT SERF SETS SEWN SEWS SHAG SHAH SHAM SHED SHIN SHIP SHIV SHOD SHOE
+SHOO SHOP SHOT SHOW SHUN SHUT SICK SIDE SIFT SIGH SIGN SILK SILL SILO SILT SINK
+SINS SIPS SIRE SIRS SITE SITS SIZE SKEW SKID SKIM SKIN SKIP SKIS SKIT SLAB SLAG
+SLAM SLAP SLAT SLAW SLAY SLED SLEW SLID SLIM SLIP SLIT SLOB SLOE SLOG SLOP SLOT
+SLOW SLUG SLUM SLUR SMOG SMUG SMUT SNAG SNAP SNIP SNIT SNOB SNOT SNOW SNUB SNUG
+SOAK SOAP SOAR SOBS SOCK SODA SODS SOFA SOFT SOIL SOLD SOLE SOLO SOLS SOME SONG
+SONS SOON SOOT SORE SORT SOUL SOUP SOUR SOWN SOWS SOYA SPAM SPAN SPAR SPAS SPAT
+SPED SPEW SPIN SPIT SPOT SPRY SPUD SPUN SPUR STAB STAG STAR STAY STEM STEP STEW
+STIR STOP STOW STUB STUD STUN STYE SUBS SUCH SUCK SUDS SUED SUES SUET SUIT SULK
+SUMS SUMP SUNG SUNK SUNS SUPS SURE SURF SWAB SWAG SWAM SWAN SWAP SWAT SWAY SWIG
+SWIM SWUM TABS TACK TACO TACT TADS TAIL TAKE TALC TALE TALK TALL TAME TAMP TANG
+TANK TANS TAPE TAPS TARE TARO TARP TART TASK TAUT TAXI TEAK TEAL TEAM TEAR TEAS
+TEAT TECH TEDS TEEM TEEN TELL TEMP TEND TENS TENT TERM TERN TEST TEXT THAN THAT
+THAW THEE THEM THEN THEW THEY THIN THIS THUD THUG TICK TICS TIDE TIDY TIED TIER
+TIES TIFF TIKE TILE TILL TILT TIME TINE TING TINS TINT TINY TIPS TIRE TITS TOAD
+TODS TODY TOED TOES TOFU TOGA TOGS TOIL TOLD TOLE TOLL TOMB TOME TONE TONG TONS
+TOOK TOOL TOOT TOPS TORE TORN TORT TORY TOSS TOTE TOTS TOUR TOUT TOWN TOWS TOYS
+TRAM TRAP TRAY TREE TREK TRIM TRIO TRIP TROD TROT TROY TRUE TUBA TUBE TUBS TUCK
+TUFF TUFT TUGS TUNA TUNE TURF TURN TUSK TUTU TWIG TWIN TWIT TWOS TYKE TYPE TYPO
+UDDER UGLY UMPS UNDO UNIT UNTO UPON URGE URNS USED USER USES VAIN VALE VAMP VANE
+VANS VARY VASE VAST VATS VEAL VEER VEIL VEIN VEND VENT VERB VERY VEST VETO VETS
+VIAL VIBE VICE VIED VIES VIEW VILE VINE VINY VIOL VISA VISE VOID VOLE VOLT VOTE
+VOWS WACK WADE WADS WAFT WAGE WAGS WAIF WAIL WAIN WAIT WAKE WALE WALK WALL WAND
+WANE WANT WARD WARE WARM WARN WARP WARS WART WARY WASH WASP WAST WATT WAVE WAVY
+WAXY WAYS WEAK WEAL WEAN WEAR WEDS WEED WEEK WEEN WEEP WEFT WEIR WELD WELL WELT
+WEND WENT WEPT WERE WEST WETS WHAM WHAT WHEE WHEN WHET WHEW WHEY WHIM WHIP WHIR
+WHIT WHIZ WHOA WHOM WHOP WICK WIDE WIFE WIGS WILD WILE WILL WILT WILY WIMP WIND
+WINE WING WINK WINO WINS WIPE WIRE WIRY WISE WISH WISP WIST WITH WITS WIVE WOAD
+WOES WOKE WOKS WOLD WOLF WOMB WONT WOOD WOOF WOOL WOOS WORD WORE WORK WORM WORN
+WOVE WOWS WRAP WREN WRIT YACK YAKS YANK YAPS YARD YARE YARN YAWL YAWN YAWS YEAH
+YEAR YEAS YELL YELP YENS YETI YEWS YIPS YOGA YOGI YOKE YOLK YOND YORE YOUR YOWL
+YULE ZAGS ZANY ZAPS ZEAL ZEDS ZERO ZEST ZINC ZING ZIPS ZITS ZONE ZONK ZOOM ZOOS
+`;
+
+const DICT = new Set(DICT_RAW.trim().split(/\s+/).map(w => w.toUpperCase()));
+
+/* By word length, for fast neighbor enumeration */
+const DICT_BY_LEN = {};
+for (const w of DICT) {
+  (DICT_BY_LEN[w.length] = DICT_BY_LEN[w.length] || new Set()).add(w);
+}
+
+/* ---------- BFS solver ---------- */
+function neighbors(word) {
+  const result = [];
+  const pool = DICT_BY_LEN[word.length];
+  if (!pool) return result;
+  for (let i = 0; i < word.length; i++) {
+    for (let c = 65; c <= 90; c++) {
+      const ch = String.fromCharCode(c);
+      if (ch === word[i]) continue;
+      const w = word.slice(0, i) + ch + word.slice(i + 1);
+      if (pool.has(w)) result.push(w);
+    }
+  }
+  return result;
+}
+
+function bfs(start, end) {
+  if (start === end) return [start];
+  if (start.length !== end.length) return null;
+  const visited = new Set([start]);
+  const queue = [[start]];
+  while (queue.length) {
+    const path = queue.shift();
+    const last = path[path.length - 1];
+    for (const n of neighbors(last)) {
+      if (visited.has(n)) continue;
+      visited.add(n);
+      const newPath = path.concat(n);
+      if (n === end) return newPath;
+      queue.push(newPath);
+    }
+    if (visited.size > 8000) return null;
+  }
+  return null;
+}
+
+function differByOne(a, b) {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) diff++;
+    if (diff > 1) return false;
+  }
+  return diff === 1;
+}
+
+function diffIndex(a, b) {
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return i;
+  return -1;
+}
+
+/* ---------- Game state ---------- */
+let state = {
+  puzzle: null,
+  ladder: [],
+  hintsUsed: 0,
+  finished: false
+};
+
+const $ = id => document.getElementById(id);
+
+function bestKey(p) { return 'wordladder.best.' + p.start + '-' + p.target; }
+
+/* ---------- Render ---------- */
+function renderPicker() {
+  const grid = $('puzzleGrid');
+  grid.innerHTML = '';
+  PUZZLES.forEach((p, i) => {
+    const card = document.createElement('button');
+    card.className = 'puzzle-card';
+    const best = localStorage.getItem(bestKey(p));
+    card.innerHTML = `
+      <div class="pair">${p.start}<span class="arrow">→</span>${p.target}</div>
+      <div class="meta">${p.difficulty}${best ? ` · best ${best}` : ''}</div>
+    `;
+    card.addEventListener('click', () => startPuzzle(i));
+    grid.appendChild(card);
+  });
+}
+
+function renderLadder() {
+  const ladder = $('ladder');
+  ladder.innerHTML = '';
+
+  const startLabel = document.createElement('div');
+  startLabel.className = 'label-row';
+  startLabel.textContent = 'START';
+  ladder.appendChild(startLabel);
+
+  state.ladder.forEach((word, idx) => {
+    const row = document.createElement('div');
+    row.className = 'row' + (idx === 0 ? ' start' : '');
+    const prev = idx > 0 ? state.ladder[idx - 1] : null;
+    const changeIdx = prev ? diffIndex(prev, word) : -1;
+    for (let i = 0; i < word.length; i++) {
+      const t = document.createElement('div');
+      t.className = 'tile' + (i === changeIdx ? ' changed' : '');
+      t.textContent = word[i];
+      row.appendChild(t);
+    }
+    ladder.appendChild(row);
+  });
+
+  const targetLabel = document.createElement('div');
+  targetLabel.className = 'label-row';
+  targetLabel.textContent = 'TARGET';
+  ladder.appendChild(targetLabel);
+
+  const tRow = document.createElement('div');
+  tRow.className = 'row target';
+  for (let i = 0; i < state.puzzle.target.length; i++) {
+    const t = document.createElement('div');
+    t.className = 'tile';
+    t.textContent = state.puzzle.target[i];
+    tRow.appendChild(t);
+  }
+  ladder.appendChild(tRow);
+
+  $('moveCount').textContent = state.ladder.length - 1;
+  $('targetWord').textContent = state.puzzle.target;
+
+  const best = localStorage.getItem(bestKey(state.puzzle));
+  $('bestCount').textContent = best || '—';
+
+  $('undoBtn').disabled = state.ladder.length <= 1 || state.finished;
+  $('hintBtn').disabled = state.finished;
+  $('submitBtn').disabled = state.finished;
+  $('wordInput').disabled = state.finished;
+}
+
+function showMessage(text, kind) {
+  const m = $('message');
+  m.textContent = text || ' ';
+  m.className = 'message' + (kind ? ' ' + kind : '');
+}
+
+function shake() {
+  const inp = $('wordInput');
+  inp.classList.remove('shake');
+  void inp.offsetWidth;
+  inp.classList.add('shake');
+}
+
+/* ---------- Game flow ---------- */
+function startPuzzle(idx) {
+  state.puzzle = PUZZLES[idx];
+  state.ladder = [state.puzzle.start];
+  state.hintsUsed = 0;
+  state.finished = false;
+  $('picker').style.display = 'none';
+  $('game').style.display = 'block';
+  $('goalText').textContent = `${state.puzzle.start} → ${state.puzzle.target}`;
+  const badge = $('diffBadge');
+  badge.textContent = state.puzzle.difficulty;
+  badge.className = 'difficulty ' + state.puzzle.difficulty.toLowerCase();
+  $('wordInput').value = '';
+  showMessage('');
+  renderLadder();
+  setTimeout(() => $('wordInput').focus(), 100);
+}
+
+function submitWord() {
+  if (state.finished) return;
+  const raw = $('wordInput').value.trim().toUpperCase();
+  if (!raw) return;
+  const last = state.ladder[state.ladder.length - 1];
+
+  if (raw.length !== last.length) {
+    showMessage(`Word must be ${last.length} letters.`, 'error');
+    shake();
+    return;
+  }
+  if (!/^[A-Z]+$/.test(raw)) {
+    showMessage('Letters only.', 'error');
+    shake();
+    return;
+  }
+  if (raw === last) {
+    showMessage('Change one letter.', 'error');
+    shake();
+    return;
+  }
+  if (!differByOne(last, raw)) {
+    showMessage('Must differ by exactly one letter.', 'error');
+    shake();
+    return;
+  }
+  if (!DICT.has(raw)) {
+    showMessage(`"${raw}" isn't in the dictionary.`, 'error');
+    shake();
+    return;
+  }
+  if (state.ladder.includes(raw)) {
+    showMessage(`"${raw}" is already in the ladder.`, 'error');
+    shake();
+    return;
+  }
+
+  state.ladder.push(raw);
+  $('wordInput').value = '';
+  showMessage('');
+  renderLadder();
+
+  if (raw === state.puzzle.target) {
+    finish();
+  }
+}
+
+function useHint() {
+  if (state.finished) return;
+  const last = state.ladder[state.ladder.length - 1];
+  if (last === state.puzzle.target) return;
+  const path = bfs(last, state.puzzle.target);
+  if (!path || path.length < 2) {
+    showMessage('No path found from here. Try undoing.', 'error');
+    return;
+  }
+  const next = path[1];
+  state.hintsUsed++;
+  state.ladder.push(next);
+  showMessage(`Hint: ${next}`, 'good');
+  renderLadder();
+  if (next === state.puzzle.target) finish();
+}
+
+function undo() {
+  if (state.ladder.length <= 1 || state.finished) return;
+  state.ladder.pop();
+  showMessage('');
+  renderLadder();
+  $('wordInput').focus();
+}
+
+function restart() {
+  state.ladder = [state.puzzle.start];
+  state.hintsUsed = 0;
+  state.finished = false;
+  $('wordInput').value = '';
+  showMessage('');
+  renderLadder();
+  $('wordInput').focus();
+}
+
+function newPuzzle() {
+  $('game').style.display = 'none';
+  $('picker').style.display = 'flex';
+  $('winModal').classList.remove('show');
+  state.finished = false;
+  renderPicker();
+}
+
+function finish() {
+  state.finished = true;
+  const moves = state.ladder.length - 1;
+  const par = state.puzzle.par;
+  const baseScore = 500;
+  const efficiencyBonus = Math.max(0, (par * 2 - moves) * 50);
+  const hintPenalty = state.hintsUsed * 75;
+  const score = Math.max(50, baseScore + efficiencyBonus - hintPenalty);
+
+  const key = bestKey(state.puzzle);
+  const prevBest = parseInt(localStorage.getItem(key) || '999', 10);
+  let isNewBest = false;
+  if (moves < prevBest) {
+    localStorage.setItem(key, String(moves));
+    isNewBest = true;
+  }
+
+  $('finalMoves').textContent = moves;
+  $('finalScore').textContent = score;
+  $('winTitle').textContent = isNewBest ? 'New Best!' : 'Solved!';
+  $('winSub').textContent = isNewBest
+    ? `${moves} moves — your best for this puzzle.`
+    : `Solved in ${moves} moves (par ${par}).`;
+  $('winModal').classList.add('show');
+  renderLadder();
+
+  if (window.Leaderboard && Leaderboard.submitScore) {
+    try { Leaderboard.submitScore(score); } catch (e) {}
+  }
+}
+
+/* ---------- Wire up ---------- */
+$('submitBtn').addEventListener('click', submitWord);
+$('hintBtn').addEventListener('click', useHint);
+$('undoBtn').addEventListener('click', undo);
+$('restartBtn').addEventListener('click', restart);
+$('newBtn').addEventListener('click', newPuzzle);
+$('playAgainBtn').addEventListener('click', () => {
+  $('winModal').classList.remove('show');
+  restart();
+});
+$('newPuzzleBtn').addEventListener('click', newPuzzle);
+
+$('wordInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    submitWord();
+  }
+});
+$('wordInput').addEventListener('input', e => {
+  e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
+});
+
+renderPicker();
+</script>
+
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

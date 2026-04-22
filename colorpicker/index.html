@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Color Picker Challenge — FindPicked Games</title>
+<meta name="description" content="Play Color Picker Challenge free — match target colors using RGB sliders across 10 progressively harder rounds. No downloads, no sign-ups.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ccircle cx='11' cy='12' r='5' fill='%23ff3b30'/%3E%3Ccircle cx='21' cy='12' r='5' fill='%2334c759'/%3E%3Ccircle cx='16' cy='21' r='5' fill='%23ffcc00'/%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+  --radius: 16px;
+  --red: #ff3b30;
+  --green: #34c759;
+  --blue: #0071e3;
+  --orange: #ff9500;
+}
+
+html, body {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px 20px 40px;
+  touch-action: manipulation;
+}
+
+.back {
+  align-self: flex-start;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 400;
+  padding: 8px 4px;
+  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.back:hover { color: var(--text-primary); }
+.back .arrow { font-size: 18px; line-height: 1; }
+
+.wrap {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+h1 {
+  font-size: clamp(32px, 8vw, 44px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.scores {
+  display: flex;
+  gap: 8px;
+}
+
+.score-box {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 10px 14px;
+  min-width: 72px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.score-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  margin-bottom: 2px;
+}
+
+.score-value {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+.score-value.bump { transform: scale(1.12); }
+.score-value.warn { color: var(--orange); }
+.score-value.danger { color: var(--red); }
+
+.subhead p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.swatches {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 14px;
+  box-shadow: var(--shadow);
+}
+
+.swatch-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.swatch-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+.swatch {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+  transition: background-color 0.12s ease;
+}
+
+.sliders {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 18px 16px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.slider-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.slider-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.slider-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.slider-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.slider-dot.r { background: var(--red); }
+.slider-dot.g { background: var(--green); }
+.slider-dot.b { background: var(--blue); }
+
+.slider-value {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  font-weight: 600;
+  min-width: 36px;
+  text-align: right;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 44px;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  padding: 0;
+  margin: 0;
+  touch-action: pan-y;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 10px;
+  border-radius: 5px;
+  background: var(--track, linear-gradient(to right, #ddd, #ddd));
+}
+input[type="range"]::-moz-range-track {
+  height: 10px;
+  border-radius: 5px;
+  background: var(--track, linear-gradient(to right, #ddd, #ddd));
+  border: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.1);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  cursor: pointer;
+  margin-top: -8px;
+  transition: transform 0.12s ease;
+}
+input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.1); }
+
+input[type="range"]::-moz-range-thumb {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.1);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  cursor: pointer;
+}
+
+.timer-bar {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 10px 14px;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.timer-track {
+  flex: 1;
+  height: 6px;
+  background: #eee;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.timer-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.2s linear, background-color 0.3s ease;
+  width: 100%;
+}
+.timer-fill.warn { background: var(--orange); }
+.timer-fill.danger { background: var(--red); }
+
+.timer-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  min-width: 36px;
+  text-align: right;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.btn {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  height: 44px;
+  padding: 0 22px;
+  border-radius: 22px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease, opacity 0.2s ease;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.btn.secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
+}
+.btn.secondary:hover { background: rgba(0, 113, 227, 0.06); }
+.btn.secondary:disabled { opacity: 0.4; }
+
+.btn.wide { flex: 1; }
+
+.round-result {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+  text-align: center;
+  display: none;
+}
+.round-result.show { display: block; }
+.round-result h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.round-result .acc {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  margin: 6px 0;
+  letter-spacing: -0.02em;
+}
+.round-result .acc.perfect { color: var(--green); }
+.round-result .acc.good { color: var(--accent); }
+.round-result .acc.ok { color: var(--orange); }
+.round-result .acc.poor { color: var(--red); }
+.round-result p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.round-result .hexes {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin: 10px 0 6px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+.round-result .hexes strong { color: var(--text-primary); font-weight: 600; }
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(250, 250, 250, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 100;
+}
+.overlay.show { opacity: 1; pointer-events: auto; }
+
+.overlay-card {
+  background: var(--bg-card);
+  border-radius: 20px;
+  padding: 28px 24px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  text-align: center;
+  max-width: 360px;
+  width: 100%;
+  transform: scale(0.96);
+  transition: transform 0.3s ease;
+}
+.overlay.show .overlay-card { transform: scale(1); }
+
+.overlay-card h2 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+
+.overlay-card .final-score {
+  font-size: 56px;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+  margin: 14px 0 4px;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.overlay-card .final-sub {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 18px;
+}
+
+.overlay-card .row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+footer {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  text-align: center;
+  margin-top: 4px;
+  line-height: 1.6;
+}
+
+.rules-toggle {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--accent);
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+  padding: 4px 8px;
+}
+.rules-toggle:hover { text-decoration: underline; }
+
+.rules-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  text-align: left;
+}
+.rules-panel.open { max-height: 600px; }
+.rules-panel ul { margin: 8px 0 0 18px; }
+.rules-panel li { margin-bottom: 4px; }
+
+@media (max-width: 420px) {
+  body { padding: 16px 14px 32px; }
+  .wrap { gap: 16px; }
+  h1 { font-size: 32px; }
+  .score-box { min-width: 60px; padding: 8px 10px; }
+  .score-value { font-size: 17px; }
+  .score-label { font-size: 10px; }
+  .swatches { padding: 12px; gap: 10px; }
+  .sliders { padding: 14px 12px; gap: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="back" href="../" aria-label="Back to games">
+    <span class="arrow">←</span>
+    <span>Games</span>
+  </a>
+
+  <header>
+    <h1>Color Picker</h1>
+    <div class="scores">
+      <div class="score-box">
+        <div class="score-label">Round</div>
+        <div class="score-value" id="round">1/10</div>
+      </div>
+      <div class="score-box">
+        <div class="score-label">Score</div>
+        <div class="score-value" id="score">0</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="subhead">
+    <p>Match the target color by adjusting the RGB sliders. Precision earns points — 10 rounds, each tighter than the last.</p>
+  </div>
+
+  <div class="timer-bar">
+    <div class="timer-track"><div class="timer-fill" id="timer-fill"></div></div>
+    <div class="timer-text" id="timer-text">20s</div>
+  </div>
+
+  <div class="swatches">
+    <div class="swatch-block">
+      <div class="swatch-label">Target</div>
+      <div class="swatch" id="target-swatch"></div>
+    </div>
+    <div class="swatch-block">
+      <div class="swatch-label">Your Match</div>
+      <div class="swatch" id="your-swatch"></div>
+    </div>
+  </div>
+
+  <div class="sliders">
+    <div class="slider-row">
+      <div class="slider-top">
+        <span class="slider-name"><span class="slider-dot r"></span>Red</span>
+        <span class="slider-value" id="r-val">128</span>
+      </div>
+      <input type="range" id="r-slider" min="0" max="255" value="128" aria-label="Red channel">
+    </div>
+    <div class="slider-row">
+      <div class="slider-top">
+        <span class="slider-name"><span class="slider-dot g"></span>Green</span>
+        <span class="slider-value" id="g-val">128</span>
+      </div>
+      <input type="range" id="g-slider" min="0" max="255" value="128" aria-label="Green channel">
+    </div>
+    <div class="slider-row">
+      <div class="slider-top">
+        <span class="slider-name"><span class="slider-dot b"></span>Blue</span>
+        <span class="slider-value" id="b-val">128</span>
+      </div>
+      <input type="range" id="b-slider" min="0" max="255" value="128" aria-label="Blue channel">
+    </div>
+  </div>
+
+  <div class="round-result" id="round-result">
+    <h3 id="round-title">Nice match!</h3>
+    <div class="acc" id="round-acc">0%</div>
+    <div class="hexes">
+      <span>Target <strong id="target-hex">#000000</strong></span>
+      <span>You <strong id="your-hex">#000000</strong></span>
+    </div>
+    <p id="round-text"></p>
+  </div>
+
+  <div class="actions">
+    <button class="btn secondary" id="restart-btn">Restart</button>
+    <button class="btn wide" id="submit-btn">Submit Match</button>
+  </div>
+
+  <div style="text-align:center">
+    <button class="rules-toggle" onclick="this.nextElementSibling.classList.toggle('open')">How to Play ▾</button>
+    <div class="rules-panel">
+      <ul>
+        <li>Each round shows a <strong>target color</strong>. Move the Red, Green, and Blue sliders until your swatch matches.</li>
+        <li>Tap <strong>Submit Match</strong> when you're happy — or the timer will submit for you when it hits zero.</li>
+        <li>Accuracy is scored 0–100 per round based on RGB distance. Perfect match = 100 points.</li>
+        <li><strong>10 rounds total.</strong> The timer shrinks each round — 20s for round 1 down to ~11s for round 10.</li>
+        <li>Max total score: <strong>1000</strong>. Submit your final score to the leaderboard.</li>
+        <li>Keyboard: <strong>Enter</strong> to submit, <strong>R</strong> to restart.</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>
+    Match the color · beat your best across 10 rounds
+  </footer>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-card">
+    <h2 id="overlay-title">Game Over</h2>
+    <div class="final-score" id="final-score">0</div>
+    <div class="final-sub" id="final-sub">out of 1000</div>
+    <div class="row">
+      <button class="btn" id="play-again">Play Again</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const TOTAL_ROUNDS = 10;
+  const MAX_DIST = Math.sqrt(3 * 255 * 255); // ≈ 441.67
+  const STORE_BEST = 'findpicked:colorpicker:best';
+
+  const targetSwatch = document.getElementById('target-swatch');
+  const yourSwatch = document.getElementById('your-swatch');
+  const rSlider = document.getElementById('r-slider');
+  const gSlider = document.getElementById('g-slider');
+  const bSlider = document.getElementById('b-slider');
+  const rVal = document.getElementById('r-val');
+  const gVal = document.getElementById('g-val');
+  const bVal = document.getElementById('b-val');
+  const roundEl = document.getElementById('round');
+  const scoreEl = document.getElementById('score');
+  const timerFill = document.getElementById('timer-fill');
+  const timerText = document.getElementById('timer-text');
+  const submitBtn = document.getElementById('submit-btn');
+  const restartBtn = document.getElementById('restart-btn');
+  const roundResult = document.getElementById('round-result');
+  const roundTitle = document.getElementById('round-title');
+  const roundAcc = document.getElementById('round-acc');
+  const roundText = document.getElementById('round-text');
+  const targetHexEl = document.getElementById('target-hex');
+  const yourHexEl = document.getElementById('your-hex');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlay-title');
+  const finalScoreEl = document.getElementById('final-score');
+  const finalSubEl = document.getElementById('final-sub');
+  const playAgainBtn = document.getElementById('play-again');
+
+  let currentRound = 0;
+  let totalScore = 0;
+  let target = { r: 0, g: 0, b: 0 };
+  let timeLimit = 20;
+  let timeLeft = 20;
+  let timerId = null;
+  let roundOver = false;
+  let gameOver = false;
+  let showingResult = false;
+
+  function roundTime(roundIndex) {
+    // Progressive: 20s round 1 → ~11s round 10
+    return Math.max(11, 20 - roundIndex);
+  }
+
+  function randTarget(roundIndex) {
+    // Progressive difficulty: early rounds favor more saturated/obvious colors,
+    // later rounds bias toward subtle mid-tones that are harder to dial in.
+    if (roundIndex < 3) {
+      // Saturated: one channel high, one low
+      const high = 180 + Math.floor(Math.random() * 76);
+      const low = Math.floor(Math.random() * 80);
+      const mid = Math.floor(Math.random() * 256);
+      const arr = [high, low, mid];
+      shuffle(arr);
+      return { r: arr[0], g: arr[1], b: arr[2] };
+    } else if (roundIndex < 7) {
+      // Medium: full range
+      return {
+        r: Math.floor(Math.random() * 256),
+        g: Math.floor(Math.random() * 256),
+        b: Math.floor(Math.random() * 256),
+      };
+    } else {
+      // Hard: compressed mid-range / near-greys / pastels
+      const base = 80 + Math.floor(Math.random() * 96);
+      return {
+        r: clamp(base + Math.floor(Math.random() * 80) - 40),
+        g: clamp(base + Math.floor(Math.random() * 80) - 40),
+        b: clamp(base + Math.floor(Math.random() * 80) - 40),
+      };
+    }
+  }
+
+  function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+  }
+
+  function clamp(v) { return Math.max(0, Math.min(255, v)); }
+
+  function hex(n) { return n.toString(16).padStart(2, '0'); }
+  function toHex(c) { return '#' + hex(c.r) + hex(c.g) + hex(c.b); }
+  function rgbStr(c) { return `rgb(${c.r},${c.g},${c.b})`; }
+
+  function updateSliderTracks() {
+    const r = +rSlider.value, g = +gSlider.value, b = +bSlider.value;
+    rSlider.style.setProperty('--track', `linear-gradient(to right, rgb(0,${g},${b}), rgb(255,${g},${b}))`);
+    gSlider.style.setProperty('--track', `linear-gradient(to right, rgb(${r},0,${b}), rgb(${r},255,${b}))`);
+    bSlider.style.setProperty('--track', `linear-gradient(to right, rgb(${r},${g},0), rgb(${r},${g},255))`);
+  }
+
+  function currentPick() {
+    return { r: +rSlider.value, g: +gSlider.value, b: +bSlider.value };
+  }
+
+  function updateYourSwatch() {
+    const c = currentPick();
+    yourSwatch.style.backgroundColor = rgbStr(c);
+    rVal.textContent = c.r;
+    gVal.textContent = c.g;
+    bVal.textContent = c.b;
+    updateSliderTracks();
+  }
+
+  function distance(a, b) {
+    const dr = a.r - b.r, dg = a.g - b.g, db = a.b - b.b;
+    return Math.sqrt(dr * dr + dg * dg + db * db);
+  }
+
+  function accuracy(a, b) {
+    const d = distance(a, b);
+    return Math.max(0, Math.round(100 - (d / MAX_DIST) * 100));
+  }
+
+  function startRound() {
+    roundOver = false;
+    showingResult = false;
+    target = randTarget(currentRound);
+    targetSwatch.style.backgroundColor = rgbStr(target);
+
+    // Randomize slider starting position so player always has to work
+    rSlider.value = Math.floor(Math.random() * 256);
+    gSlider.value = Math.floor(Math.random() * 256);
+    bSlider.value = Math.floor(Math.random() * 256);
+    updateYourSwatch();
+
+    timeLimit = roundTime(currentRound);
+    timeLeft = timeLimit;
+    updateTimer();
+
+    roundEl.textContent = `${currentRound + 1}/${TOTAL_ROUNDS}`;
+    roundResult.classList.remove('show');
+    submitBtn.textContent = 'Submit Match';
+    submitBtn.disabled = false;
+    [rSlider, gSlider, bSlider].forEach(s => s.disabled = false);
+
+    clearInterval(timerId);
+    timerId = setInterval(tick, 100);
+  }
+
+  function tick() {
+    timeLeft -= 0.1;
+    if (timeLeft <= 0) {
+      timeLeft = 0;
+      updateTimer();
+      submitRound(true);
+      return;
+    }
+    updateTimer();
+  }
+
+  function updateTimer() {
+    const pct = Math.max(0, (timeLeft / timeLimit) * 100);
+    timerFill.style.width = pct + '%';
+    timerText.textContent = Math.ceil(timeLeft) + 's';
+    timerFill.classList.toggle('warn', pct <= 40 && pct > 20);
+    timerFill.classList.toggle('danger', pct <= 20);
+  }
+
+  function submitRound(fromTimeout) {
+    if (roundOver) return;
+    roundOver = true;
+    clearInterval(timerId);
+
+    const pick = currentPick();
+    const acc = accuracy(pick, target);
+    totalScore += acc;
+
+    bump(scoreEl);
+    scoreEl.textContent = totalScore;
+
+    // Show result
+    showingResult = true;
+    submitBtn.disabled = true;
+    [rSlider, gSlider, bSlider].forEach(s => s.disabled = true);
+
+    roundAcc.textContent = acc + '%';
+    roundAcc.className = 'acc ' + accClass(acc);
+    targetHexEl.textContent = toHex(target).toUpperCase();
+    yourHexEl.textContent = toHex(pick).toUpperCase();
+
+    const tier = accTier(acc);
+    roundTitle.textContent = fromTimeout ? "Time's up!" : tier.title;
+    roundText.textContent = tier.text + (currentRound + 1 < TOTAL_ROUNDS
+      ? ' Next round starts in 3s…'
+      : ' Final round complete.');
+
+    roundResult.classList.add('show');
+
+    // Advance to next round or finish
+    if (currentRound + 1 >= TOTAL_ROUNDS) {
+      setTimeout(finishGame, 2200);
+    } else {
+      submitBtn.textContent = 'Next Round';
+      submitBtn.disabled = false;
+      const advanceTimer = setTimeout(nextRound, 3000);
+      submitBtn.onclick = () => {
+        clearTimeout(advanceTimer);
+        submitBtn.onclick = null;
+        nextRound();
+      };
+    }
+  }
+
+  function nextRound() {
+    if (submitBtn.onclick) submitBtn.onclick = null;
+    submitBtn.onclick = null;
+    submitBtn.textContent = 'Submit Match';
+    // restore default submit handler
+    currentRound++;
+    startRound();
+  }
+
+  function accClass(acc) {
+    if (acc >= 95) return 'perfect';
+    if (acc >= 85) return 'good';
+    if (acc >= 70) return 'ok';
+    return 'poor';
+  }
+
+  function accTier(acc) {
+    if (acc >= 98) return { title: 'Pixel perfect!', text: 'Incredible eye for color.' };
+    if (acc >= 92) return { title: 'Excellent match!', text: 'Almost indistinguishable.' };
+    if (acc >= 82) return { title: 'Nice match.', text: 'Very close — a tiny shift would nail it.' };
+    if (acc >= 65) return { title: 'Decent attempt.', text: 'In the right neighborhood.' };
+    if (acc >= 40) return { title: 'Not quite.', text: 'Check which channel is off.' };
+    return { title: 'Way off.', text: 'Take a closer look at the target.' };
+  }
+
+  function finishGame() {
+    gameOver = true;
+    clearInterval(timerId);
+    roundResult.classList.remove('show');
+
+    let best = parseInt(localStorage.getItem(STORE_BEST) || '0', 10);
+    const isNewBest = totalScore > best;
+    if (isNewBest) {
+      best = totalScore;
+      try { localStorage.setItem(STORE_BEST, String(best)); } catch {}
+    }
+
+    overlayTitle.textContent = isNewBest ? 'New Personal Best!' : 'Game Over';
+    finalScoreEl.textContent = totalScore;
+    finalSubEl.textContent = `out of ${TOTAL_ROUNDS * 100} · best ${best}`;
+    overlay.classList.add('show');
+
+    if (window.Leaderboard && typeof Leaderboard.submitScore === 'function') {
+      setTimeout(() => Leaderboard.submitScore(totalScore), 600);
+    }
+  }
+
+  function bump(el) {
+    el.classList.remove('bump');
+    void el.offsetWidth;
+    el.classList.add('bump');
+    setTimeout(() => el.classList.remove('bump'), 220);
+  }
+
+  function resetGame() {
+    gameOver = false;
+    roundOver = false;
+    currentRound = 0;
+    totalScore = 0;
+    scoreEl.textContent = '0';
+    overlay.classList.remove('show');
+    submitBtn.onclick = null;
+    startRound();
+  }
+
+  // Slider input
+  [rSlider, gSlider, bSlider].forEach(s => {
+    s.addEventListener('input', updateYourSwatch);
+  });
+
+  // Default submit behaviour
+  submitBtn.addEventListener('click', () => {
+    if (gameOver) return;
+    if (roundOver) return; // handled via submitBtn.onclick
+    submitRound(false);
+  });
+
+  restartBtn.addEventListener('click', () => {
+    if (gameOver || confirmRestart()) resetGame();
+  });
+
+  playAgainBtn.addEventListener('click', resetGame);
+
+  function confirmRestart() {
+    if (currentRound === 0 && totalScore === 0) return true;
+    return confirm('Restart the game? Your current progress will be lost.');
+  }
+
+  // Keyboard
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (gameOver) resetGame();
+      else if (roundOver && submitBtn.onclick) submitBtn.onclick();
+      else if (!roundOver) submitRound(false);
+    } else if (e.key === 'r' || e.key === 'R') {
+      if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
+      e.preventDefault();
+      if (gameOver || confirmRestart()) resetGame();
+    }
+  });
+
+  // init
+  startRound();
+})();
+</script>
+
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

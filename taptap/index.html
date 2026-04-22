@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Tap Tap — FindPicked Games</title>
+<meta name="description" content="Tap Tap — tap targets as fast as you can in 30-second rounds. Targets shrink as time runs out.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ccircle cx='16' cy='16' r='7' fill='white'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%230071e3'/%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-arena: #f5f5f7;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --hit: #34c759;
+  --miss: #ff3b30;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.06);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+  --radius: 16px;
+}
+
+html, body {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px 20px 40px;
+  touch-action: manipulation;
+}
+
+.back {
+  align-self: flex-start;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 400;
+  padding: 8px 4px;
+  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.back:hover { color: var(--text-primary); }
+.back .arrow { font-size: 18px; line-height: 1; }
+
+.wrap {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+h1 {
+  font-size: clamp(36px, 9vw, 52px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.scores {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.score-box {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 10px 14px;
+  min-width: 72px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.score-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  margin-bottom: 2px;
+}
+
+.score-value {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  transition: transform 0.2s ease;
+}
+.score-value.bump { transform: scale(1.15); }
+
+.subhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.subhead p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  max-width: 480px;
+}
+
+.btn {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  height: 44px;
+  padding: 0 22px;
+  border-radius: 22px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn:active { transform: scale(0.97); }
+
+.btn.secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
+}
+.btn.secondary:hover { background: rgba(0, 113, 227, 0.06); }
+
+.arena {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: var(--bg-arena);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.target {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #4ea1ff, #0071e3);
+  box-shadow: 0 4px 14px rgba(0, 113, 227, 0.35), inset 0 -2px 6px rgba(0,0,0,0.12);
+  transform: translate(-50%, -50%) scale(0);
+  animation: target-in 0.14s ease-out forwards;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
+.target::after {
+  content: '';
+  position: absolute;
+  inset: 26%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #fff, #e7f0ff);
+}
+.target.hit {
+  animation: target-hit 0.22s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes target-in {
+  to { transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes target-hit {
+  0%   { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.7); opacity: 0; }
+}
+
+.pop {
+  position: absolute;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--hit);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation: pop-fade 0.6s ease-out forwards;
+  -webkit-font-smoothing: antialiased;
+}
+@keyframes pop-fade {
+  0%   { opacity: 1; transform: translate(-50%, -60%); }
+  100% { opacity: 0; transform: translate(-50%, -140%); }
+}
+
+.miss-marker {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255, 59, 48, 0.15);
+  border: 1.5px solid var(--miss);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  animation: miss-fade 0.6s ease-out forwards;
+}
+@keyframes miss-fade {
+  0%   { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.4); }
+}
+
+.timer-bar {
+  position: absolute;
+  top: 0; left: 0;
+  height: 4px;
+  width: 100%;
+  background: var(--accent);
+  transform-origin: left;
+  transition: transform 0.1s linear;
+  z-index: 5;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.92);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px;
+  text-align: center;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.overlay.show { opacity: 1; pointer-events: auto; }
+
+.overlay h2 {
+  font-size: clamp(28px, 6vw, 38px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.overlay p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  max-width: 320px;
+  line-height: 1.5;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(110px, 1fr));
+  gap: 8px;
+  width: 100%;
+  max-width: 320px;
+  margin: 4px 0;
+}
+
+.summary .stat {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 10px 12px;
+  box-shadow: var(--shadow);
+}
+.summary .stat-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  margin-bottom: 2px;
+}
+.summary .stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.countdown {
+  font-size: clamp(72px, 16vw, 120px);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.howto {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  box-shadow: var(--shadow);
+}
+.howto h3 {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-bottom: 10px;
+}
+.howto ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.howto li {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  padding-left: 18px;
+  position: relative;
+}
+.howto li::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 9px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+@media (max-width: 520px) {
+  body { padding: 16px 14px 32px; }
+  .wrap { gap: 16px; }
+  .arena { aspect-ratio: 3 / 4; }
+  .score-box { min-width: 64px; padding: 8px 10px; }
+  .score-value { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a href="../" class="back"><span class="arrow">‹</span> All Games</a>
+
+  <header>
+    <h1>Tap Tap</h1>
+    <div class="scores">
+      <div class="score-box">
+        <div class="score-label">Score</div>
+        <div class="score-value" id="scoreEl">0</div>
+      </div>
+      <div class="score-box">
+        <div class="score-label">Accuracy</div>
+        <div class="score-value" id="accEl">—</div>
+      </div>
+      <div class="score-box">
+        <div class="score-label">Best</div>
+        <div class="score-value" id="bestEl">0</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="subhead">
+    <p>Tap every target as fast as you can. Thirty seconds. Targets shrink as time runs out.</p>
+    <button class="btn" id="startBtn">Start</button>
+  </div>
+
+  <div class="arena" id="arena">
+    <div class="timer-bar" id="timerBar"></div>
+
+    <div class="overlay show" id="startOverlay">
+      <h2>Ready?</h2>
+      <p>A target will appear. Tap it. When it disappears, tap the next one. Don't miss — accuracy counts.</p>
+      <button class="btn" id="startOverlayBtn">Start Round</button>
+    </div>
+
+    <div class="overlay" id="countOverlay">
+      <div class="countdown" id="countEl">3</div>
+    </div>
+
+    <div class="overlay" id="endOverlay">
+      <h2 id="endTitle">Time!</h2>
+      <div class="summary">
+        <div class="stat">
+          <div class="stat-label">Score</div>
+          <div class="stat-value" id="endScore">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Accuracy</div>
+          <div class="stat-value" id="endAcc">0%</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Hits</div>
+          <div class="stat-value" id="endHits">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Misses</div>
+          <div class="stat-value" id="endMiss">0</div>
+        </div>
+      </div>
+      <p id="endBest"></p>
+      <div class="actions">
+        <button class="btn" id="playAgainBtn">Play Again</button>
+        <a class="btn secondary" href="../">More Games</a>
+      </div>
+    </div>
+  </div>
+
+  <section class="howto">
+    <h3>How to Play</h3>
+    <ul>
+      <li>Press Start. A blue target appears somewhere in the arena.</li>
+      <li>Tap or click the target as quickly as you can.</li>
+      <li>Each hit is +1. Missed taps hurt your accuracy.</li>
+      <li>Targets start large and shrink over the 30 seconds.</li>
+      <li>Your highest score is saved on this device.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(function () {
+  const arena = document.getElementById('arena');
+  const timerBar = document.getElementById('timerBar');
+  const scoreEl = document.getElementById('scoreEl');
+  const accEl = document.getElementById('accEl');
+  const bestEl = document.getElementById('bestEl');
+  const startBtn = document.getElementById('startBtn');
+  const startOverlay = document.getElementById('startOverlay');
+  const startOverlayBtn = document.getElementById('startOverlayBtn');
+  const countOverlay = document.getElementById('countOverlay');
+  const countEl = document.getElementById('countEl');
+  const endOverlay = document.getElementById('endOverlay');
+  const endScore = document.getElementById('endScore');
+  const endAcc = document.getElementById('endAcc');
+  const endHits = document.getElementById('endHits');
+  const endMiss = document.getElementById('endMiss');
+  const endBest = document.getElementById('endBest');
+  const playAgainBtn = document.getElementById('playAgainBtn');
+
+  const ROUND_MS = 30000;
+  const START_SIZE = 84;
+  const END_SIZE = 34;
+  const BEST_KEY = 'taptap_best';
+
+  let running = false;
+  let startTime = 0;
+  let rafId = 0;
+  let hits = 0;
+  let misses = 0;
+  let currentTarget = null;
+  let best = Number(localStorage.getItem(BEST_KEY) || 0);
+  bestEl.textContent = best;
+
+  function showOnly(overlay) {
+    [startOverlay, countOverlay, endOverlay].forEach(o => {
+      if (o === overlay) o.classList.add('show'); else o.classList.remove('show');
+    });
+  }
+  function hideAllOverlays() {
+    [startOverlay, countOverlay, endOverlay].forEach(o => o.classList.remove('show'));
+  }
+
+  function bump(el) {
+    el.classList.remove('bump');
+    void el.offsetWidth;
+    el.classList.add('bump');
+  }
+
+  function updateScore() {
+    scoreEl.textContent = hits;
+    const tries = hits + misses;
+    accEl.textContent = tries === 0 ? '—' : Math.round((hits / tries) * 100) + '%';
+  }
+
+  function currentSize() {
+    if (!running) return START_SIZE;
+    const elapsed = performance.now() - startTime;
+    const t = Math.min(1, elapsed / ROUND_MS);
+    return START_SIZE + (END_SIZE - START_SIZE) * t;
+  }
+
+  function spawnTarget() {
+    if (!running) return;
+    if (currentTarget) currentTarget.remove();
+    const size = currentSize();
+    const rect = arena.getBoundingClientRect();
+    const pad = size / 2 + 8;
+    const x = pad + Math.random() * (rect.width - pad * 2);
+    const y = pad + 14 + Math.random() * (rect.height - pad * 2 - 14);
+    const el = document.createElement('div');
+    el.className = 'target';
+    el.style.width = size + 'px';
+    el.style.height = size + 'px';
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    el.addEventListener('pointerdown', onTargetHit, { passive: false });
+    arena.appendChild(el);
+    currentTarget = el;
+  }
+
+  function onTargetHit(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!running) return;
+    const el = e.currentTarget;
+    if (el.classList.contains('hit')) return;
+    el.classList.add('hit');
+    hits++;
+    bump(scoreEl);
+    updateScore();
+    const rect = arena.getBoundingClientRect();
+    const x = parseFloat(el.style.left);
+    const y = parseFloat(el.style.top);
+    const pop = document.createElement('div');
+    pop.className = 'pop';
+    pop.textContent = '+1';
+    pop.style.left = x + 'px';
+    pop.style.top = y + 'px';
+    arena.appendChild(pop);
+    setTimeout(() => pop.remove(), 600);
+    setTimeout(() => { if (el.parentNode) el.remove(); }, 220);
+    if (currentTarget === el) currentTarget = null;
+    spawnTarget();
+  }
+
+  function onArenaTap(e) {
+    if (!running) return;
+    if (e.target.closest('.target')) return;
+    misses++;
+    updateScore();
+    const rect = arena.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const m = document.createElement('div');
+    m.className = 'miss-marker';
+    m.style.left = x + 'px';
+    m.style.top = y + 'px';
+    arena.appendChild(m);
+    setTimeout(() => m.remove(), 600);
+  }
+  arena.addEventListener('pointerdown', onArenaTap);
+
+  function tick() {
+    if (!running) return;
+    const elapsed = performance.now() - startTime;
+    const remain = Math.max(0, ROUND_MS - elapsed);
+    const pct = remain / ROUND_MS;
+    timerBar.style.transform = 'scaleX(' + pct + ')';
+    if (remain <= 0) {
+      endRound();
+      return;
+    }
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function beginRound() {
+    hits = 0;
+    misses = 0;
+    updateScore();
+    if (currentTarget) { currentTarget.remove(); currentTarget = null; }
+    running = true;
+    startTime = performance.now();
+    timerBar.style.transform = 'scaleX(1)';
+    hideAllOverlays();
+    spawnTarget();
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function countdown(n) {
+    showOnly(countOverlay);
+    countEl.textContent = n;
+    if (n <= 0) {
+      beginRound();
+      return;
+    }
+    setTimeout(() => countdown(n - 1), 700);
+  }
+
+  function startRound() {
+    cancelAnimationFrame(rafId);
+    running = false;
+    if (currentTarget) { currentTarget.remove(); currentTarget = null; }
+    countdown(3);
+  }
+
+  function endRound() {
+    running = false;
+    cancelAnimationFrame(rafId);
+    timerBar.style.transform = 'scaleX(0)';
+    if (currentTarget) { currentTarget.remove(); currentTarget = null; }
+
+    const tries = hits + misses;
+    const acc = tries === 0 ? 0 : Math.round((hits / tries) * 100);
+    endScore.textContent = hits;
+    endAcc.textContent = acc + '%';
+    endHits.textContent = hits;
+    endMiss.textContent = misses;
+
+    const newBest = hits > best;
+    if (newBest) {
+      best = hits;
+      localStorage.setItem(BEST_KEY, String(best));
+      bestEl.textContent = best;
+      endBest.textContent = 'New personal best!';
+    } else {
+      endBest.textContent = 'Best: ' + best;
+    }
+
+    if (window.Leaderboard && typeof Leaderboard.submitScore === 'function') {
+      try { Leaderboard.submitScore(hits); } catch (e) {}
+    }
+
+    showOnly(endOverlay);
+  }
+
+  startBtn.addEventListener('click', startRound);
+  startOverlayBtn.addEventListener('click', startRound);
+  playAgainBtn.addEventListener('click', startRound);
+})();
+</script>
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

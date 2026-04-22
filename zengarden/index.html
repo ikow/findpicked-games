@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Zen Garden — FindPicked Games</title>
+<meta name="description" content="A peaceful digital zen garden. Drag to rake patterns in the sand. Place rocks and plants. No score, no timer — just breathe.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23e8d9b8'/%3E%3Cpath d='M3 11 Q16 7 29 11 M3 17 Q16 13 29 17 M3 23 Q16 19 29 23' stroke='%23a8906a' stroke-width='1.4' fill='none' stroke-linecap='round'/%3E%3Cellipse cx='11' cy='18' rx='3.2' ry='2.4' fill='%23555'/%3E%3Ccircle cx='22' cy='14' r='2' fill='%237ca862'/%3E%3C/svg%3E">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #fafafa;
+    --card: #ffffff;
+    --text: #1d1d1f;
+    --text-2: #6e6e73;
+    --text-3: #86868b;
+    --accent: #0071e3;
+    --accent-hover: #0077ed;
+    --border: rgba(0,0,0,0.08);
+    --border-strong: rgba(0,0,0,0.14);
+    --shadow: 0 2px 14px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+    --shadow-hover: 0 8px 30px rgba(0,0,0,0.10);
+    --danger: #a8524a;
+  }
+
+  html, body { height: 100%; overscroll-behavior: none; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    padding: 20px 16px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    touch-action: manipulation;
+  }
+
+  .back {
+    align-self: flex-start;
+    color: var(--text-2);
+    text-decoration: none;
+    font-size: 15px;
+    padding: 8px 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: color .2s ease;
+    min-height: 44px;
+  }
+  .back:hover { color: var(--text); }
+  .back .arrow { font-size: 18px; line-height: 1; }
+
+  .wrap {
+    width: 100%;
+    max-width: 860px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+  }
+  h1 {
+    font-size: clamp(28px, 6vw, 40px);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+  }
+  .subtitle {
+    color: var(--text-2);
+    font-size: 15px;
+    font-weight: 400;
+    margin-top: 4px;
+  }
+
+  .canvas-wrap {
+    background: var(--card);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    padding: 8px;
+    overflow: hidden;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 14px;
+    touch-action: none;
+    cursor: crosshair;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    padding: 0 4px;
+  }
+
+  .tool {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0 18px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    font-size: 15px;
+    font-family: inherit;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, color .15s ease, transform .12s ease, box-shadow .15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+  .tool:hover { border-color: var(--border-strong); transform: translateY(-1px); box-shadow: var(--shadow); }
+  .tool:active { transform: translateY(0); box-shadow: none; }
+  .tool.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .tool.active:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+  .tool.danger { color: var(--danger); }
+  .tool.danger:hover { background: #fff5f4; border-color: #f1d7d3; }
+
+  .tool .swatch {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 14px;
+  }
+  .tool .swatch svg { width: 100%; height: 100%; }
+
+  .how {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 24px 28px;
+    box-shadow: var(--shadow);
+    margin-top: 8px;
+  }
+  .how h2 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    letter-spacing: -0.01em;
+  }
+  .how ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    color: var(--text-2);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .how ul li {
+    display: flex;
+    gap: 10px;
+  }
+  .how ul li::before {
+    content: '';
+    flex: 0 0 5px;
+    height: 5px;
+    margin-top: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .hint {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    font-style: italic;
+    color: var(--text-3);
+    font-size: 14px;
+  }
+
+  @media (max-width: 520px) {
+    body { padding: 14px 10px 32px; }
+    .canvas-wrap { padding: 6px; border-radius: 16px; }
+    canvas { border-radius: 12px; }
+    .tool { padding: 0 14px; font-size: 14px; }
+    .how { padding: 20px; border-radius: 16px; }
+  }
+</style>
+</head>
+<body>
+  <a class="back" href="../"><span class="arrow">‹</span> All Games</a>
+
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Zen Garden</h1>
+        <div class="subtitle">Breathe. Rake. Place. Repeat.</div>
+      </div>
+    </header>
+
+    <div class="canvas-wrap">
+      <canvas id="zen"></canvas>
+    </div>
+
+    <div class="toolbar" role="toolbar" aria-label="Drawing tools">
+      <button class="tool active" data-tool="rake-fine" aria-pressed="true">
+        <span class="swatch" aria-hidden="true"><svg viewBox="0 0 20 14"><g stroke="#1d1d1f" stroke-width="1" stroke-linecap="round"><line x1="2" y1="3" x2="18" y2="3"/><line x1="2" y1="7" x2="18" y2="7"/><line x1="2" y1="11" x2="18" y2="11"/></g></svg></span>
+        Fine rake
+      </button>
+      <button class="tool" data-tool="rake-med" aria-pressed="false">
+        <span class="swatch" aria-hidden="true"><svg viewBox="0 0 20 14"><g stroke="#1d1d1f" stroke-width="1.4" stroke-linecap="round"><line x1="2" y1="3" x2="18" y2="3"/><line x1="2" y1="7" x2="18" y2="7"/><line x1="2" y1="11" x2="18" y2="11"/></g></svg></span>
+        Medium rake
+      </button>
+      <button class="tool" data-tool="rake-wide" aria-pressed="false">
+        <span class="swatch" aria-hidden="true"><svg viewBox="0 0 20 14"><g stroke="#1d1d1f" stroke-width="1.8" stroke-linecap="round"><line x1="2" y1="3" x2="18" y2="3"/><line x1="2" y1="10" x2="18" y2="10"/></g></svg></span>
+        Wide rake
+      </button>
+      <button class="tool" data-tool="rock" aria-pressed="false">
+        <span class="swatch" aria-hidden="true"><svg viewBox="0 0 20 14"><ellipse cx="10" cy="8" rx="6" ry="4" fill="#555"/></svg></span>
+        Rock
+      </button>
+      <button class="tool" data-tool="plant" aria-pressed="false">
+        <span class="swatch" aria-hidden="true"><svg viewBox="0 0 20 14"><circle cx="8" cy="8" r="3" fill="#7ca862"/><circle cx="12" cy="7" r="3" fill="#5f8e4e"/><circle cx="10" cy="10" r="2.5" fill="#4e7540"/></svg></span>
+        Plant
+      </button>
+      <button class="tool" data-tool="smooth" aria-pressed="false">
+        <span class="swatch" aria-hidden="true"><svg viewBox="0 0 20 14"><ellipse cx="10" cy="7" rx="7" ry="3" fill="#e8d9b8" stroke="#c9b58a" stroke-width="1"/></svg></span>
+        Smooth
+      </button>
+    </div>
+
+    <div class="toolbar" aria-label="Actions">
+      <button class="tool" id="undo-btn" type="button">Undo</button>
+      <button class="tool" id="save-btn" type="button">Save image</button>
+      <button class="tool danger" id="clear-btn" type="button">Clear garden</button>
+    </div>
+
+    <section class="how" aria-labelledby="how-title">
+      <h2 id="how-title">How to Play</h2>
+      <ul>
+        <li>Pick a rake — fine, medium, or wide — and drag across the sand to carve patterns.</li>
+        <li>Tap Rock or Plant, then tap the garden to place one wherever feels right.</li>
+        <li>Smooth gently flattens a spot if you want to start a pattern over.</li>
+        <li>Undo removes the last thing you added. Clear resets the whole garden.</li>
+        <li>There is no score. There is no timer. Slow down and enjoy.</li>
+      </ul>
+      <div class="hint">Your garden saves automatically and is here when you return.</div>
+    </section>
+  </div>
+
+  <script src="../shared-leaderboard.js"></script>
+  <script>
+  (function () {
+    const canvas = document.getElementById('zen');
+    const ctx = canvas.getContext('2d');
+    const wrap = canvas.parentElement;
+    const LS_KEY = 'zengarden-state-v1';
+
+    let items = [];
+    let tool = 'rake-fine';
+    let drawing = false;
+    let currentStroke = null;
+    let canvasW = 0, canvasH = 0;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    const RAKE = {
+      'rake-fine': { tines: 4, spacing: 5, width: 1.3, darken: 0.22, highlight: 0.12 },
+      'rake-med':  { tines: 6, spacing: 8, width: 1.8, darken: 0.28, highlight: 0.14 },
+      'rake-wide': { tines: 8, spacing: 12, width: 2.4, darken: 0.34, highlight: 0.16 }
+    };
+
+    // Deterministic pseudo-random (0..1) from a string seed — keeps rock/plant
+    // shape consistent across redraws and resizes.
+    function hash(s) {
+      let h = 2166136261;
+      for (let i = 0; i < s.length; i++) {
+        h ^= s.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return (h >>> 0) / 4294967295;
+    }
+
+    function sizeCanvas() {
+      const inner = wrap.clientWidth - 16; // padding
+      const maxW = Math.min(inner, 820);
+      const maxH = Math.max(320, Math.min(window.innerHeight - 320, 620));
+      const aspect = 3 / 2;
+      let w = maxW;
+      let h = w / aspect;
+      if (h > maxH) { h = maxH; w = h * aspect; }
+      if (w > maxW) { w = maxW; h = w / aspect; }
+      canvasW = Math.floor(w);
+      canvasH = Math.floor(h);
+      canvas.style.width = canvasW + 'px';
+      canvas.style.height = canvasH + 'px';
+      canvas.width = Math.round(canvasW * dpr);
+      canvas.height = Math.round(canvasH * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function paintSand() {
+      const g = ctx.createLinearGradient(0, 0, 0, canvasH);
+      g.addColorStop(0, '#ecdcb7');
+      g.addColorStop(1, '#ddcc9c');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, canvasW, canvasH);
+
+      // Subtle grain — adds tactile sand texture.
+      try {
+        const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const d = img.data;
+        for (let i = 0; i < d.length; i += 4) {
+          const n = (Math.random() - 0.5) * 14;
+          d[i]   = Math.max(0, Math.min(255, d[i]   + n));
+          d[i+1] = Math.max(0, Math.min(255, d[i+1] + n));
+          d[i+2] = Math.max(0, Math.min(255, d[i+2] + n));
+        }
+        ctx.putImageData(img, 0, 0);
+      } catch (e) { /* cross-origin / low memory — skip grain */ }
+
+      // Soft vignette around the edges.
+      const r = Math.max(canvasW, canvasH);
+      const rg = ctx.createRadialGradient(canvasW / 2, canvasH / 2, r * 0.35, canvasW / 2, canvasH / 2, r * 0.75);
+      rg.addColorStop(0, 'rgba(0,0,0,0)');
+      rg.addColorStop(1, 'rgba(60,40,20,0.18)');
+      ctx.fillStyle = rg;
+      ctx.fillRect(0, 0, canvasW, canvasH);
+    }
+
+    function drawRakeSegment(x1, y1, x2, y2, toolName) {
+      const cfg = RAKE[toolName];
+      if (!cfg) return;
+      const dx = x2 - x1, dy = y2 - y1;
+      const len = Math.hypot(dx, dy);
+      if (len < 0.5) return;
+      const nx = -dy / len, ny = dx / len;
+
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      // Etched groove — darker, wider line.
+      ctx.strokeStyle = 'rgba(118, 88, 52, ' + cfg.darken + ')';
+      ctx.lineWidth = cfg.width;
+      for (let i = 0; i < cfg.tines; i++) {
+        const offset = (i - (cfg.tines - 1) / 2) * cfg.spacing;
+        ctx.beginPath();
+        ctx.moveTo(x1 + offset * nx, y1 + offset * ny);
+        ctx.lineTo(x2 + offset * nx, y2 + offset * ny);
+        ctx.stroke();
+      }
+
+      // Ridge highlight — thin light line next to each groove for a 3D feel.
+      ctx.strokeStyle = 'rgba(255, 244, 220, ' + cfg.highlight + ')';
+      ctx.lineWidth = Math.max(0.5, cfg.width * 0.5);
+      for (let i = 0; i < cfg.tines; i++) {
+        const offset = (i - (cfg.tines - 1) / 2) * cfg.spacing + cfg.width * 0.75;
+        ctx.beginPath();
+        ctx.moveTo(x1 + offset * nx, y1 + offset * ny);
+        ctx.lineTo(x2 + offset * nx, y2 + offset * ny);
+        ctx.stroke();
+      }
+    }
+
+    function drawSmoothSegment(x1, y1, x2, y2) {
+      const r = 30;
+      const dx = x2 - x1, dy = y2 - y1;
+      const steps = Math.max(1, Math.ceil(Math.hypot(dx, dy) / 5));
+      for (let s = 0; s <= steps; s++) {
+        const t = s / steps;
+        const px = x1 + dx * t, py = y1 + dy * t;
+        const g = ctx.createRadialGradient(px, py, 0, px, py, r);
+        g.addColorStop(0, 'rgba(233, 217, 178, 0.38)');
+        g.addColorStop(1, 'rgba(233, 217, 178, 0)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(px, py, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawRock(x, y, seed) {
+      const r1 = hash('rk1:' + seed);
+      const r2 = hash('rk2:' + seed);
+      const size = 16 + r1 * 14;
+      const rx = size * (1 + r2 * 0.35);
+      const ry = size * (0.55 + r1 * 0.2);
+      const angle = (r1 - 0.5) * 0.8;
+
+      ctx.save();
+      ctx.translate(x, y);
+
+      // Drop shadow on sand.
+      ctx.fillStyle = 'rgba(60, 44, 24, 0.28)';
+      ctx.beginPath();
+      ctx.ellipse(3, 5, rx * 1.05, ry * 0.9, angle, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Sand disturbance rings.
+      ctx.strokeStyle = 'rgba(168, 140, 94, 0.5)';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.ellipse(0, 1, rx + 4, ry + 3, angle, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(200, 178, 134, 0.38)';
+      ctx.lineWidth = 1.1;
+      ctx.beginPath();
+      ctx.ellipse(0, 1, rx + 9, ry + 6, angle, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Organic rock body — jittered polygon.
+      ctx.rotate(angle);
+      const hue = 210 + Math.floor(r2 * 24) - 12;
+      const g = ctx.createRadialGradient(-rx * 0.3, -ry * 0.4, 2, 0, 0, Math.max(rx, ry));
+      g.addColorStop(0, 'hsl(' + hue + ', 7%, ' + (58 + r1 * 10) + '%)');
+      g.addColorStop(0.55, 'hsl(' + hue + ', 10%, ' + (38 + r1 * 8) + '%)');
+      g.addColorStop(1, 'hsl(' + hue + ', 14%, ' + (22 + r2 * 6) + '%)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      const sides = 14;
+      for (let i = 0; i < sides; i++) {
+        const a = (i / sides) * Math.PI * 2;
+        const j = 1 + (hash('rkj:' + seed + ':' + i) - 0.5) * 0.2;
+        const px = Math.cos(a) * rx * j;
+        const py = Math.sin(a) * ry * j;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fill();
+
+      // Soft top-left highlight.
+      ctx.fillStyle = 'rgba(255,255,255,0.14)';
+      ctx.beginPath();
+      ctx.ellipse(-rx * 0.3, -ry * 0.4, rx * 0.35, ry * 0.22, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function drawPlant(x, y, seed) {
+      const r1 = hash('pl1:' + seed);
+      const r2 = hash('pl2:' + seed);
+      const count = 7 + Math.floor(r1 * 5);
+      const baseHue = 95 + Math.floor(r2 * 30) - 12;
+      const scale = 0.85 + r1 * 0.35;
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(scale, scale);
+
+      // Sand disturbance.
+      ctx.strokeStyle = 'rgba(168, 140, 94, 0.4)';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.ellipse(0, 2, 18, 10, 0, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Shadow.
+      ctx.fillStyle = 'rgba(50, 62, 34, 0.22)';
+      ctx.beginPath();
+      ctx.ellipse(2, 4, 14, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Moss cluster.
+      for (let i = 0; i < count; i++) {
+        const a = hash('pla:' + seed + ':' + i) * Math.PI * 2;
+        const rad = hash('plr:' + seed + ':' + i) * 11;
+        const px = Math.cos(a) * rad;
+        const py = Math.sin(a) * rad * 0.55 - 1;
+        const sz = 5 + hash('pls:' + seed + ':' + i) * 4;
+        const sat = 30 + hash('plsa:' + seed + ':' + i) * 25;
+        const light = 30 + hash('pll:' + seed + ':' + i) * 22;
+        ctx.fillStyle = 'hsl(' + baseHue + ', ' + sat + '%, ' + light + '%)';
+        ctx.beginPath();
+        ctx.arc(px, py, sz, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // Tiny top highlight.
+      ctx.fillStyle = 'hsla(' + baseHue + ', 50%, 68%, 0.55)';
+      ctx.beginPath();
+      ctx.arc(-2, -5, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function applyItem(it) {
+      if (it.type === 'rake' || it.type === 'smooth') {
+        const pts = it.points;
+        if (!pts || pts.length < 2) return;
+        for (let i = 1; i < pts.length; i++) {
+          const p1 = pts[i - 1], p2 = pts[i];
+          const x1 = p1.x * canvasW, y1 = p1.y * canvasH;
+          const x2 = p2.x * canvasW, y2 = p2.y * canvasH;
+          if (it.type === 'rake') drawRakeSegment(x1, y1, x2, y2, it.tool);
+          else drawSmoothSegment(x1, y1, x2, y2);
+        }
+      } else if (it.type === 'rock') {
+        drawRock(it.x * canvasW, it.y * canvasH, it.seed);
+      } else if (it.type === 'plant') {
+        drawPlant(it.x * canvasW, it.y * canvasH, it.seed);
+      }
+    }
+
+    function fullRedraw() {
+      paintSand();
+      for (let i = 0; i < items.length; i++) applyItem(items[i]);
+    }
+
+    let saveTimer = null;
+    function saveState() {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(function () {
+        try {
+          const data = JSON.stringify({ items: items });
+          if (data.length < 800000) localStorage.setItem(LS_KEY, data);
+        } catch (e) {}
+      }, 250);
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        if (data && Array.isArray(data.items)) items = data.items;
+      } catch (e) {}
+    }
+
+    function getPt(e) {
+      const rect = canvas.getBoundingClientRect();
+      const t = e.touches && e.touches[0] ? e.touches[0] : e;
+      const x = (t.clientX - rect.left) / rect.width;
+      const y = (t.clientY - rect.top) / rect.height;
+      return {
+        x: Math.max(0, Math.min(1, x)),
+        y: Math.max(0, Math.min(1, y))
+      };
+    }
+
+    function newSeed() {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    }
+
+    function start(e) {
+      if (e.cancelable) e.preventDefault();
+      const p = getPt(e);
+      if (tool === 'rake-fine' || tool === 'rake-med' || tool === 'rake-wide') {
+        drawing = true;
+        currentStroke = { type: 'rake', tool: tool, points: [p] };
+        items.push(currentStroke);
+      } else if (tool === 'smooth') {
+        drawing = true;
+        currentStroke = { type: 'smooth', points: [p] };
+        items.push(currentStroke);
+        const px = p.x * canvasW, py = p.y * canvasH;
+        drawSmoothSegment(px, py, px, py);
+      } else if (tool === 'rock') {
+        const it = { type: 'rock', x: p.x, y: p.y, seed: newSeed() };
+        items.push(it);
+        applyItem(it);
+        saveState();
+      } else if (tool === 'plant') {
+        const it = { type: 'plant', x: p.x, y: p.y, seed: newSeed() };
+        items.push(it);
+        applyItem(it);
+        saveState();
+      }
+    }
+
+    function move(e) {
+      if (!drawing || !currentStroke) return;
+      if (e.cancelable) e.preventDefault();
+      const p = getPt(e);
+      const last = currentStroke.points[currentStroke.points.length - 1];
+      const dx = (p.x - last.x) * canvasW;
+      const dy = (p.y - last.y) * canvasH;
+      if (Math.hypot(dx, dy) < 2) return;
+      currentStroke.points.push(p);
+      const x1 = last.x * canvasW, y1 = last.y * canvasH;
+      const x2 = p.x * canvasW,    y2 = p.y * canvasH;
+      if (currentStroke.type === 'rake') drawRakeSegment(x1, y1, x2, y2, currentStroke.tool);
+      else drawSmoothSegment(x1, y1, x2, y2);
+    }
+
+    function end() {
+      if (!drawing) return;
+      drawing = false;
+      if (currentStroke && currentStroke.points.length < 2 && currentStroke.type === 'rake') {
+        // Discard an empty rake stroke (tap without drag).
+        items.pop();
+      }
+      currentStroke = null;
+      saveState();
+    }
+
+    canvas.addEventListener('mousedown', start);
+    canvas.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', end);
+    canvas.addEventListener('mouseleave', function () { if (drawing) end(); });
+    canvas.addEventListener('touchstart', start, { passive: false });
+    canvas.addEventListener('touchmove', move, { passive: false });
+    canvas.addEventListener('touchend', end);
+    canvas.addEventListener('touchcancel', end);
+
+    document.querySelectorAll('.tool[data-tool]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.tool[data-tool]').forEach(function (b) {
+          b.classList.remove('active');
+          b.setAttribute('aria-pressed', 'false');
+        });
+        btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
+        tool = btn.dataset.tool;
+        canvas.style.cursor = (tool === 'rock' || tool === 'plant') ? 'pointer' : 'crosshair';
+      });
+    });
+
+    document.getElementById('undo-btn').addEventListener('click', function () {
+      if (items.length === 0) return;
+      items.pop();
+      fullRedraw();
+      saveState();
+    });
+
+    document.getElementById('clear-btn').addEventListener('click', function () {
+      if (items.length === 0) return;
+      if (!confirm('Clear the entire garden?')) return;
+      items = [];
+      fullRedraw();
+      saveState();
+    });
+
+    document.getElementById('save-btn').addEventListener('click', function () {
+      try {
+        const link = document.createElement('a');
+        link.download = 'zen-garden.png';
+        link.href = canvas.toDataURL('image/png');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (e) {}
+    });
+
+    let resizeT = null;
+    window.addEventListener('resize', function () {
+      clearTimeout(resizeT);
+      resizeT = setTimeout(function () {
+        sizeCanvas();
+        fullRedraw();
+      }, 120);
+    });
+
+    loadState();
+    sizeCanvas();
+    fullRedraw();
+
+    // Leaderboard integration — guarded. Zen Garden has no score by design,
+    // so nothing is submitted. The shared module is loaded to remain
+    // consistent with the rest of the site.
+    if (window.Leaderboard && typeof window.Leaderboard.submitScore === 'function') {
+      // Intentionally no-op.
+    }
+  })();
+  </script>
+</body>
+</html>

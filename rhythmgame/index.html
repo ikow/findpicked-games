@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Rhythm Game — FindPicked Games</title>
+<meta name="description" content="Play Rhythm Game free — tap notes on the beat across four lanes. Minimal design, instant play.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Crect x='7'  y='6' width='3' height='14' rx='1.5' fill='%23ff3b30'/%3E%3Crect x='13' y='10' width='3' height='10' rx='1.5' fill='%23ffcc00'/%3E%3Crect x='19' y='4' width='3' height='16' rx='1.5' fill='%2334c759'/%3E%3Crect x='25' y='8' width='3' height='12' rx='1.5' fill='%235ac8fa'/%3E%3Crect x='5'  y='23' width='22' height='2' rx='1' fill='white'/%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-board: #f2f2f4;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+  --radius: 16px;
+
+  --lane-1: #ff3b30;
+  --lane-2: #ffcc00;
+  --lane-3: #34c759;
+  --lane-4: #5ac8fa;
+
+  --perfect: #0071e3;
+  --good:    #34c759;
+  --miss:    #ff3b30;
+}
+
+html, body {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px 20px 40px;
+  touch-action: manipulation;
+}
+
+.back {
+  align-self: flex-start;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 400;
+  padding: 8px 4px;
+  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.back:hover { color: var(--text-primary); }
+.back .arrow { font-size: 18px; line-height: 1; }
+
+.wrap {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+h1 {
+  font-size: clamp(32px, 8vw, 48px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.stats {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.stat-box {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 10px 14px;
+  min-width: 68px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  margin-bottom: 2px;
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  transition: transform 0.18s ease;
+}
+.stat-value.bump { transform: scale(1.14); }
+
+.subhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.subhead p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.mode-picker {
+  display: inline-flex;
+  background: var(--bg-card);
+  border-radius: 22px;
+  padding: 4px;
+  box-shadow: var(--shadow);
+}
+
+.mode-picker button {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 18px;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.mode-picker button.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  height: 44px;
+  padding: 0 22px;
+  border-radius: 22px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn:active { transform: scale(0.97); }
+
+.btn.secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
+}
+.btn.secondary:hover { background: rgba(0, 113, 227, 0.06); }
+
+.board {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  max-height: 70vh;
+  background: var(--bg-board);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  user-select: none;
+  -webkit-user-select: none;
+  overflow: hidden;
+}
+
+.lanes {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+}
+
+.lane {
+  position: relative;
+  border-right: 1px solid rgba(0,0,0,0.06);
+}
+.lane:last-child { border-right: none; }
+
+.lane::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.25) 100%);
+  pointer-events: none;
+}
+
+/* Hit line at ~82% down */
+.hit-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 82%;
+  height: 3px;
+  background: rgba(29,29,31,0.28);
+  box-shadow: 0 0 14px rgba(0,113,227,0.22);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Tap buttons below the hit line — the bottom 18% of the board */
+.tap-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 82%;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  z-index: 5;
+}
+
+.tap-btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  min-height: 44px;
+  min-width: 44px;
+  -webkit-tap-highlight-color: transparent;
+  border-top: 2px solid rgba(29,29,31,0.28);
+  border-right: 1px solid rgba(0,0,0,0.06);
+  transition: background 0.08s ease, color 0.08s ease;
+  position: relative;
+}
+.tap-btn:last-child { border-right: none; }
+.tap-btn:active,
+.tap-btn.pressed {
+  background: rgba(0,113,227,0.12);
+  color: var(--accent);
+}
+
+.tap-btn[data-lane="0"] { --lane-color: var(--lane-1); }
+.tap-btn[data-lane="1"] { --lane-color: var(--lane-2); }
+.tap-btn[data-lane="2"] { --lane-color: var(--lane-3); }
+.tap-btn[data-lane="3"] { --lane-color: var(--lane-4); }
+
+.tap-btn .key-label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-weight: 600;
+}
+
+.tap-btn.flash::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--lane-color);
+  opacity: 0.45;
+  animation: tapFlash 0.25s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes tapFlash {
+  from { opacity: 0.5; }
+  to   { opacity: 0; }
+}
+
+/* Notes */
+.note {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  height: 7%;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15), inset 0 -2px 0 rgba(0,0,0,0.12);
+  will-change: transform;
+  pointer-events: none;
+  z-index: 3;
+}
+.note[data-lane="0"] { background: var(--lane-1); }
+.note[data-lane="1"] { background: var(--lane-2); }
+.note[data-lane="2"] { background: var(--lane-3); }
+.note[data-lane="3"] { background: var(--lane-4); }
+
+.note.gone {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+/* Judgement popup */
+.judge {
+  position: absolute;
+  left: 50%;
+  top: 55%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(28px, 7vw, 42px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-shadow: 0 2px 10px rgba(255,255,255,0.9);
+  pointer-events: none;
+  opacity: 0;
+  z-index: 6;
+}
+.judge.show {
+  animation: judgePop 0.55s ease-out forwards;
+}
+.judge.perfect { color: var(--perfect); }
+.judge.good    { color: var(--good); }
+.judge.miss    { color: var(--miss); }
+
+@keyframes judgePop {
+  0%   { opacity: 0; transform: translate(-50%, -40%) scale(0.85); }
+  20%  { opacity: 1; transform: translate(-50%, -55%) scale(1.05); }
+  100% { opacity: 0; transform: translate(-50%, -70%) scale(1); }
+}
+
+.combo-badge {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(29,29,31,0.85);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 18px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  opacity: 0;
+  transition: opacity 0.25s ease, transform 0.2s ease;
+  pointer-events: none;
+  z-index: 6;
+}
+.combo-badge.show { opacity: 1; }
+.combo-badge.bump { transform: translateX(-50%) scale(1.12); }
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.92);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  padding: 24px;
+  text-align: center;
+  z-index: 10;
+}
+.overlay.show { opacity: 1; pointer-events: auto; }
+
+.overlay h2 {
+  font-size: clamp(28px, 6vw, 36px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.overlay p {
+  font-size: 15px;
+  color: var(--text-secondary);
+  max-width: 380px;
+  line-height: 1.5;
+}
+
+.overlay .summary {
+  display: flex;
+  gap: 20px;
+  margin: 4px 0;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.overlay .summary div { text-align: center; }
+
+.overlay .summary .val {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.overlay .summary .lbl {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+}
+
+.overlay .row {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.status {
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  min-height: 20px;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sound-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border: none;
+  border-radius: 22px;
+  height: 36px;
+  padding: 0 14px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.2s ease;
+}
+.sound-toggle:hover { color: var(--text-primary); }
+
+footer {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  text-align: center;
+  margin-top: 8px;
+  line-height: 1.6;
+}
+
+.rules-toggle {
+  display: inline-block;
+  font-size: 13px;
+  color: var(--accent);
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+  padding: 0;
+}
+.rules-toggle:hover { text-decoration: underline; }
+
+.rules-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  text-align: left;
+  margin: 8px auto 0;
+}
+.rules-panel.open { max-height: 600px; }
+.rules-panel ul { margin: 8px 0 0 16px; }
+.rules-panel li { margin-bottom: 4px; }
+
+.progress {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 3px;
+  background: var(--accent);
+  width: 0%;
+  transition: width 0.18s linear;
+  z-index: 7;
+  border-top-left-radius: var(--radius);
+}
+
+@media (max-width: 480px) {
+  body { padding: 16px 14px 32px; }
+  .wrap { gap: 14px; }
+  .stat-box { min-width: 58px; padding: 8px 10px; }
+  .stat-value { font-size: 17px; }
+  .mode-picker button { padding: 0 12px; font-size: 13px; }
+  .board { aspect-ratio: 3 / 5; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="back" href="../" aria-label="Back to games">
+    <span class="arrow">←</span>
+    <span>Games</span>
+  </a>
+
+  <header>
+    <h1>Rhythm Game</h1>
+    <div class="stats">
+      <div class="stat-box">
+        <div class="stat-label">Score</div>
+        <div class="stat-value" id="score">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Combo</div>
+        <div class="stat-value" id="combo">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Best</div>
+        <div class="stat-value" id="best">0</div>
+      </div>
+    </div>
+  </header>
+
+  <div style="text-align:center">
+    <button class="rules-toggle" onclick="this.nextElementSibling.classList.toggle('open')">How to Play ▾</button>
+    <div class="rules-panel">
+      <ul>
+        <li>Notes fall down four colored lanes — tap the lane button the instant a note reaches the gray hit line</li>
+        <li><strong>Perfect</strong> (100 pts) — tap right on the line, Good (50 pts) — slightly early or late, Miss (0 pts) — too far off</li>
+        <li>Chain Perfects and Goods to build a <strong>combo</strong>; combos add bonus points on every hit</li>
+        <li>Missing a note or tapping an empty lane breaks the combo and resets it to zero</li>
+        <li>Use the on-screen buttons, or keyboard keys <strong>D F J K</strong> for lanes 1 to 4</li>
+        <li>Pick a built-in beat pattern and difficulty — faster speeds mean bigger combo multipliers</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="subhead">
+    <p>Tap to the beat. Chain hits. Stay on rhythm.</p>
+    <div class="mode-picker" id="mode-picker" role="tablist" aria-label="Difficulty">
+      <button data-mode="easy" aria-pressed="false">Easy</button>
+      <button data-mode="normal" class="active" aria-pressed="true">Normal</button>
+      <button data-mode="hard" aria-pressed="false">Hard</button>
+    </div>
+  </div>
+
+  <div class="subhead">
+    <p style="font-size:13px">Beat pattern</p>
+    <div class="mode-picker" id="track-picker" role="tablist" aria-label="Beat pattern">
+      <button data-track="pulse"  class="active" aria-pressed="true">Pulse</button>
+      <button data-track="groove" aria-pressed="false">Groove</button>
+      <button data-track="surge"  aria-pressed="false">Surge</button>
+    </div>
+  </div>
+
+  <div class="board" id="board">
+    <div class="progress" id="progress"></div>
+    <div class="lanes" id="lanes">
+      <div class="lane"></div>
+      <div class="lane"></div>
+      <div class="lane"></div>
+      <div class="lane"></div>
+    </div>
+    <div class="hit-line" aria-hidden="true"></div>
+    <div class="combo-badge" id="combo-badge">Combo ×0</div>
+    <div class="judge" id="judge"></div>
+    <div class="tap-bar" id="tap-bar">
+      <button class="tap-btn" data-lane="0" type="button" aria-label="Lane 1"><span class="key-label">D</span></button>
+      <button class="tap-btn" data-lane="1" type="button" aria-label="Lane 2"><span class="key-label">F</span></button>
+      <button class="tap-btn" data-lane="2" type="button" aria-label="Lane 3"><span class="key-label">J</span></button>
+      <button class="tap-btn" data-lane="3" type="button" aria-label="Lane 4"><span class="key-label">K</span></button>
+    </div>
+    <div class="overlay show" id="overlay">
+      <h2 id="overlay-title">Ready?</h2>
+      <p id="overlay-text">Notes fall down the lanes — tap when they hit the line.</p>
+      <div class="summary" id="overlay-summary" style="display:none">
+        <div><div class="val" id="overlay-score">0</div><div class="lbl">Score</div></div>
+        <div><div class="val" id="overlay-max-combo">0</div><div class="lbl">Max combo</div></div>
+        <div><div class="val" id="overlay-accuracy">—</div><div class="lbl">Accuracy</div></div>
+        <div><div class="val" id="overlay-best">0</div><div class="lbl">Best</div></div>
+      </div>
+      <div class="row">
+        <button class="btn" id="overlay-start">Start</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="status" id="status">Press Start to play</div>
+
+  <div class="controls">
+    <a class="btn secondary" href="../leaderboard/#rhythmgame">Leaderboard</a>
+    <button class="sound-toggle" id="sound-toggle" type="button" aria-pressed="true">
+      <span id="sound-icon">🔊</span><span id="sound-label">Sound on</span>
+    </button>
+    <button class="btn" id="newgame" type="button">New Game</button>
+  </div>
+
+  <footer>
+    Four lanes · Built-in beat patterns · Perfect, Good, Miss · Chain combos
+  </footer>
+</div>
+
+<script>
+(() => {
+  const boardEl      = document.getElementById('board');
+  const lanesEl      = document.getElementById('lanes');
+  const tapBarEl     = document.getElementById('tap-bar');
+  const tapBtns      = Array.from(tapBarEl.querySelectorAll('.tap-btn'));
+  const scoreEl      = document.getElementById('score');
+  const comboEl      = document.getElementById('combo');
+  const bestEl       = document.getElementById('best');
+  const statusEl     = document.getElementById('status');
+  const progressEl   = document.getElementById('progress');
+  const comboBadge   = document.getElementById('combo-badge');
+  const judgeEl      = document.getElementById('judge');
+  const overlay      = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlay-title');
+  const overlayText  = document.getElementById('overlay-text');
+  const overlaySummary = document.getElementById('overlay-summary');
+  const overlayScore = document.getElementById('overlay-score');
+  const overlayMaxCombo = document.getElementById('overlay-max-combo');
+  const overlayAccuracy = document.getElementById('overlay-accuracy');
+  const overlayBest  = document.getElementById('overlay-best');
+  const overlayStart = document.getElementById('overlay-start');
+  const newBtn       = document.getElementById('newgame');
+  const modePicker   = document.getElementById('mode-picker');
+  const trackPicker  = document.getElementById('track-picker');
+  const soundToggle  = document.getElementById('sound-toggle');
+  const soundIcon    = document.getElementById('sound-icon');
+  const soundLabel   = document.getElementById('sound-label');
+
+  const STORE_MODE  = 'findpicked:rhythmgame:mode';
+  const STORE_TRACK = 'findpicked:rhythmgame:track';
+  const STORE_SOUND = 'findpicked:rhythmgame:sound';
+  const bestKey = (mode, track) => `findpicked:rhythmgame:best:${mode}:${track}`;
+  const overallBestKey = 'findpicked:rhythmgame:best';
+
+  const LANE_COUNT = 4;
+
+  // Difficulty shapes travel time, score multiplier, and hit windows.
+  const MODES = {
+    easy:   { fallMs: 2200, multiplier: 1.0, perfectMs: 90, goodMs: 180 },
+    normal: { fallMs: 1700, multiplier: 1.25, perfectMs: 75, goodMs: 150 },
+    hard:   { fallMs: 1250, multiplier: 1.6,  perfectMs: 60, goodMs: 125 },
+  };
+
+  // Built-in beat patterns. Each entry: [timeInBeats, lane].
+  // 'beatsPerSecond' controls note density. Duration derived from last beat.
+  const TRACKS = {
+    pulse: {
+      label: 'Pulse',
+      bps: 2.0,
+      notes: [
+        [0,0],[1,1],[2,2],[3,3],
+        [4,0],[4.5,1],[5,2],[5.5,3],
+        [6,0],[6,3],[7,1],[7,2],
+        [8,0],[9,2],[10,1],[11,3],
+        [12,0],[12.5,1],[13,2],[13.5,3],[14,0],[14.5,2],[15,1],[15.5,3],
+        [16,1],[17,2],[18,0],[19,3],
+        [20,0],[20,2],[21,1],[21,3],
+        [22,0],[22.5,1],[23,2],[23.5,3],
+        [24,0],[25,1],[26,2],[27,3],
+        [28,0],[28,3],[29,1],[29,2],
+        [30,0],[30.5,2],[31,1],[31.5,3],
+        [32,0],[32,1],[32,2],[32,3]
+      ]
+    },
+    groove: {
+      label: 'Groove',
+      bps: 2.4,
+      notes: [
+        [0,1],[1,2],[2,0],[3,3],
+        [4,1],[4.5,2],[5,0],[5.5,3],
+        [6,1],[6.5,2],[7,1],[7.5,2],
+        [8,0],[8,3],[9,1],[9,2],
+        [10,0],[10.5,3],[11,1],[11.5,2],
+        [12,0],[12.25,1],[12.5,2],[12.75,3],
+        [13,3],[13.25,2],[13.5,1],[13.75,0],
+        [14,0],[14,3],[15,1],[15,2],
+        [16,2],[16.5,1],[17,3],[17.5,0],
+        [18,0],[18.5,1],[19,2],[19.5,3],
+        [20,1],[20,2],[21,0],[21,3],
+        [22,0],[22.5,2],[23,1],[23.5,3],
+        [24,0],[24.25,1],[24.5,2],[24.75,3],[25,2],[25.25,1],[25.5,0],[25.75,1],
+        [26,2],[26.5,3],[27,0],[27.5,1],
+        [28,0],[28,3],[29,1],[29,2],[30,0],[30,1],[30,2],[30,3]
+      ]
+    },
+    surge: {
+      label: 'Surge',
+      bps: 2.8,
+      notes: [
+        [0,0],[0.5,1],[1,2],[1.5,3],
+        [2,3],[2.5,2],[3,1],[3.5,0],
+        [4,0],[4,3],[4.5,1],[4.5,2],
+        [5,0],[5.25,1],[5.5,2],[5.75,3],
+        [6,0],[6,1],[6.5,2],[6.5,3],
+        [7,3],[7.25,2],[7.5,1],[7.75,0],
+        [8,0],[8.25,2],[8.5,1],[8.75,3],
+        [9,1],[9.25,3],[9.5,0],[9.75,2],
+        [10,0],[10,1],[10,2],[10,3],
+        [11,1],[11.5,2],[12,0],[12.5,3],
+        [13,0],[13.25,1],[13.5,2],[13.75,3],[14,3],[14.25,2],[14.5,1],[14.75,0],
+        [15,0],[15,3],[15.5,1],[15.5,2],
+        [16,0],[16.5,2],[17,1],[17.5,3],
+        [18,0],[18.25,1],[18.5,0],[18.75,1],[19,2],[19.25,3],[19.5,2],[19.75,3],
+        [20,0],[20,1],[20,2],[20,3]
+      ]
+    }
+  };
+
+  let mode  = localStorage.getItem(STORE_MODE)  || 'normal';
+  let track = localStorage.getItem(STORE_TRACK) || 'pulse';
+  let soundOn = localStorage.getItem(STORE_SOUND) !== '0';
+  if (!MODES[mode]) mode = 'normal';
+  if (!TRACKS[track]) track = 'pulse';
+
+  // Runtime game state
+  let running = false;
+  let notes = []; // array of live notes: { lane, hitAt, el, judged }
+  let score = 0;
+  let combo = 0;
+  let maxCombo = 0;
+  let hitsPerfect = 0, hitsGood = 0, hitsMiss = 0;
+  let totalNotes = 0;
+  let trackStartedAt = 0;
+  let trackDurationMs = 0;
+  let rafId = null;
+  let spawnIndex = 0;
+  let scheduledNotes = []; // copy with [ms, lane]
+  let judgeTimer = null;
+
+  // Audio (simple Web Audio beeps)
+  let audioCtx = null;
+  const LANE_FREQ = [349.23, 440.00, 523.25, 659.25]; // F4, A4, C5, E5
+
+  function ensureAudio() {
+    if (!soundOn) return null;
+    if (!audioCtx) {
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+      catch { audioCtx = null; }
+    }
+    return audioCtx;
+  }
+
+  function beep(freq, durationMs, type = 'sine', gain = 0.08) {
+    const ctx = ensureAudio();
+    if (!ctx) return;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    g.gain.setValueAtTime(0, ctx.currentTime);
+    g.gain.linearRampToValueAtTime(gain, ctx.currentTime + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + durationMs / 1000);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + durationMs / 1000 + 0.02);
+  }
+
+  function sPerfect(lane) { beep(LANE_FREQ[lane], 120, 'triangle', 0.1); }
+  function sGood(lane)    { beep(LANE_FREQ[lane] * 0.75, 110, 'sine', 0.07); }
+  function sMiss()        { beep(110, 150, 'square', 0.05); }
+  function sStart()       { beep(523.25, 120, 'sine', 0.08); setTimeout(() => beep(659.25, 160, 'sine', 0.08), 130); }
+
+  // --- Mode + track UI ---
+  function setMode(next) {
+    if (!MODES[next]) return;
+    mode = next;
+    localStorage.setItem(STORE_MODE, mode);
+    Array.from(modePicker.querySelectorAll('button')).forEach(b => {
+      const on = b.dataset.mode === mode;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    refreshBest();
+  }
+
+  function setTrack(next) {
+    if (!TRACKS[next]) return;
+    track = next;
+    localStorage.setItem(STORE_TRACK, track);
+    Array.from(trackPicker.querySelectorAll('button')).forEach(b => {
+      const on = b.dataset.track === track;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    refreshBest();
+  }
+
+  function refreshBest() {
+    const v = parseInt(localStorage.getItem(bestKey(mode, track)) || '0', 10) || 0;
+    bestEl.textContent = v;
+  }
+
+  function setSound(on) {
+    soundOn = !!on;
+    localStorage.setItem(STORE_SOUND, soundOn ? '1' : '0');
+    soundIcon.textContent = soundOn ? '🔊' : '🔇';
+    soundLabel.textContent = soundOn ? 'Sound on' : 'Sound off';
+    soundToggle.setAttribute('aria-pressed', soundOn ? 'true' : 'false');
+  }
+
+  // --- Game flow ---
+  function showOverlay(title, text, showSummary = false) {
+    overlayTitle.textContent = title;
+    overlayText.textContent = text;
+    overlaySummary.style.display = showSummary ? 'flex' : 'none';
+    overlayStart.textContent = showSummary ? 'Play Again' : 'Start';
+    overlay.classList.add('show');
+  }
+
+  function hideOverlay() { overlay.classList.remove('show'); }
+
+  function clearNotes() {
+    for (const n of notes) { if (n.el && n.el.parentNode) n.el.parentNode.removeChild(n.el); }
+    notes = [];
+  }
+
+  function resetStats() {
+    score = 0; combo = 0; maxCombo = 0;
+    hitsPerfect = 0; hitsGood = 0; hitsMiss = 0;
+    scoreEl.textContent = '0';
+    comboEl.textContent = '0';
+    comboBadge.classList.remove('show');
+    progressEl.style.width = '0%';
+  }
+
+  function bump(el) {
+    el.classList.remove('bump');
+    void el.offsetWidth;
+    el.classList.add('bump');
+  }
+
+  function showJudge(kind) {
+    if (judgeTimer) clearTimeout(judgeTimer);
+    judgeEl.className = 'judge';
+    void judgeEl.offsetWidth;
+    judgeEl.textContent = kind === 'perfect' ? 'PERFECT' : kind === 'good' ? 'GOOD' : 'MISS';
+    judgeEl.classList.add('show', kind);
+    judgeTimer = setTimeout(() => {
+      judgeEl.classList.remove('show');
+    }, 550);
+  }
+
+  function addScore(kind, lane) {
+    const mult = MODES[mode].multiplier;
+    let base = 0;
+    if (kind === 'perfect') { base = 100; hitsPerfect++; }
+    else if (kind === 'good') { base = 50; hitsGood++; }
+    else { hitsMiss++; }
+
+    if (kind === 'miss') {
+      combo = 0;
+      comboBadge.classList.remove('show');
+      sMiss();
+    } else {
+      combo++;
+      if (combo > maxCombo) maxCombo = combo;
+      // Combo bonus: +1 per step in combo, capped at +50
+      const bonus = Math.min(combo, 50);
+      const gained = Math.round((base + bonus) * mult);
+      score += gained;
+      if (kind === 'perfect') sPerfect(lane);
+      else sGood(lane);
+      comboBadge.textContent = 'Combo ×' + combo;
+      comboBadge.classList.add('show', 'bump');
+      setTimeout(() => comboBadge.classList.remove('bump'), 200);
+    }
+
+    scoreEl.textContent = String(score);
+    comboEl.textContent = String(combo);
+    bump(scoreEl);
+    if (combo > 0) bump(comboEl);
+    showJudge(kind);
+  }
+
+  function buildScheduleForTrack() {
+    const def = TRACKS[track];
+    const secPerBeat = 1 / def.bps;
+    // Schedule time = the moment the note should be at the hit line.
+    scheduledNotes = def.notes.map(([b, lane]) => [b * secPerBeat * 1000, lane]);
+    scheduledNotes.sort((a, b) => a[0] - b[0]);
+    const last = scheduledNotes[scheduledNotes.length - 1][0];
+    // Give a tail after the last note so feedback can play out.
+    trackDurationMs = last + 1500;
+    totalNotes = scheduledNotes.length;
+  }
+
+  function spawnNote(lane, hitAt) {
+    const el = document.createElement('div');
+    el.className = 'note';
+    el.dataset.lane = String(lane);
+    el.style.left = (lane * 25 + 2) + '%';
+    el.style.width = '21%';
+    el.style.top = '-10%';
+    boardEl.insertBefore(el, tapBarEl);
+    notes.push({ lane, hitAt, el, judged: false });
+  }
+
+  function startGame() {
+    buildScheduleForTrack();
+    resetStats();
+    clearNotes();
+    spawnIndex = 0;
+    running = true;
+    hideOverlay();
+    statusEl.textContent = 'Tap when notes reach the line.';
+    sStart();
+    trackStartedAt = performance.now();
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function endGame() {
+    running = false;
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = null;
+    clearNotes();
+
+    const accuracy = totalNotes > 0
+      ? Math.round(((hitsPerfect + hitsGood) / totalNotes) * 100)
+      : 0;
+
+    // Save personal best for this mode + track.
+    const prevBest = parseInt(localStorage.getItem(bestKey(mode, track)) || '0', 10) || 0;
+    const newRecord = score > prevBest;
+    if (newRecord) localStorage.setItem(bestKey(mode, track), String(score));
+    refreshBest();
+
+    // Also track overall best across all modes/tracks for leaderboard submission.
+    const prevOverall = parseInt(localStorage.getItem(overallBestKey) || '0', 10) || 0;
+    if (score > prevOverall) localStorage.setItem(overallBestKey, String(score));
+
+    overlayScore.textContent = String(score);
+    overlayMaxCombo.textContent = String(maxCombo);
+    overlayAccuracy.textContent = totalNotes > 0 ? (accuracy + '%') : '—';
+    overlayBest.textContent = String(Math.max(prevBest, score));
+
+    const title = newRecord ? 'New Best!' : 'Finished';
+    const parts = [
+      `${hitsPerfect} perfect · ${hitsGood} good · ${hitsMiss} miss.`,
+      `Max combo ×${maxCombo}.`
+    ];
+    showOverlay(title, parts.join(' '), true);
+    statusEl.textContent = newRecord ? 'New personal best — nice.' : 'Tap Play Again to try again.';
+
+    // Leaderboard submission — guarded.
+    if (window.Leaderboard && Leaderboard.submitScore) {
+      try { Leaderboard.submitScore(score); } catch (e) { /* no-op */ }
+    }
+  }
+
+  function loop(now) {
+    if (!running) return;
+    const elapsed = now - trackStartedAt;
+    const fallMs = MODES[mode].fallMs;
+
+    // Spawn upcoming notes. A note is spawned fallMs before it should be at the hit line.
+    while (spawnIndex < scheduledNotes.length && scheduledNotes[spawnIndex][0] - fallMs <= elapsed) {
+      const [hitMs, lane] = scheduledNotes[spawnIndex];
+      spawnNote(lane, hitMs);
+      spawnIndex++;
+    }
+
+    // Update live notes: position from top: -10% to hit line at 82%.
+    for (const n of notes) {
+      if (n.judged) continue;
+      const remaining = n.hitAt - elapsed; // ms until hit line
+      // progress: 0 when just spawned (top = -10%), 1 at hit line (top = 82% - note height/2 ≈ 78.5%).
+      const p = 1 - (remaining / fallMs);
+      // Allow past 1 so note exits past the hit line before auto-miss.
+      const topStart = -10; // in board %
+      const topHit = 79; // approximate — note height is 7% so top of note ≈ 79 at hit
+      const topEnd = 95; // bottom
+      let top;
+      if (p <= 1) top = topStart + (topHit - topStart) * p;
+      else top = topHit + (topEnd - topHit) * Math.min((p - 1) * 2, 1);
+      n.el.style.top = top + '%';
+
+      // Miss if the note passed beyond miss window.
+      if (!n.judged && remaining < -MODES[mode].goodMs) {
+        n.judged = true;
+        addScore('miss');
+        n.el.classList.add('gone');
+        // remove after fade
+        setTimeout(() => { if (n.el && n.el.parentNode) n.el.parentNode.removeChild(n.el); }, 150);
+      }
+    }
+
+    // Cleanup off-screen notes (fully past hit without judge).
+    notes = notes.filter(n => !(n.judged && (!n.el || !n.el.isConnected)));
+
+    // Progress bar
+    const pct = Math.min(100, (elapsed / trackDurationMs) * 100);
+    progressEl.style.width = pct + '%';
+
+    if (elapsed >= trackDurationMs) {
+      endGame();
+      return;
+    }
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function handleTap(lane) {
+    if (!running) return;
+    const now = performance.now();
+    const elapsed = now - trackStartedAt;
+    const perfectMs = MODES[mode].perfectMs;
+    const goodMs = MODES[mode].goodMs;
+
+    // Find the not-yet-judged note in this lane whose hit time is closest to now.
+    let target = null;
+    let bestDelta = Infinity;
+    for (const n of notes) {
+      if (n.judged || n.lane !== lane) continue;
+      const delta = Math.abs(n.hitAt - elapsed);
+      if (delta < bestDelta) { bestDelta = delta; target = n; }
+    }
+
+    const btn = tapBtns[lane];
+    btn.classList.remove('flash');
+    void btn.offsetWidth;
+    btn.classList.add('flash');
+
+    if (!target || bestDelta > goodMs) {
+      // Empty-lane tap = miss. Break combo.
+      if (combo > 0) {
+        combo = 0;
+        comboEl.textContent = '0';
+        comboBadge.classList.remove('show');
+      }
+      // No score change, but small miss feedback — only if within a loose window so random taps
+      // during idle lanes don't feel punishing.
+      if (target && bestDelta <= goodMs * 2) {
+        // too early — don't consume the note, just shake
+      }
+      return;
+    }
+
+    target.judged = true;
+    target.el.classList.add('gone');
+    setTimeout(() => { if (target.el && target.el.parentNode) target.el.parentNode.removeChild(target.el); }, 150);
+
+    if (bestDelta <= perfectMs) addScore('perfect', lane);
+    else addScore('good', lane);
+  }
+
+  // --- Input wiring ---
+  tapBtns.forEach(btn => {
+    const lane = parseInt(btn.dataset.lane, 10);
+    btn.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      btn.classList.add('pressed');
+      handleTap(lane);
+    });
+    btn.addEventListener('pointerup',    () => btn.classList.remove('pressed'));
+    btn.addEventListener('pointerleave', () => btn.classList.remove('pressed'));
+    btn.addEventListener('pointercancel',() => btn.classList.remove('pressed'));
+  });
+
+  const KEY_LANE = { 'd': 0, 'f': 1, 'j': 2, 'k': 3 };
+  const pressedKeys = new Set();
+  document.addEventListener('keydown', (e) => {
+    if (e.repeat) return;
+    const lane = KEY_LANE[e.key.toLowerCase()];
+    if (lane === undefined) {
+      if (e.key === ' ' || e.key === 'Enter') {
+        if (!running && overlay.classList.contains('show')) { e.preventDefault(); startGame(); }
+      }
+      return;
+    }
+    if (pressedKeys.has(lane)) return;
+    pressedKeys.add(lane);
+    tapBtns[lane].classList.add('pressed');
+    handleTap(lane);
+  });
+  document.addEventListener('keyup', (e) => {
+    const lane = KEY_LANE[e.key.toLowerCase()];
+    if (lane === undefined) return;
+    pressedKeys.delete(lane);
+    tapBtns[lane].classList.remove('pressed');
+  });
+
+  modePicker.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-mode]');
+    if (!btn) return;
+    setMode(btn.dataset.mode);
+  });
+  trackPicker.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-track]');
+    if (!btn) return;
+    setTrack(btn.dataset.track);
+  });
+
+  overlayStart.addEventListener('click', startGame);
+  newBtn.addEventListener('click', () => {
+    if (running) {
+      running = false;
+      if (rafId) cancelAnimationFrame(rafId);
+      clearNotes();
+    }
+    showOverlay('Ready?', 'Notes fall down the lanes — tap when they hit the line.');
+    statusEl.textContent = 'Press Start to play';
+  });
+  soundToggle.addEventListener('click', () => setSound(!soundOn));
+
+  // Init UI
+  setMode(mode);
+  setTrack(track);
+  setSound(soundOn);
+  refreshBest();
+})();
+</script>
+
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

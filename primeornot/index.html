@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Prime or Not — FindPicked Games</title>
+<meta name="description" content="Prime or Not — a 30-second mental math sprint. Decide if each flashing number is prime before the bar runs out.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='-apple-system,sans-serif' font-size='18' font-weight='700' fill='white'%3E7%3C/text%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-arena: #f5f5f7;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --good: #34c759;
+  --bad: #ff3b30;
+  --warn: #ff9f0a;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.06);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+  --radius: 16px;
+}
+
+html, body {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px 20px 40px;
+  touch-action: manipulation;
+}
+
+.back {
+  align-self: flex-start;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 400;
+  padding: 8px 4px;
+  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.back:hover { color: var(--text-primary); }
+.back .arrow { font-size: 18px; line-height: 1; }
+
+.wrap {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+h1 {
+  font-size: clamp(36px, 9vw, 52px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.scores {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.score-box {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 10px 14px;
+  min-width: 78px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.score-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  margin-bottom: 2px;
+}
+
+.score-value {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+.score-value.bump { transform: scale(1.15); }
+.score-value.good { color: var(--good); }
+.score-value.bad { color: var(--bad); }
+
+.subhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.subhead p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.btn {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  height: 44px;
+  padding: 0 22px;
+  border-radius: 22px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn:active { transform: scale(0.97); }
+
+.btn.secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
+}
+.btn.secondary:hover { background: rgba(0, 113, 227, 0.06); }
+
+.arena {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: var(--bg-arena);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.timer-bar {
+  position: absolute;
+  top: 0; left: 0;
+  height: 4px;
+  width: 100%;
+  background: var(--accent);
+  transform-origin: left;
+  transition: transform 0.1s linear;
+  z-index: 5;
+}
+
+.number-card {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  aspect-ratio: 5 / 4;
+  background: var(--bg-card);
+  border-radius: 24px;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+.number-card.flash-good {
+  background: #e7f8ec;
+  box-shadow: 0 6px 22px rgba(52, 199, 89, 0.25);
+}
+.number-card.flash-bad {
+  background: #fdecea;
+  box-shadow: 0 6px 22px rgba(255, 59, 48, 0.25);
+  animation: shake 0.32s ease;
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(7px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(3px); }
+}
+
+.number {
+  font-size: clamp(72px, 18vw, 132px);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.tile-bar {
+  position: absolute;
+  bottom: 14px;
+  left: 14px; right: 14px;
+  height: 6px;
+  background: rgba(0,0,0,0.06);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.tile-bar-fill {
+  height: 100%;
+  width: 100%;
+  background: var(--accent);
+  transform-origin: left;
+  transition: transform 0.05s linear, background 0.2s ease;
+}
+.tile-bar-fill.warn { background: var(--warn); }
+.tile-bar-fill.danger { background: var(--bad); }
+
+.feedback {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.92);
+  padding: 8px 14px;
+  border-radius: 999px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.3s ease;
+  white-space: nowrap;
+  z-index: 6;
+}
+.feedback.show {
+  opacity: 1;
+  transform: translate(-50%, -120%);
+}
+.feedback.good { color: var(--good); }
+.feedback.bad { color: var(--bad); }
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.94);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px;
+  text-align: center;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.overlay.show { opacity: 1; pointer-events: auto; }
+
+.overlay h2 {
+  font-size: clamp(28px, 6vw, 38px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.overlay p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  max-width: 320px;
+  line-height: 1.5;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(110px, 1fr));
+  gap: 8px;
+  width: 100%;
+  max-width: 320px;
+  margin: 4px 0;
+}
+
+.summary .stat {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 10px 12px;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+.summary .stat .v {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.summary .stat .l {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+
+.row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+.controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.choice {
+  border: none;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+  height: 64px;
+  border-radius: 32px;
+  cursor: pointer;
+  color: #fff;
+  transition: transform 0.12s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.choice:active { transform: scale(0.97); }
+.choice:disabled { opacity: 0.5; cursor: default; }
+
+.choice.prime { background: var(--accent); }
+.choice.prime:hover:not(:disabled) { background: var(--accent-hover); }
+.choice.notprime { background: #1d1d1f; }
+.choice.notprime:hover:not(:disabled) { background: #34343a; }
+
+.choice .key {
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(255,255,255,0.22);
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.04em;
+}
+
+footer {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  text-align: center;
+  margin-top: 4px;
+  line-height: 1.6;
+}
+
+.rules-toggle {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--accent);
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+  padding: 0;
+}
+.rules-toggle:hover { text-decoration: underline; }
+.rules-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  text-align: left;
+  max-width: 480px;
+  margin: 6px auto 0;
+}
+.rules-panel.open { max-height: 600px; }
+.rules-panel ul { margin: 8px 0 0 18px; }
+.rules-panel li { margin-bottom: 4px; }
+
+@media (max-width: 480px) {
+  body { padding: 16px 14px 32px; }
+  .wrap { gap: 14px; }
+  .score-box { min-width: 64px; padding: 8px 10px; }
+  .score-value { font-size: 18px; }
+  .arena { aspect-ratio: 1 / 1; padding: 16px; }
+  .number-card { aspect-ratio: 5 / 4; max-width: 320px; }
+  .choice { height: 56px; font-size: 16px; }
+  .choice .key { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="back" href="../" aria-label="Back to games">
+    <span class="arrow">←</span>
+    <span>Games</span>
+  </a>
+
+  <header>
+    <h1>Prime or Not</h1>
+    <div class="scores">
+      <div class="score-box">
+        <div class="score-label">Time</div>
+        <div class="score-value" id="time">30</div>
+      </div>
+      <div class="score-box">
+        <div class="score-label">Score</div>
+        <div class="score-value" id="score">0</div>
+      </div>
+      <div class="score-box">
+        <div class="score-label">Streak</div>
+        <div class="score-value" id="streak">0</div>
+      </div>
+      <div class="score-box">
+        <div class="score-label">Best</div>
+        <div class="score-value" id="best">0</div>
+      </div>
+    </div>
+  </header>
+
+  <div style="text-align:center">
+    <button class="rules-toggle" id="rules-toggle">How to Play ▾</button>
+    <div class="rules-panel" id="rules-panel">
+      <ul>
+        <li>A number flashes on screen. Tap <strong>Prime</strong> if it has no divisors other than 1 and itself, or <strong>Not Prime</strong> otherwise.</li>
+        <li>You have 30 seconds total per round. Each number also has its own quick timer — answer before it runs out, or it counts wrong.</li>
+        <li>Correct answer: <strong>+1</strong> point and the next number flashes faster.</li>
+        <li>Wrong or too slow: <strong>−1</strong> point (minimum 0) and your streak resets.</li>
+        <li>Numbers get bigger as your score climbs. By definition, <strong>1 is not prime</strong> and <strong>2 is prime</strong>.</li>
+        <li>Keyboard: <strong>← / P</strong> for Prime, <strong>→ / N</strong> for Not Prime, <strong>Space</strong> to start.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="subhead">
+    <p>Decide fast: prime or not? 30 seconds, sharper each round.</p>
+    <button class="btn" id="start">Start</button>
+  </div>
+
+  <div class="arena" id="arena">
+    <div class="timer-bar" id="timer-bar"></div>
+
+    <div class="number-card" id="card">
+      <div class="number" id="number">—</div>
+      <div class="feedback" id="feedback"></div>
+      <div class="tile-bar"><div class="tile-bar-fill" id="tile-bar-fill"></div></div>
+    </div>
+
+    <div class="overlay show" id="overlay">
+      <h2 id="overlay-title">Ready?</h2>
+      <p id="overlay-text">A number will flash on screen — decide if it's prime before the bar runs out. 30 seconds per round.</p>
+      <div class="summary" id="summary" style="display:none;">
+        <div class="stat"><div class="v" id="s-score">0</div><div class="l">Score</div></div>
+        <div class="stat"><div class="v" id="s-acc">0%</div><div class="l">Accuracy</div></div>
+        <div class="stat"><div class="v" id="s-streak">0</div><div class="l">Best Streak</div></div>
+        <div class="stat"><div class="v" id="s-fast">0 ms</div><div class="l">Avg Reply</div></div>
+      </div>
+      <div class="row">
+        <button class="btn" id="overlay-start">Start</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="choice prime" id="btn-prime" disabled>
+      Prime
+      <span class="key">←  P</span>
+    </button>
+    <button class="choice notprime" id="btn-notprime" disabled>
+      Not Prime
+      <span class="key">→  N</span>
+    </button>
+  </div>
+
+  <footer>
+    Mental math sprint · Speed climbs with score · Numbers grow up to 200
+  </footer>
+</div>
+
+<script>
+(() => {
+  const ROUND_MS = 30000;
+  const STORE_BEST = 'findpicked:primeornot:best';
+  const TILE_START_MS = 3500;
+  const TILE_MIN_MS = 1100;
+  const TILE_STEP_MS = 70;
+
+  const arena = document.getElementById('arena');
+  const card = document.getElementById('card');
+  const numberEl = document.getElementById('number');
+  const feedbackEl = document.getElementById('feedback');
+  const tileFill = document.getElementById('tile-bar-fill');
+  const timerBar = document.getElementById('timer-bar');
+
+  const timeEl = document.getElementById('time');
+  const scoreEl = document.getElementById('score');
+  const streakEl = document.getElementById('streak');
+  const bestEl = document.getElementById('best');
+
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlay-title');
+  const overlayText = document.getElementById('overlay-text');
+  const overlayStart = document.getElementById('overlay-start');
+  const summary = document.getElementById('summary');
+  const sScore = document.getElementById('s-score');
+  const sAcc = document.getElementById('s-acc');
+  const sStreak = document.getElementById('s-streak');
+  const sFast = document.getElementById('s-fast');
+
+  const startBtn = document.getElementById('start');
+  const primeBtn = document.getElementById('btn-prime');
+  const notPrimeBtn = document.getElementById('btn-notprime');
+
+  const rulesToggle = document.getElementById('rules-toggle');
+  const rulesPanel = document.getElementById('rules-panel');
+  rulesToggle.addEventListener('click', () => rulesPanel.classList.toggle('open'));
+
+  let state = 'idle'; // idle | playing | over
+  let score = 0, streak = 0, bestStreak = 0;
+  let correct = 0, wrong = 0;
+  let totalReplyMs = 0;
+  let currentNumber = null;
+  let currentIsPrime = false;
+  let tileStart = 0;
+  let tileDuration = TILE_START_MS;
+  let endTime = 0;
+  let rafId = null;
+
+  function isPrime(n) {
+    if (n < 2) return false;
+    if (n < 4) return true;
+    if (n % 2 === 0) return false;
+    for (let i = 3, lim = Math.floor(Math.sqrt(n)); i <= lim; i += 2) {
+      if (n % i === 0) return false;
+    }
+    return true;
+  }
+
+  function rangeMaxForScore(s) {
+    if (s < 5) return 30;
+    if (s < 12) return 60;
+    if (s < 22) return 100;
+    if (s < 35) return 150;
+    return 200;
+  }
+
+  function pickNumber() {
+    const max = rangeMaxForScore(score);
+    const wantPrime = Math.random() < 0.5;
+    const tried = new Set();
+    for (let attempts = 0; attempts < 80; attempts++) {
+      const n = 2 + Math.floor(Math.random() * (max - 1));
+      if (tried.has(n)) continue;
+      tried.add(n);
+      if (n === currentNumber) continue;
+      if (isPrime(n) === wantPrime) return n;
+    }
+    return wantPrime ? 7 : 9;
+  }
+
+  function readBest() {
+    try { return parseInt(localStorage.getItem(STORE_BEST) || '0', 10) || 0; }
+    catch { return 0; }
+  }
+  function writeBest(v) {
+    try { localStorage.setItem(STORE_BEST, String(v)); } catch {}
+  }
+
+  function bump(el) {
+    el.classList.remove('bump');
+    void el.offsetWidth;
+    el.classList.add('bump');
+  }
+
+  function flashFeedback(text, kind) {
+    feedbackEl.textContent = text;
+    feedbackEl.classList.remove('good', 'bad');
+    if (kind) feedbackEl.classList.add(kind);
+    feedbackEl.classList.add('show');
+    clearTimeout(flashFeedback._t);
+    flashFeedback._t = setTimeout(() => feedbackEl.classList.remove('show'), 700);
+  }
+
+  function flashCard(kind) {
+    card.classList.remove('flash-good', 'flash-bad');
+    void card.offsetWidth;
+    card.classList.add('flash-' + kind);
+    setTimeout(() => card.classList.remove('flash-' + kind), 320);
+  }
+
+  function nextNumber() {
+    if (state !== 'playing') return;
+    currentNumber = pickNumber();
+    currentIsPrime = isPrime(currentNumber);
+    numberEl.textContent = currentNumber;
+    tileDuration = Math.max(TILE_MIN_MS, TILE_START_MS - score * TILE_STEP_MS);
+    tileStart = performance.now();
+    tileFill.style.transition = 'none';
+    tileFill.style.transform = 'scaleX(1)';
+    tileFill.classList.remove('warn', 'danger');
+    void tileFill.offsetWidth;
+    tileFill.style.transition = `transform ${tileDuration}ms linear, background 0.2s ease`;
+    tileFill.style.transform = 'scaleX(0)';
+  }
+
+  function answer(saidPrime) {
+    if (state !== 'playing' || currentNumber == null) return;
+    const elapsed = performance.now() - tileStart;
+    const isRight = (saidPrime === currentIsPrime);
+
+    if (isRight) {
+      correct++;
+      score++;
+      streak++;
+      if (streak > bestStreak) bestStreak = streak;
+      totalReplyMs += elapsed;
+      scoreEl.classList.add('good');
+      setTimeout(() => scoreEl.classList.remove('good'), 250);
+      bump(scoreEl);
+      bump(streakEl);
+      flashFeedback('+1', 'good');
+      flashCard('good');
+    } else {
+      wrong++;
+      score = Math.max(0, score - 1);
+      streak = 0;
+      scoreEl.classList.add('bad');
+      setTimeout(() => scoreEl.classList.remove('bad'), 250);
+      bump(scoreEl);
+      const why = currentIsPrime
+        ? `${currentNumber} is prime`
+        : `${currentNumber} = ${factorString(currentNumber)}`;
+      flashFeedback(why, 'bad');
+      flashCard('bad');
+    }
+    scoreEl.textContent = score;
+    streakEl.textContent = streak;
+    nextNumber();
+  }
+
+  function factorString(n) {
+    if (n < 2) return '—';
+    for (let i = 2, lim = Math.floor(Math.sqrt(n)); i <= lim; i++) {
+      if (n % i === 0) return `${i} × ${n / i}`;
+    }
+    return `${n}`;
+  }
+
+  function tick() {
+    if (state !== 'playing') return;
+    const now = performance.now();
+    const remaining = Math.max(0, endTime - now);
+    timeEl.textContent = Math.ceil(remaining / 1000);
+    timerBar.style.transform = `scaleX(${remaining / ROUND_MS})`;
+
+    const tileElapsed = now - tileStart;
+    const ratio = tileElapsed / tileDuration;
+    if (ratio > 0.66 && ratio <= 0.85) {
+      tileFill.classList.add('warn');
+      tileFill.classList.remove('danger');
+    } else if (ratio > 0.85) {
+      tileFill.classList.add('danger');
+      tileFill.classList.remove('warn');
+    }
+
+    if (tileElapsed >= tileDuration) {
+      // time-out on this tile counts as wrong
+      wrong++;
+      streak = 0;
+      score = Math.max(0, score - 1);
+      scoreEl.textContent = score;
+      streakEl.textContent = streak;
+      const why = currentIsPrime
+        ? `Too slow — ${currentNumber} is prime`
+        : `Too slow — ${currentNumber} = ${factorString(currentNumber)}`;
+      flashFeedback(why, 'bad');
+      flashCard('bad');
+      bump(scoreEl);
+      nextNumber();
+    }
+
+    if (remaining <= 0) {
+      endRound();
+      return;
+    }
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function startRound() {
+    state = 'playing';
+    score = 0; streak = 0; bestStreak = 0;
+    correct = 0; wrong = 0; totalReplyMs = 0;
+    scoreEl.textContent = '0';
+    streakEl.textContent = '0';
+    timeEl.textContent = Math.round(ROUND_MS / 1000);
+    timerBar.style.transform = 'scaleX(1)';
+
+    overlay.classList.remove('show');
+    summary.style.display = 'none';
+    primeBtn.disabled = false;
+    notPrimeBtn.disabled = false;
+    startBtn.textContent = 'Restart';
+
+    endTime = performance.now() + ROUND_MS;
+    nextNumber();
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function endRound() {
+    state = 'over';
+    cancelAnimationFrame(rafId);
+    timerBar.style.transform = 'scaleX(0)';
+    timeEl.textContent = 0;
+    primeBtn.disabled = true;
+    notPrimeBtn.disabled = true;
+    numberEl.textContent = '—';
+    tileFill.style.transition = 'none';
+    tileFill.style.transform = 'scaleX(1)';
+
+    const best = readBest();
+    const isNewBest = score > best;
+    if (isNewBest) {
+      writeBest(score);
+      bestEl.textContent = score;
+    }
+
+    const total = correct + wrong;
+    const acc = total === 0 ? 0 : Math.round((correct / total) * 100);
+    const avg = correct === 0 ? 0 : Math.round(totalReplyMs / correct);
+
+    sScore.textContent = score;
+    sAcc.textContent = acc + '%';
+    sStreak.textContent = bestStreak;
+    sFast.textContent = avg + ' ms';
+    summary.style.display = 'grid';
+
+    overlayTitle.textContent = isNewBest ? 'New Best!' : 'Time!';
+    overlayText.textContent = score === 0
+      ? 'No correct answers this round. Give it another shot.'
+      : (isNewBest ? 'Sharp work — a personal best.' : 'Nice round. Try again?');
+    overlayStart.textContent = 'Play Again';
+    overlay.classList.add('show');
+
+    if (window.Leaderboard && Leaderboard.submitScore) {
+      try { Leaderboard.submitScore(score); } catch {}
+    }
+  }
+
+  primeBtn.addEventListener('click', () => answer(true));
+  notPrimeBtn.addEventListener('click', () => answer(false));
+  startBtn.addEventListener('click', startRound);
+  overlayStart.addEventListener('click', startRound);
+
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' && state !== 'playing') {
+      e.preventDefault();
+      startRound();
+      return;
+    }
+    if (state !== 'playing') return;
+    if (e.key === 'ArrowLeft' || e.key === 'p' || e.key === 'P') {
+      e.preventDefault();
+      answer(true);
+    } else if (e.key === 'ArrowRight' || e.key === 'n' || e.key === 'N') {
+      e.preventDefault();
+      answer(false);
+    }
+  });
+
+  bestEl.textContent = readBest();
+})();
+</script>
+
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

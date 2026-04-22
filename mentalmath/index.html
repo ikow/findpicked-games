@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Mental Math · FindPicked Games</title>
+<meta name="description" content="Mental math trainer — random arithmetic with a timer per problem. Build streaks, climb the difficulty curve.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ctext x='16' y='22' font-size='16' fill='white' text-anchor='middle' font-family='system-ui' font-weight='700'%3E%C3%97%3C/text%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-hover: #f5f5f7;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --error: #ff3b30;
+  --error-bg: rgba(255, 59, 48, 0.12);
+  --success: #34c759;
+  --success-bg: rgba(52, 199, 89, 0.12);
+  --streak: #ff9500;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+
+html, body {
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+button { font-family: inherit; }
+input { font-family: inherit; }
+
+.app {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 12px 16px 24px;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 44px;
+  flex-shrink: 0;
+}
+
+.back {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: background 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.back:hover, .back:active { background: var(--bg-hover); }
+
+.title {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.help-btn {
+  margin-left: auto;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.help-btn:hover, .help-btn:active { background: var(--bg-hover); }
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 16px;
+  flex-shrink: 0;
+}
+
+.stat {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 10px 6px;
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-value.streak { color: var(--streak); }
+.stat-value.best { color: var(--accent); }
+
+.timer-bar {
+  height: 6px;
+  width: 100%;
+  background: var(--bg-hover);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 16px;
+  flex-shrink: 0;
+}
+
+.timer-fill {
+  height: 100%;
+  width: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.1s linear, background 0.3s ease;
+}
+
+.timer-fill.warn { background: var(--streak); }
+.timer-fill.danger { background: var(--error); }
+
+.board {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+  padding: 24px 0;
+}
+
+.problem {
+  font-size: 56px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  min-height: 72px;
+  line-height: 1.1;
+  transition: transform 0.15s ease, color 0.2s ease;
+}
+
+.problem.correct { color: var(--success); transform: scale(1.05); }
+.problem.wrong { color: var(--error); transform: translateX(0); animation: shake 0.4s ease; }
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+
+.answer-box {
+  width: 100%;
+  max-width: 320px;
+  text-align: center;
+}
+
+.answer-input {
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 16px;
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  background: var(--bg-card);
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s ease;
+  font-variant-numeric: tabular-nums;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.answer-input:focus { border-color: var(--accent); }
+
+.hint {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--text-tertiary);
+  min-height: 18px;
+}
+
+.keypad {
+  width: 100%;
+  max-width: 320px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.key {
+  min-height: 56px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 22px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  -webkit-tap-highlight-color: transparent;
+  font-variant-numeric: tabular-nums;
+}
+.key:hover { background: var(--bg-hover); }
+.key:active { transform: scale(0.96); }
+.key.accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+.key.accent:hover { background: var(--accent-hover); }
+.key.muted { color: var(--text-secondary); font-size: 18px; }
+
+.modes {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.mode-btn {
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.mode-btn.active { background: var(--text-primary); color: #fff; border-color: var(--text-primary); }
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  z-index: 100;
+}
+.overlay.show { opacity: 1; pointer-events: auto; }
+
+.sheet {
+  background: var(--bg-card);
+  border-radius: 20px;
+  padding: 28px 24px;
+  max-width: 380px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  transform: scale(0.94);
+  transition: transform 0.25s ease;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+.overlay.show .sheet { transform: scale(1); }
+
+.sheet h2 {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+}
+
+.sheet p, .sheet li {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.sheet ul { padding-left: 20px; margin: 10px 0; }
+.sheet li { margin-bottom: 6px; }
+
+.sheet-score {
+  font-size: 64px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.03em;
+  margin: 12px 0 4px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.sheet-sub {
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.sheet-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 18px 0 20px;
+}
+
+.sheet-stat {
+  background: var(--bg-hover);
+  border-radius: 12px;
+  padding: 10px 6px;
+  text-align: center;
+}
+.sheet-stat-label {
+  font-size: 10px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+.sheet-stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pill {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 24px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.pill:hover { background: var(--accent-hover); }
+.pill.ghost { background: transparent; color: var(--text-secondary); margin-top: 8px; }
+.pill.ghost:hover { background: var(--bg-hover); }
+
+@media (max-width: 380px) {
+  .stat-value { font-size: 18px; }
+  .problem { font-size: 44px; }
+  .answer-input { font-size: 28px; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <nav class="nav">
+    <a class="back" href="../" aria-label="Back">‹</a>
+    <div class="title">Mental Math</div>
+    <button class="help-btn" id="helpBtn" aria-label="How to play">?</button>
+  </nav>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-label">Score</div>
+      <div class="stat-value" id="scoreV">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Streak</div>
+      <div class="stat-value streak" id="streakV">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Level</div>
+      <div class="stat-value" id="levelV">1</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Best</div>
+      <div class="stat-value best" id="bestV">0</div>
+    </div>
+  </div>
+
+  <div class="timer-bar"><div class="timer-fill" id="timerFill"></div></div>
+
+  <div class="board">
+    <div class="problem" id="problem">Ready?</div>
+    <div class="answer-box">
+      <input class="answer-input" id="answer" type="text" inputmode="numeric" autocomplete="off" placeholder="?" />
+      <div class="hint" id="hint">Tap Start to begin</div>
+    </div>
+    <div class="keypad" id="keypad">
+      <button class="key" data-k="1">1</button>
+      <button class="key" data-k="2">2</button>
+      <button class="key" data-k="3">3</button>
+      <button class="key" data-k="4">4</button>
+      <button class="key" data-k="5">5</button>
+      <button class="key" data-k="6">6</button>
+      <button class="key" data-k="7">7</button>
+      <button class="key" data-k="8">8</button>
+      <button class="key" data-k="9">9</button>
+      <button class="key muted" data-k="-">±</button>
+      <button class="key" data-k="0">0</button>
+      <button class="key muted" data-k="del">⌫</button>
+    </div>
+  </div>
+
+  <div class="modes">
+    <button class="mode-btn active" data-ops="+-">Basic</button>
+    <button class="mode-btn" data-ops="+-×">Core</button>
+    <button class="mode-btn" data-ops="+-×÷">All</button>
+  </div>
+</div>
+
+<div class="overlay" id="helpOverlay">
+  <div class="sheet">
+    <h2>How to Play</h2>
+    <p>Solve as many arithmetic problems as you can — one at a time, against the clock.</p>
+    <ul>
+      <li><b>Answer</b> by typing or tapping the keypad. It auto-submits.</li>
+      <li><b>Timer per problem.</b> Let it run out and the streak breaks.</li>
+      <li><b>Streak bonus:</b> every 5 in a row bumps the level.</li>
+      <li><b>Levels</b> widen the number range and add operations.</li>
+      <li><b>Modes:</b> Basic (+ −), Core (+ − ×), All (+ − × ÷).</li>
+      <li>Division problems always have whole-number answers.</li>
+      <li>One wrong answer or timeout ends the run.</li>
+    </ul>
+    <button class="pill" id="closeHelp">Got it</button>
+  </div>
+</div>
+
+<div class="overlay" id="gameOver">
+  <div class="sheet">
+    <h2>Game Over</h2>
+    <p class="sheet-sub" id="gameOverReason">Nice run!</p>
+    <div class="sheet-score" id="finalScore">0</div>
+    <p class="sheet-sub">correct answers</p>
+    <div class="sheet-grid">
+      <div class="sheet-stat">
+        <div class="sheet-stat-label">Best Streak</div>
+        <div class="sheet-stat-value" id="finalStreak">0</div>
+      </div>
+      <div class="sheet-stat">
+        <div class="sheet-stat-label">Top Level</div>
+        <div class="sheet-stat-value" id="finalLevel">1</div>
+      </div>
+      <div class="sheet-stat">
+        <div class="sheet-stat-label">Accuracy</div>
+        <div class="sheet-stat-value" id="finalAcc">0%</div>
+      </div>
+    </div>
+    <button class="pill" id="playAgain">Play Again</button>
+    <button class="pill ghost" id="backHome">Back to Games</button>
+  </div>
+</div>
+
+<script>
+(function() {
+  const $ = id => document.getElementById(id);
+  const problemEl = $('problem');
+  const answerEl = $('answer');
+  const hintEl = $('hint');
+  const scoreV = $('scoreV');
+  const streakV = $('streakV');
+  const levelV = $('levelV');
+  const bestV = $('bestV');
+  const timerFill = $('timerFill');
+  const keypad = $('keypad');
+  const modes = document.querySelectorAll('.mode-btn');
+  const gameOverEl = $('gameOver');
+  const helpOverlay = $('helpOverlay');
+
+  const LS_BEST = 'mentalmath-best';
+  const LS_MODE = 'mentalmath-mode';
+
+  const state = {
+    ops: '+-',
+    running: false,
+    score: 0,
+    streak: 0,
+    bestStreak: 0,
+    level: 1,
+    answered: 0,
+    correct: 0,
+    current: null,
+    tickId: null,
+    deadline: 0,
+    duration: 10000,
+  };
+
+  function loadBest() {
+    try { return parseInt(localStorage.getItem(LS_BEST) || '0', 10) || 0; } catch { return 0; }
+  }
+  function saveBest(v) {
+    try { localStorage.setItem(LS_BEST, String(v)); } catch {}
+  }
+  function loadMode() {
+    try { return localStorage.getItem(LS_MODE) || '+-'; } catch { return '+-'; }
+  }
+  function saveMode(m) {
+    try { localStorage.setItem(LS_MODE, m); } catch {}
+  }
+
+  function rand(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function pickOp(allowed, level) {
+    // Bias by level — more ops available as you progress
+    const list = [];
+    for (const ch of allowed) list.push(ch);
+    return list[rand(0, list.length - 1)];
+  }
+
+  function rangeFor(level, op) {
+    // Grows with level. Each op has its own band.
+    const L = Math.min(level, 15);
+    if (op === '+' || op === '-') {
+      const cap = 10 + L * 8; // 1 -> 18, 5 -> 50, 10 -> 90, 15 -> 130
+      return [2, cap];
+    }
+    if (op === '×') {
+      const a = Math.min(2 + Math.floor(L / 2), 12);
+      const b = Math.min(2 + L, 20);
+      return [a, b];
+    }
+    if (op === '÷') {
+      const a = Math.min(2 + Math.floor(L / 2), 12);
+      const b = Math.min(2 + L, 15);
+      return [a, b];
+    }
+    return [2, 10];
+  }
+
+  function makeProblem() {
+    const op = pickOp(state.ops, state.level);
+    let a, b, answer, text;
+    if (op === '+') {
+      const [lo, hi] = rangeFor(state.level, op);
+      a = rand(lo, hi);
+      b = rand(lo, hi);
+      answer = a + b;
+      text = `${a} + ${b}`;
+    } else if (op === '-') {
+      const [lo, hi] = rangeFor(state.level, op);
+      a = rand(lo, hi);
+      b = rand(lo, a); // keep non-negative for simpler mental math
+      answer = a - b;
+      text = `${a} − ${b}`;
+    } else if (op === '×') {
+      const [aMax, bMax] = rangeFor(state.level, op);
+      a = rand(2, aMax);
+      b = rand(2, bMax);
+      answer = a * b;
+      text = `${a} × ${b}`;
+    } else if (op === '÷') {
+      const [aMax, bMax] = rangeFor(state.level, op);
+      b = rand(2, aMax);
+      const q = rand(2, bMax);
+      a = b * q;
+      answer = q;
+      text = `${a} ÷ ${b}`;
+    }
+    return { text, answer };
+  }
+
+  function durationForLevel(level) {
+    // Start at 10s, down to 4s minimum
+    return Math.max(4000, 10000 - (level - 1) * 400);
+  }
+
+  function setMode(ops) {
+    state.ops = ops;
+    saveMode(ops);
+    modes.forEach(m => m.classList.toggle('active', m.dataset.ops === ops));
+    if (!state.running) hintEl.textContent = hintForIdle();
+  }
+
+  function hintForIdle() {
+    const m = state.ops === '+-' ? 'Basic'
+            : state.ops === '+-×' ? 'Core'
+            : 'All operations';
+    return `${m} — tap Start`;
+  }
+
+  function updateHUD() {
+    scoreV.textContent = state.score;
+    streakV.textContent = state.streak;
+    levelV.textContent = state.level;
+    bestV.textContent = loadBest();
+  }
+
+  function startGame() {
+    state.running = true;
+    state.score = 0;
+    state.streak = 0;
+    state.bestStreak = 0;
+    state.level = 1;
+    state.answered = 0;
+    state.correct = 0;
+    state.duration = durationForLevel(1);
+    updateHUD();
+    answerEl.value = '';
+    answerEl.removeAttribute('disabled');
+    answerEl.focus();
+    nextProblem();
+  }
+
+  function nextProblem() {
+    state.current = makeProblem();
+    problemEl.textContent = state.current.text;
+    problemEl.classList.remove('correct', 'wrong');
+    answerEl.value = '';
+    hintEl.textContent = `Level ${state.level} · ${Math.round(state.duration / 1000)}s`;
+    state.deadline = performance.now() + state.duration;
+    if (state.tickId) cancelAnimationFrame(state.tickId);
+    tick();
+  }
+
+  function tick() {
+    const now = performance.now();
+    const remaining = state.deadline - now;
+    const pct = Math.max(0, Math.min(1, remaining / state.duration));
+    timerFill.style.width = (pct * 100) + '%';
+    timerFill.classList.toggle('warn', pct < 0.5 && pct >= 0.2);
+    timerFill.classList.toggle('danger', pct < 0.2);
+    if (remaining <= 0) {
+      endGame('Time up!');
+      return;
+    }
+    state.tickId = requestAnimationFrame(tick);
+  }
+
+  function submit() {
+    if (!state.running) return;
+    const raw = answerEl.value.trim();
+    if (raw === '' || raw === '-') return;
+    const val = parseInt(raw, 10);
+    if (Number.isNaN(val)) return;
+    state.answered++;
+    if (val === state.current.answer) {
+      state.correct++;
+      state.score++;
+      state.streak++;
+      if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+      // Level up every 5 in a row
+      if (state.streak > 0 && state.streak % 5 === 0) {
+        state.level = Math.min(state.level + 1, 15);
+        state.duration = durationForLevel(state.level);
+      }
+      problemEl.classList.add('correct');
+      updateHUD();
+      setTimeout(() => { if (state.running) nextProblem(); }, 180);
+    } else {
+      problemEl.classList.add('wrong');
+      endGame('Wrong answer');
+    }
+  }
+
+  function endGame(reason) {
+    state.running = false;
+    if (state.tickId) cancelAnimationFrame(state.tickId);
+    answerEl.setAttribute('disabled', 'disabled');
+    const best = loadBest();
+    if (state.score > best) saveBest(state.score);
+
+    $('gameOverReason').textContent = reason + (state.current ? ` · Answer was ${state.current.answer}` : '');
+    $('finalScore').textContent = state.score;
+    $('finalStreak').textContent = state.bestStreak;
+    $('finalLevel').textContent = state.level;
+    const acc = state.answered > 0 ? Math.round((state.correct / state.answered) * 100) : 0;
+    $('finalAcc').textContent = acc + '%';
+    updateHUD();
+    gameOverEl.classList.add('show');
+
+    if (state.score > 0 && window.Leaderboard && Leaderboard.submitScore) {
+      Leaderboard.submitScore(state.score);
+    }
+  }
+
+  // --- Input handling ---
+  answerEl.addEventListener('input', () => {
+    // Strip anything that's not digit or leading minus
+    let v = answerEl.value.replace(/[^\d-]/g, '');
+    if (v.indexOf('-') > 0) v = v.replace(/-/g, '');
+    if (v.length > 6) v = v.slice(0, 6);
+    answerEl.value = v;
+    if (!state.running || !state.current) return;
+    // Auto-submit when the number of digits matches the answer length
+    if (v === '' || v === '-') return;
+    const expected = String(state.current.answer);
+    if (v.length >= expected.length) {
+      // brief debounce so users can correct typos with delete
+      clearTimeout(answerEl._t);
+      answerEl._t = setTimeout(submit, 120);
+    }
+  });
+
+  answerEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); submit(); }
+  });
+
+  keypad.addEventListener('click', e => {
+    const btn = e.target.closest('.key');
+    if (!btn) return;
+    const k = btn.dataset.k;
+    if (!state.running) return;
+    answerEl.focus({ preventScroll: true });
+    if (k === 'del') {
+      answerEl.value = answerEl.value.slice(0, -1);
+    } else if (k === '-') {
+      if (answerEl.value.startsWith('-')) answerEl.value = answerEl.value.slice(1);
+      else answerEl.value = '-' + answerEl.value;
+    } else {
+      if (answerEl.value.length < 6) answerEl.value += k;
+    }
+    answerEl.dispatchEvent(new Event('input'));
+  });
+
+  modes.forEach(m => {
+    m.addEventListener('click', () => {
+      if (state.running) return;
+      setMode(m.dataset.ops);
+    });
+  });
+
+  // Tap problem / answer to start
+  function attemptStart() {
+    if (!state.running) startGame();
+  }
+  problemEl.addEventListener('click', attemptStart);
+  answerEl.addEventListener('focus', attemptStart);
+
+  // Game over buttons
+  $('playAgain').addEventListener('click', () => {
+    gameOverEl.classList.remove('show');
+    startGame();
+  });
+  $('backHome').addEventListener('click', () => {
+    location.href = '../';
+  });
+
+  // Help overlay
+  $('helpBtn').addEventListener('click', () => helpOverlay.classList.add('show'));
+  $('closeHelp').addEventListener('click', () => helpOverlay.classList.remove('show'));
+  helpOverlay.addEventListener('click', e => {
+    if (e.target === helpOverlay) helpOverlay.classList.remove('show');
+  });
+
+  // First-visit help
+  try {
+    if (!localStorage.getItem('mentalmath-seen')) {
+      helpOverlay.classList.add('show');
+      localStorage.setItem('mentalmath-seen', '1');
+    }
+  } catch {}
+
+  // Init
+  setMode(loadMode());
+  updateHUD();
+  hintEl.textContent = hintForIdle();
+})();
+</script>
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

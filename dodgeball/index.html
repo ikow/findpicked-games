@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Dodgeball · FindPicked Games</title>
+<meta name="description" content="Play Dodgeball online for free. Dodge incoming balls, grab power-ups, survive as long as you can.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ccircle cx='16' cy='16' r='7' fill='white'/%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-hover: #f5f5f7;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: manipulation;
+}
+
+.app {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 12px 16px 20px;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+  flex-shrink: 0;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.back {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: background 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.back:hover, .back:active { background: var(--bg-hover); }
+
+.title {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease, color 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.icon-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.icon-btn svg { width: 18px; height: 18px; }
+
+.scores {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  flex-shrink: 0;
+}
+
+.score-card {
+  background: var(--bg-card);
+  box-shadow: var(--shadow);
+  border-radius: 14px;
+  padding: 10px 14px;
+  flex: 1;
+  text-align: center;
+  min-width: 0;
+}
+
+.score-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+}
+
+.score-value {
+  font-size: 22px;
+  font-weight: 700;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.board-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 16px;
+  position: relative;
+}
+
+.board {
+  background: var(--bg-card);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+  touch-action: none;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 28px;
+  text-align: center;
+  background: rgba(255,255,255,0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  z-index: 2;
+}
+.overlay.visible { opacity: 1; pointer-events: auto; }
+
+.overlay h2 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.overlay p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.5;
+  max-width: 280px;
+}
+
+.btn {
+  height: 44px;
+  min-width: 120px;
+  padding: 0 24px;
+  border-radius: 22px;
+  border: none;
+  background: var(--accent);
+  color: white;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease, transform 0.1s ease;
+  -webkit-tap-highlight-color: transparent;
+  margin-top: 8px;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn:active { transform: scale(0.97); }
+
+.hint {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.rules-toggle{display:inline-block;margin-top:12px;font-size:13px;color:#0071e3;cursor:pointer;border:none;background:none;font-family:inherit;padding:0}
+.rules-toggle:hover{text-decoration:underline}
+.rules-panel{max-height:0;overflow:hidden;transition:max-height 0.3s ease;font-size:13px;color:#6e6e73;line-height:1.6;text-align:left;max-width:480px;margin:8px auto 0}
+.rules-panel.open{max-height:600px}
+.rules-panel ul{margin:8px 0 0 16px}
+.rules-panel li{margin-bottom:4px}
+.rules-panel .pu{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;margin-right:4px}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="nav">
+    <div class="nav-left">
+      <a class="back" href="../" aria-label="Back to games">←</a>
+      <div class="title">Dodgeball</div>
+    </div>
+    <button class="icon-btn" id="pause-btn" aria-label="Pause">
+      <svg viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="5" width="3.5" height="14" rx="1"/><rect x="13.5" y="5" width="3.5" height="14" rx="1"/></svg>
+    </button>
+  </nav>
+
+  <div class="scores">
+    <div class="score-card">
+      <div class="score-label">Time</div>
+      <div class="score-value" id="score">0.0</div>
+    </div>
+    <div class="score-card">
+      <div class="score-label">Wave</div>
+      <div class="score-value" id="wave">1</div>
+    </div>
+    <div class="score-card">
+      <div class="score-label">Best</div>
+      <div class="score-value" id="best">0.0</div>
+    </div>
+  </div>
+
+  <div class="board-wrap" id="board-wrap">
+    <div class="board" id="board">
+      <canvas id="canvas"></canvas>
+      <div class="overlay visible" id="overlay">
+        <h2 id="overlay-title">Dodgeball</h2>
+        <p id="overlay-text">Drag or use the arrow keys to dodge the balls. Survive as long as you can.</p>
+        <button class="btn" id="action-btn">Start</button>
+        <button class="rules-toggle" onclick="this.nextElementSibling.classList.toggle('open')">How to Play ▾</button>
+        <div class="rules-panel">
+          <ul>
+            <li>Move with arrow keys, WASD, or drag your finger across the board</li>
+            <li>Balls fly in from every edge — get hit and the game ends</li>
+            <li>Your score is how long you survive, in seconds</li>
+            <li>New waves arrive over time — more balls, faster balls</li>
+            <li>Press P or Space to pause</li>
+          </ul>
+          <div style="margin-top:10px;font-weight:600;color:#1d1d1f">Power-ups</div>
+          <ul>
+            <li><span class="pu" style="background:#0071e3"></span><b>Shield</b> — absorbs the next hit</li>
+            <li><span class="pu" style="background:#ff9500"></span><b>Slow-mo</b> — balls move at half speed for 5s</li>
+            <li><span class="pu" style="background:#34c759"></span><b>Clear</b> — removes every ball on screen</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="hint">Arrow keys · WASD · Drag · P to pause</p>
+</div>
+
+<script>
+(function () {
+  const VW = 400;
+  const VH = 560;
+
+  const PLAYER_R = 12;
+  const PLAYER_SPEED = 260;       // px/s in viewport units
+  const PLAYER_SPEED_TOUCH = 1;   // direct positioning multiplier
+
+  const BALL_R_MIN = 7;
+  const BALL_R_MAX = 12;
+  const BALL_SPEED_BASE = 110;
+  const BALL_SPEED_GROWTH = 8;    // per wave
+  const BALL_SPEED_MAX = 360;
+
+  const SPAWN_BASE = 0.95;        // seconds between spawns at wave 1
+  const SPAWN_MIN = 0.16;
+  const SPAWN_DECAY = 0.92;       // multiplier per wave
+  const WAVE_INTERVAL = 8;        // seconds per wave
+
+  const POWERUP_INTERVAL = 9;     // average seconds
+  const POWERUP_R = 13;
+  const POWERUP_LIFE = 9;         // seconds before it disappears
+
+  const SLOWMO_DURATION = 5;
+  const SLOWMO_FACTOR = 0.4;
+
+  const COLORS = {
+    player: '#0071e3',
+    playerShield: '#5ac8fa',
+    ball: '#ff3b30',
+    ballAlt: '#ff9500',
+    shield: '#0071e3',
+    slowmo: '#ff9500',
+    clear: '#34c759',
+    text: '#1d1d1f'
+  };
+
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const boardWrap = document.getElementById('board-wrap');
+  const board = document.getElementById('board');
+  const scoreEl = document.getElementById('score');
+  const waveEl = document.getElementById('wave');
+  const bestEl = document.getElementById('best');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlay-title');
+  const overlayText = document.getElementById('overlay-text');
+  const actionBtn = document.getElementById('action-btn');
+  const pauseBtn = document.getElementById('pause-btn');
+
+  let boardW = 0, boardH = 0;
+  let scale = 1;
+
+  let state = 'idle';   // idle | running | paused | over
+  let elapsed = 0;
+  let wave = 1;
+  let waveTimer = 0;
+  let spawnTimer = 0;
+  let powerupTimer = 4;
+  let player;
+  let balls;
+  let powerups;
+  let particles;
+  let shieldActive = false;
+  let slowmoUntil = 0;
+  let flashUntil = 0;
+
+  let keys = { up:false, down:false, left:false, right:false };
+  let dragging = false;
+  let dragTarget = null;
+
+  let best = parseFloat(localStorage.getItem('dodgeball.best') || '0') || 0;
+  bestEl.textContent = best.toFixed(1);
+
+  function resize() {
+    const rect = boardWrap.getBoundingClientRect();
+    const availW = rect.width;
+    const availH = rect.height;
+    if (availW <= 0 || availH <= 0) return;
+    const ratio = VW / VH;
+    let w = availW, h = availW / ratio;
+    if (h > availH) { h = availH; w = h * ratio; }
+    w = Math.min(w, 480);
+    h = w / ratio;
+    boardW = w;
+    boardH = h;
+    board.style.width = w + 'px';
+    board.style.height = h + 'px';
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    scale = (w * dpr) / VW;
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  }
+
+  function makePlayer() {
+    return { x: VW / 2, y: VH / 2 };
+  }
+
+  function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+
+  function reset() {
+    elapsed = 0;
+    wave = 1;
+    waveTimer = 0;
+    spawnTimer = 0.5;
+    powerupTimer = 4;
+    shieldActive = false;
+    slowmoUntil = 0;
+    flashUntil = 0;
+    player = makePlayer();
+    balls = [];
+    powerups = [];
+    particles = [];
+    updateHud();
+  }
+
+  function updateHud() {
+    scoreEl.textContent = elapsed.toFixed(1);
+    waveEl.textContent = wave;
+  }
+
+  function spawnBall() {
+    const speed = Math.min(BALL_SPEED_MAX, BALL_SPEED_BASE + (wave - 1) * BALL_SPEED_GROWTH) * (0.85 + Math.random() * 0.3);
+    const r = BALL_R_MIN + Math.random() * (BALL_R_MAX - BALL_R_MIN);
+    const edge = Math.floor(Math.random() * 4);
+    let x, y;
+    if (edge === 0)      { x = Math.random() * VW; y = -r; }
+    else if (edge === 1) { x = VW + r; y = Math.random() * VH; }
+    else if (edge === 2) { x = Math.random() * VW; y = VH + r; }
+    else                 { x = -r; y = Math.random() * VH; }
+
+    // Aim with random spread — most balls aim near the player so dodging matters
+    const aimAtPlayer = Math.random() < 0.7;
+    let tx, ty;
+    if (aimAtPlayer) {
+      tx = player.x + (Math.random() - 0.5) * 80;
+      ty = player.y + (Math.random() - 0.5) * 80;
+    } else {
+      tx = Math.random() * VW;
+      ty = Math.random() * VH;
+    }
+    const dx = tx - x, dy = ty - y;
+    const d = Math.hypot(dx, dy) || 1;
+    const vx = dx / d * speed;
+    const vy = dy / d * speed;
+    const color = Math.random() < 0.18 ? COLORS.ballAlt : COLORS.ball;
+    balls.push({ x, y, vx, vy, r, color });
+  }
+
+  function spawnPowerup() {
+    const types = ['shield', 'slowmo', 'clear'];
+    const type = types[Math.floor(Math.random() * types.length)];
+    const margin = 40;
+    const x = margin + Math.random() * (VW - margin * 2);
+    const y = margin + Math.random() * (VH - margin * 2);
+    powerups.push({ x, y, type, life: POWERUP_LIFE, born: 0 });
+  }
+
+  function emitBurst(x, y, color, count) {
+    for (let i = 0; i < count; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const sp = 60 + Math.random() * 140;
+      particles.push({
+        x, y,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp,
+        life: 0.5 + Math.random() * 0.4,
+        age: 0,
+        color,
+        r: 2 + Math.random() * 2
+      });
+    }
+  }
+
+  function showOverlay(title, text, btnLabel) {
+    overlayTitle.textContent = title;
+    overlayText.textContent = text;
+    actionBtn.textContent = btnLabel;
+    overlay.classList.add('visible');
+  }
+  function hideOverlay() { overlay.classList.remove('visible'); }
+
+  function start() {
+    reset();
+    state = 'running';
+    hideOverlay();
+    lastTime = performance.now();
+  }
+
+  function pause() {
+    if (state !== 'running') return;
+    state = 'paused';
+    showOverlay('Paused', 'Catch your breath.', 'Resume');
+  }
+  function resume() {
+    if (state !== 'paused') return;
+    state = 'running';
+    hideOverlay();
+    lastTime = performance.now();
+  }
+
+  function gameOver() {
+    state = 'over';
+    emitBurst(player.x, player.y, COLORS.ball, 26);
+    flashUntil = performance.now() / 1000 + 0.4;
+    let isBest = false;
+    if (elapsed > best) {
+      best = elapsed;
+      try { localStorage.setItem('dodgeball.best', String(best)); } catch {}
+      bestEl.textContent = best.toFixed(1);
+      isBest = true;
+    }
+    const finalScore = elapsed;
+    setTimeout(function () {
+      const text = (isBest ? 'New best! ' : '') + 'You survived ' + finalScore.toFixed(1) + 's through wave ' + wave + '.';
+      showOverlay('Game Over', text, 'Play Again');
+      if (window.Leaderboard && typeof Leaderboard.submitScore === 'function') {
+        Leaderboard.submitScore(Math.round(finalScore * 10));
+      }
+    }, 450);
+  }
+
+  function applyPowerup(type) {
+    if (type === 'shield') {
+      shieldActive = true;
+      emitBurst(player.x, player.y, COLORS.shield, 14);
+    } else if (type === 'slowmo') {
+      slowmoUntil = performance.now() / 1000 + SLOWMO_DURATION;
+      emitBurst(player.x, player.y, COLORS.slowmo, 14);
+    } else if (type === 'clear') {
+      for (const b of balls) emitBurst(b.x, b.y, b.color, 6);
+      balls.length = 0;
+      flashUntil = performance.now() / 1000 + 0.2;
+    }
+  }
+
+  let lastTime = performance.now();
+
+  function loop(now) {
+    requestAnimationFrame(loop);
+    const dtRaw = Math.min(0.05, (now - lastTime) / 1000);
+    lastTime = now;
+    if (state === 'running') update(dtRaw);
+    render();
+  }
+
+  function update(dt) {
+    elapsed += dt;
+    waveTimer += dt;
+    if (waveTimer >= WAVE_INTERVAL) {
+      waveTimer -= WAVE_INTERVAL;
+      wave += 1;
+    }
+
+    // Player movement (keys)
+    let mx = 0, my = 0;
+    if (keys.left)  mx -= 1;
+    if (keys.right) mx += 1;
+    if (keys.up)    my -= 1;
+    if (keys.down)  my += 1;
+    if (mx || my) {
+      const m = Math.hypot(mx, my);
+      mx /= m; my /= m;
+      player.x += mx * PLAYER_SPEED * dt;
+      player.y += my * PLAYER_SPEED * dt;
+    }
+    if (dragging && dragTarget) {
+      const dx = dragTarget.x - player.x;
+      const dy = dragTarget.y - player.y;
+      const d = Math.hypot(dx, dy);
+      const maxStep = PLAYER_SPEED * 1.6 * dt;
+      if (d <= maxStep) { player.x = dragTarget.x; player.y = dragTarget.y; }
+      else { player.x += dx / d * maxStep; player.y += dy / d * maxStep; }
+    }
+    player.x = clamp(player.x, PLAYER_R, VW - PLAYER_R);
+    player.y = clamp(player.y, PLAYER_R, VH - PLAYER_R);
+
+    // Spawn balls
+    spawnTimer -= dt;
+    while (spawnTimer <= 0) {
+      const interval = Math.max(SPAWN_MIN, SPAWN_BASE * Math.pow(SPAWN_DECAY, wave - 1));
+      spawnTimer += interval;
+      spawnBall();
+    }
+
+    // Spawn power-ups
+    powerupTimer -= dt;
+    if (powerupTimer <= 0) {
+      powerupTimer = POWERUP_INTERVAL * (0.7 + Math.random() * 0.7);
+      if (powerups.length < 2) spawnPowerup();
+    }
+
+    // Move balls
+    const slow = (performance.now() / 1000 < slowmoUntil) ? SLOWMO_FACTOR : 1;
+    for (let i = balls.length - 1; i >= 0; i--) {
+      const b = balls[i];
+      b.x += b.vx * dt * slow;
+      b.y += b.vy * dt * slow;
+      // Remove balls that have left the play field
+      if (b.x < -40 || b.x > VW + 40 || b.y < -40 || b.y > VH + 40) {
+        balls.splice(i, 1);
+        continue;
+      }
+      // Hit test
+      const dx = b.x - player.x;
+      const dy = b.y - player.y;
+      const rr = b.r + PLAYER_R;
+      if (dx * dx + dy * dy <= rr * rr) {
+        if (shieldActive) {
+          shieldActive = false;
+          emitBurst(b.x, b.y, COLORS.shield, 14);
+          balls.splice(i, 1);
+          flashUntil = performance.now() / 1000 + 0.15;
+        } else {
+          balls.splice(i, 1);
+          gameOver();
+          return;
+        }
+      }
+    }
+
+    // Power-up pickup + decay
+    for (let i = powerups.length - 1; i >= 0; i--) {
+      const p = powerups[i];
+      p.born += dt;
+      const dx = p.x - player.x;
+      const dy = p.y - player.y;
+      const rr = POWERUP_R + PLAYER_R;
+      if (dx * dx + dy * dy <= rr * rr) {
+        applyPowerup(p.type);
+        powerups.splice(i, 1);
+        continue;
+      }
+      if (p.born >= p.life) powerups.splice(i, 1);
+    }
+
+    // Particles
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.age += dt;
+      if (p.age >= p.life) { particles.splice(i, 1); continue; }
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vx *= 0.94;
+      p.vy *= 0.94;
+    }
+
+    updateHud();
+  }
+
+  function render() {
+    ctx.clearRect(0, 0, VW, VH);
+
+    // Subtle grid background
+    ctx.save();
+    ctx.fillStyle = '#fafafa';
+    ctx.fillRect(0, 0, VW, VH);
+    ctx.strokeStyle = 'rgba(0,0,0,0.04)';
+    ctx.lineWidth = 1;
+    const step = 40;
+    for (let x = step; x < VW; x += step) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, VH); ctx.stroke();
+    }
+    for (let y = step; y < VH; y += step) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(VW, y); ctx.stroke();
+    }
+    ctx.restore();
+
+    // Slow-mo tint
+    const t = performance.now() / 1000;
+    if (t < slowmoUntil) {
+      ctx.fillStyle = 'rgba(255,149,0,0.06)';
+      ctx.fillRect(0, 0, VW, VH);
+    }
+
+    // Power-ups
+    for (const p of powerups) {
+      const fadeIn = Math.min(1, p.born / 0.3);
+      const fadeOut = Math.min(1, (p.life - p.born) / 1.5);
+      ctx.globalAlpha = fadeIn * fadeOut;
+      let color = COLORS.shield, label = 'S';
+      if (p.type === 'slowmo') { color = COLORS.slowmo; label = '◐'; }
+      else if (p.type === 'clear') { color = COLORS.clear; label = '✦'; }
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, POWERUP_R, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 14px -apple-system, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, p.x, p.y + 0.5);
+      ctx.globalAlpha = 1;
+    }
+
+    // Balls
+    for (const b of balls) {
+      ctx.fillStyle = b.color;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.45)';
+      ctx.beginPath();
+      ctx.arc(b.x - b.r * 0.3, b.y - b.r * 0.3, b.r * 0.35, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Particles
+    for (const p of particles) {
+      const a = 1 - p.age / p.life;
+      ctx.globalAlpha = a;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // Player
+    if (state !== 'over') {
+      if (shieldActive) {
+        ctx.strokeStyle = COLORS.playerShield;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, PLAYER_R + 6, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.fillStyle = COLORS.player;
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, PLAYER_R, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.beginPath();
+      ctx.arc(player.x - 3, player.y - 3, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Slow-mo timer ring
+    if (t < slowmoUntil) {
+      const remain = (slowmoUntil - t) / SLOWMO_DURATION;
+      ctx.strokeStyle = COLORS.slowmo;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(VW - 22, 22, 12, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * remain);
+      ctx.stroke();
+    }
+
+    // Hit flash
+    if (t < flashUntil) {
+      const a = (flashUntil - t) / 0.4;
+      ctx.fillStyle = 'rgba(255,59,48,' + (0.25 * a) + ')';
+      ctx.fillRect(0, 0, VW, VH);
+    }
+  }
+
+  // Input — keyboard
+  window.addEventListener('keydown', function (e) {
+    const k = e.key;
+    if (k === 'ArrowLeft' || k === 'a' || k === 'A') keys.left = true;
+    else if (k === 'ArrowRight' || k === 'd' || k === 'D') keys.right = true;
+    else if (k === 'ArrowUp' || k === 'w' || k === 'W') keys.up = true;
+    else if (k === 'ArrowDown' || k === 's' || k === 'S') keys.down = true;
+    else if (k === 'p' || k === 'P' || k === ' ') {
+      e.preventDefault();
+      if (state === 'running') pause();
+      else if (state === 'paused') resume();
+      else if (state === 'idle' || state === 'over') start();
+    }
+    if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].indexOf(k) !== -1) e.preventDefault();
+  });
+  window.addEventListener('keyup', function (e) {
+    const k = e.key;
+    if (k === 'ArrowLeft' || k === 'a' || k === 'A') keys.left = false;
+    else if (k === 'ArrowRight' || k === 'd' || k === 'D') keys.right = false;
+    else if (k === 'ArrowUp' || k === 'w' || k === 'W') keys.up = false;
+    else if (k === 'ArrowDown' || k === 's' || k === 'S') keys.down = false;
+  });
+
+  // Input — pointer / touch (drag to move)
+  function pointerPos(e) {
+    const rect = board.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: (clientX - rect.left) / rect.width * VW,
+      y: (clientY - rect.top) / rect.height * VH
+    };
+  }
+  function onPointerDown(e) {
+    if (state === 'idle' || state === 'over') { start(); }
+    if (state !== 'running') return;
+    dragging = true;
+    dragTarget = pointerPos(e);
+  }
+  function onPointerMove(e) {
+    if (!dragging) return;
+    dragTarget = pointerPos(e);
+    if (e.cancelable) e.preventDefault();
+  }
+  function onPointerUp() { dragging = false; dragTarget = null; }
+
+  board.addEventListener('mousedown', onPointerDown);
+  window.addEventListener('mousemove', onPointerMove);
+  window.addEventListener('mouseup', onPointerUp);
+  board.addEventListener('touchstart', function (e) { onPointerDown(e); if (e.cancelable) e.preventDefault(); }, { passive: false });
+  board.addEventListener('touchmove', function (e) { onPointerMove(e); }, { passive: false });
+  board.addEventListener('touchend', onPointerUp);
+
+  actionBtn.addEventListener('click', function () {
+    if (state === 'paused') resume();
+    else start();
+  });
+  pauseBtn.addEventListener('click', function () {
+    if (state === 'running') pause();
+    else if (state === 'paused') resume();
+  });
+
+  window.addEventListener('resize', resize);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
+
+  // Boot — show idle screen
+  player = makePlayer();
+  balls = [];
+  powerups = [];
+  particles = [];
+  resize();
+  requestAnimationFrame(loop);
+})();
+</script>
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

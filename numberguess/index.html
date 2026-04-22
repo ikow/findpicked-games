@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Number Guessing · FindPicked Games</title>
+<meta name="description" content="Guess the secret number between 1 and 100. Higher or lower hints — solve it in as few guesses as possible.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ctext x='16' y='22' font-size='14' fill='white' text-anchor='middle' font-family='system-ui' font-weight='700'%3E%3F%3C/text%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-hover: #f5f5f7;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --error: #ff3b30;
+  --success: #34c759;
+  --warn: #ff9500;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+
+html, body {
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+button { font-family: inherit; }
+input { font-family: inherit; }
+
+.app {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 12px 16px 24px;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 44px;
+  flex-shrink: 0;
+}
+
+.back {
+  width: 44px;
+  height: 44px;
+  margin-left: -8px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: background 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.back:hover, .back:active { background: var(--bg-hover); }
+
+.title {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.help-btn {
+  margin-left: auto;
+  width: 44px;
+  height: 44px;
+  margin-right: -8px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.help-btn:hover, .help-btn:active { background: var(--bg-hover); }
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 16px;
+  flex-shrink: 0;
+}
+
+.stat {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 6px;
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-value.best { color: var(--accent); }
+.stat-value.rounds { color: var(--success); }
+
+.board {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  padding: 24px 0;
+}
+
+.range-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 14px;
+  color: var(--text-tertiary);
+  font-size: 15px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.range-row .dash { color: var(--text-tertiary); }
+.range-row .lo, .range-row .hi {
+  color: var(--text-secondary);
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.guess-display {
+  font-size: 96px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  min-height: 96px;
+  transition: color 0.2s ease, transform 0.15s ease;
+}
+.guess-display.placeholder { color: var(--text-tertiary); font-weight: 500; }
+.guess-display.win { color: var(--success); transform: scale(1.05); }
+.guess-display.high { color: var(--warn); }
+.guess-display.low { color: var(--accent); }
+.guess-display.shake { animation: shake 0.35s ease; }
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+.hint {
+  font-size: 17px;
+  color: var(--text-secondary);
+  min-height: 24px;
+  text-align: center;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.hint.high { color: var(--warn); }
+.hint.low { color: var(--accent); }
+.hint.win { color: var(--success); font-weight: 600; }
+
+.history {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  min-height: 30px;
+  max-width: 340px;
+  max-height: 68px;
+  overflow-y: auto;
+}
+
+.chip {
+  min-width: 40px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.chip.high { color: var(--warn); border-color: rgba(255, 149, 0, 0.3); }
+.chip.low { color: var(--accent); border-color: rgba(0, 113, 227, 0.3); }
+.chip.win { color: var(--success); border-color: rgba(52, 199, 89, 0.4); background: rgba(52, 199, 89, 0.08); }
+
+.input-row {
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  gap: 8px;
+}
+
+.guess-input {
+  flex: 1;
+  min-height: 56px;
+  padding: 0 20px;
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  background: var(--bg-card);
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s ease;
+  font-variant-numeric: tabular-nums;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.guess-input:focus { border-color: var(--accent); }
+.guess-input::placeholder { color: var(--text-tertiary); font-weight: 500; }
+
+.submit-btn {
+  min-height: 56px;
+  min-width: 100px;
+  padding: 0 20px;
+  border-radius: 16px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.submit-btn:hover { background: var(--accent-hover); }
+.submit-btn:active { transform: scale(0.97); }
+.submit-btn:disabled { background: var(--bg-hover); color: var(--text-tertiary); cursor: default; }
+
+.new-round-btn {
+  width: 100%;
+  max-width: 340px;
+  min-height: 56px;
+  border-radius: 16px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.new-round-btn:hover { background: var(--accent-hover); }
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  z-index: 100;
+}
+.overlay.show { opacity: 1; pointer-events: auto; }
+
+.sheet {
+  background: var(--bg-card);
+  border-radius: 20px;
+  padding: 28px 24px;
+  max-width: 380px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  transform: scale(0.94);
+  transition: transform 0.25s ease;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+.overlay.show .sheet { transform: scale(1); }
+
+.sheet h2 {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+  text-align: center;
+}
+
+.sheet p, .sheet li {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.sheet ul { padding-left: 20px; margin: 10px 0; }
+.sheet li { margin-bottom: 6px; }
+
+.sheet-score {
+  font-size: 64px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.03em;
+  margin: 12px 0 4px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.sheet-sub {
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.sheet-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin: 18px 0 20px;
+}
+
+.sheet-stat {
+  background: var(--bg-hover);
+  border-radius: 12px;
+  padding: 12px 6px;
+  text-align: center;
+}
+.sheet-stat-label {
+  font-size: 10px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+.sheet-stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.new-best {
+  text-align: center;
+  color: var(--success);
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.pill {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 24px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.pill:hover { background: var(--accent-hover); }
+.pill.ghost { background: transparent; color: var(--text-secondary); margin-top: 8px; }
+.pill.ghost:hover { background: var(--bg-hover); }
+
+@media (max-width: 380px) {
+  .stat-value { font-size: 20px; }
+  .guess-display { font-size: 80px; min-height: 80px; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <nav class="nav">
+    <a class="back" href="../" aria-label="Back">‹</a>
+    <div class="title">Number Guessing</div>
+    <button class="help-btn" id="helpBtn" aria-label="How to play">?</button>
+  </nav>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-label">Guesses</div>
+      <div class="stat-value" id="guessesV">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Best</div>
+      <div class="stat-value best" id="bestV">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Rounds</div>
+      <div class="stat-value rounds" id="roundsV">0</div>
+    </div>
+  </div>
+
+  <div class="board">
+    <div class="range-row">
+      <span class="lo" id="rangeLo">1</span>
+      <span class="dash">—</span>
+      <span class="hi" id="rangeHi">100</span>
+    </div>
+    <div class="guess-display placeholder" id="guessDisplay">?</div>
+    <div class="hint" id="hint">Pick a number between 1 and 100</div>
+    <div class="history" id="history"></div>
+    <div class="input-row" id="inputRow">
+      <input class="guess-input" id="guessInput" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="1–100" maxlength="3" />
+      <button class="submit-btn" id="submitBtn">Guess</button>
+    </div>
+    <button class="new-round-btn" id="newRoundBtn" style="display:none">New Round</button>
+  </div>
+</div>
+
+<div class="overlay" id="helpOverlay">
+  <div class="sheet">
+    <h2>How to Play</h2>
+    <p>A secret number between 1 and 100 has been chosen. Find it in as few guesses as possible.</p>
+    <ul>
+      <li>Type a number and tap <b>Guess</b> — or press Enter.</li>
+      <li>You'll get a <b>Higher</b> or <b>Lower</b> hint after each guess.</li>
+      <li>The active range updates so you can narrow in fast.</li>
+      <li>Fewer guesses is better — your <b>Best</b> is the lowest count ever.</li>
+      <li>Play unlimited rounds — the round counter tracks how many you've solved.</li>
+      <li>Binary search solves any number in 7 guesses or less. Beat that.</li>
+    </ul>
+    <button class="pill" id="closeHelp">Got it</button>
+  </div>
+</div>
+
+<div class="overlay" id="winOverlay">
+  <div class="sheet">
+    <h2 id="winTitle">You got it!</h2>
+    <p class="sheet-sub" id="winSub">The number was <b id="winNumber">—</b></p>
+    <div class="sheet-score" id="winGuesses">0</div>
+    <p class="sheet-sub">guesses</p>
+    <div class="new-best" id="newBestMsg" style="display:none">★ New Personal Best</div>
+    <div class="sheet-grid">
+      <div class="sheet-stat">
+        <div class="sheet-stat-label">Best</div>
+        <div class="sheet-stat-value" id="winBest">—</div>
+      </div>
+      <div class="sheet-stat">
+        <div class="sheet-stat-label">Rounds Won</div>
+        <div class="sheet-stat-value" id="winRounds">0</div>
+      </div>
+    </div>
+    <button class="pill" id="playAgain">Next Round</button>
+    <button class="pill ghost" id="backHome">Back to Games</button>
+  </div>
+</div>
+
+<script>
+(function() {
+  const $ = id => document.getElementById(id);
+  const guessDisplay = $('guessDisplay');
+  const hintEl = $('hint');
+  const historyEl = $('history');
+  const guessInput = $('guessInput');
+  const submitBtn = $('submitBtn');
+  const newRoundBtn = $('newRoundBtn');
+  const inputRow = $('inputRow');
+  const rangeLo = $('rangeLo');
+  const rangeHi = $('rangeHi');
+  const guessesV = $('guessesV');
+  const bestV = $('bestV');
+  const roundsV = $('roundsV');
+  const winOverlay = $('winOverlay');
+  const helpOverlay = $('helpOverlay');
+
+  const LS_BEST = 'numberguess-best';
+  const LS_ROUNDS = 'numberguess-rounds';
+  const LS_SEEN = 'numberguess-seen';
+
+  const MIN = 1, MAX = 100;
+
+  const state = {
+    target: 0,
+    guesses: 0,
+    lo: MIN,
+    hi: MAX,
+    history: [],
+    won: false,
+  };
+
+  function loadBest() {
+    try { const v = parseInt(localStorage.getItem(LS_BEST) || '0', 10); return v > 0 ? v : 0; } catch { return 0; }
+  }
+  function saveBest(v) {
+    try { localStorage.setItem(LS_BEST, String(v)); } catch {}
+  }
+  function loadRounds() {
+    try { return parseInt(localStorage.getItem(LS_ROUNDS) || '0', 10) || 0; } catch { return 0; }
+  }
+  function saveRounds(v) {
+    try { localStorage.setItem(LS_ROUNDS, String(v)); } catch {}
+  }
+
+  function updateHUD() {
+    guessesV.textContent = state.guesses;
+    const best = loadBest();
+    bestV.textContent = best > 0 ? best : '—';
+    roundsV.textContent = loadRounds();
+    rangeLo.textContent = state.lo;
+    rangeHi.textContent = state.hi;
+  }
+
+  function newRound() {
+    state.target = Math.floor(Math.random() * (MAX - MIN + 1)) + MIN;
+    state.guesses = 0;
+    state.lo = MIN;
+    state.hi = MAX;
+    state.history = [];
+    state.won = false;
+    historyEl.innerHTML = '';
+    guessDisplay.className = 'guess-display placeholder';
+    guessDisplay.textContent = '?';
+    hintEl.className = 'hint';
+    hintEl.textContent = `Pick a number between ${MIN} and ${MAX}`;
+    guessInput.value = '';
+    guessInput.removeAttribute('disabled');
+    submitBtn.removeAttribute('disabled');
+    inputRow.style.display = '';
+    newRoundBtn.style.display = 'none';
+    updateHUD();
+    setTimeout(() => guessInput.focus({ preventScroll: true }), 50);
+  }
+
+  function addChip(val, kind) {
+    const chip = document.createElement('div');
+    chip.className = 'chip ' + kind;
+    chip.textContent = val;
+    historyEl.appendChild(chip);
+    historyEl.scrollTop = historyEl.scrollHeight;
+  }
+
+  function shake() {
+    guessDisplay.classList.remove('shake');
+    void guessDisplay.offsetWidth;
+    guessDisplay.classList.add('shake');
+  }
+
+  function submitGuess() {
+    if (state.won) return;
+    const raw = guessInput.value.trim();
+    if (!raw) { shake(); return; }
+    const val = parseInt(raw, 10);
+    if (Number.isNaN(val) || val < MIN || val > MAX) {
+      hintEl.textContent = `Enter a number from ${MIN} to ${MAX}`;
+      hintEl.className = 'hint';
+      shake();
+      guessInput.value = '';
+      return;
+    }
+
+    state.guesses++;
+    guessInput.value = '';
+
+    if (val === state.target) {
+      state.won = true;
+      guessDisplay.textContent = val;
+      guessDisplay.className = 'guess-display win';
+      hintEl.textContent = `Exactly! Solved in ${state.guesses} guess${state.guesses === 1 ? '' : 'es'}.`;
+      hintEl.className = 'hint win';
+      addChip(val, 'win');
+      finishRound();
+      return;
+    }
+
+    // Update range tracking
+    if (val < state.target) {
+      if (val >= state.lo) state.lo = val + 1;
+      guessDisplay.textContent = val;
+      guessDisplay.className = 'guess-display low';
+      hintEl.textContent = 'Higher ↑';
+      hintEl.className = 'hint low';
+      addChip(val, 'low');
+    } else {
+      if (val <= state.hi) state.hi = val - 1;
+      guessDisplay.textContent = val;
+      guessDisplay.className = 'guess-display high';
+      hintEl.textContent = 'Lower ↓';
+      hintEl.className = 'hint high';
+      addChip(val, 'high');
+    }
+
+    updateHUD();
+    setTimeout(() => guessInput.focus({ preventScroll: true }), 30);
+  }
+
+  function finishRound() {
+    guessInput.setAttribute('disabled', 'disabled');
+    submitBtn.setAttribute('disabled', 'disabled');
+    inputRow.style.display = 'none';
+    newRoundBtn.style.display = '';
+
+    const rounds = loadRounds() + 1;
+    saveRounds(rounds);
+
+    const prevBest = loadBest();
+    const isNewBest = prevBest === 0 || state.guesses < prevBest;
+    if (isNewBest) saveBest(state.guesses);
+
+    updateHUD();
+
+    // Fill win overlay
+    $('winNumber').textContent = state.target;
+    $('winGuesses').textContent = state.guesses;
+    $('winBest').textContent = loadBest();
+    $('winRounds').textContent = rounds;
+    $('newBestMsg').style.display = isNewBest ? '' : 'none';
+    $('winTitle').textContent = isNewBest ? 'New Best!' : 'You got it!';
+
+    setTimeout(() => winOverlay.classList.add('show'), 600);
+
+    if (window.Leaderboard && Leaderboard.submitScore) {
+      Leaderboard.submitScore(state.guesses, { lowerIsBetter: true });
+    }
+  }
+
+  // --- Input handling ---
+  guessInput.addEventListener('input', () => {
+    let v = guessInput.value.replace(/[^\d]/g, '');
+    if (v.length > 3) v = v.slice(0, 3);
+    guessInput.value = v;
+  });
+
+  guessInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); submitGuess(); }
+  });
+
+  submitBtn.addEventListener('click', submitGuess);
+
+  newRoundBtn.addEventListener('click', () => {
+    winOverlay.classList.remove('show');
+    newRound();
+  });
+
+  $('playAgain').addEventListener('click', () => {
+    winOverlay.classList.remove('show');
+    newRound();
+  });
+  $('backHome').addEventListener('click', () => {
+    location.href = '../';
+  });
+
+  // Help overlay
+  $('helpBtn').addEventListener('click', () => helpOverlay.classList.add('show'));
+  $('closeHelp').addEventListener('click', () => helpOverlay.classList.remove('show'));
+  helpOverlay.addEventListener('click', e => {
+    if (e.target === helpOverlay) helpOverlay.classList.remove('show');
+  });
+  winOverlay.addEventListener('click', e => {
+    if (e.target === winOverlay) winOverlay.classList.remove('show');
+  });
+
+  // First-visit help
+  try {
+    if (!localStorage.getItem(LS_SEEN)) {
+      helpOverlay.classList.add('show');
+      localStorage.setItem(LS_SEEN, '1');
+    }
+  } catch {}
+
+  // Init
+  newRound();
+})();
+</script>
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

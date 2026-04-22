@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Number Chain — Draw the Path Puzzle</title>
+<meta name="description" content="Play Number Chain free online. Draw a single path that visits every cell on the grid while passing numbered anchors in order.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Cpath d='M6 6 L26 6 L6 16 L26 16 L6 26 L26 26' stroke='white' stroke-width='2.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='6' cy='6' r='2.8' fill='white'/%3E%3Ccircle cx='26' cy='16' r='2.8' fill='white'/%3E%3Ccircle cx='26' cy='26' r='2.8' fill='white'/%3E%3C/svg%3E">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg: #fafafa;
+    --bg-card: #ffffff;
+    --text: #1d1d1f;
+    --text-2: #6e6e73;
+    --text-3: #86868b;
+    --accent: #0071e3;
+    --accent-hover: #0077ed;
+    --accent-soft: rgba(0, 113, 227, 0.1);
+    --accent-softer: rgba(0, 113, 227, 0.04);
+    --good: #34c759;
+    --bad: #ff3b30;
+    --border: rgba(0, 0, 0, 0.08);
+    --grid-line: #e5e5ea;
+    --shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.08);
+  }
+
+  html, body { height: 100%; overscroll-behavior: none; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px 16px 48px;
+  }
+
+  .back {
+    align-self: flex-start;
+    color: var(--text-2);
+    text-decoration: none;
+    font-size: 15px;
+    padding: 10px 6px;
+    transition: color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+  }
+  .back:hover { color: var(--text); }
+  .back .arrow { font-size: 18px; line-height: 1; }
+
+  .wrap {
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  header { text-align: center; margin-top: 4px; }
+
+  h1 {
+    font-size: clamp(34px, 8vw, 44px);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .subtitle { font-size: 14px; color: var(--text-2); }
+
+  .hud {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .hud-item {
+    background: var(--bg-card);
+    border-radius: 14px;
+    padding: 10px 8px;
+    text-align: center;
+    box-shadow: var(--shadow);
+  }
+
+  .hud-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-3);
+    margin-bottom: 4px;
+  }
+
+  .hud-value {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    transition: color 0.2s;
+  }
+  .hud-value.accent { color: var(--accent); }
+  .hud-value.good { color: var(--good); }
+
+  .board-wrap {
+    position: relative;
+    width: 100%;
+    background: var(--bg-card);
+    border-radius: 20px;
+    box-shadow: var(--shadow-lg);
+    padding: 14px;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .board-inner {
+    position: relative;
+    width: 100%;
+    touch-action: none;
+  }
+
+  .board {
+    display: grid;
+    gap: 3px;
+    background: var(--grid-line);
+    border-radius: 10px;
+    padding: 3px;
+  }
+
+  .cell {
+    position: relative;
+    background: var(--bg-card);
+    border-radius: 6px;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(14px, 4.2vw, 20px);
+    font-weight: 700;
+    color: var(--text);
+    transition: background-color 0.18s;
+  }
+
+  .cell.visited {
+    background: var(--accent-softer);
+  }
+  .cell.last::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 8px;
+    border: 2px solid var(--accent);
+    animation: pulse 1.4s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.55; }
+    50% { opacity: 1; }
+  }
+
+  .cell.anchor {
+    background: var(--text);
+    color: white;
+    z-index: 2;
+  }
+  .cell.anchor.reached {
+    background: var(--accent);
+  }
+  .cell.anchor.final {
+    background: var(--good);
+  }
+
+  .path-overlay {
+    position: absolute;
+    inset: 3px;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .board-wrap.shake {
+    animation: shake 0.32s ease-in-out;
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+
+  .status {
+    text-align: center;
+    font-size: 14px;
+    color: var(--text-2);
+    min-height: 20px;
+    transition: color 0.2s;
+  }
+  .status.win { color: var(--good); font-weight: 600; }
+  .status.error { color: var(--bad); font-weight: 600; }
+
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .btn {
+    border: none;
+    border-radius: 999px;
+    padding: 14px 20px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    min-height: 48px;
+    transition: opacity 0.2s, transform 0.1s, background-color 0.2s;
+  }
+  .btn:hover { opacity: 0.88; }
+  .btn:active { transform: scale(0.97); }
+  .btn.primary { background: var(--accent); color: white; }
+  .btn.primary:hover { background: var(--accent-hover); opacity: 1; }
+  .btn.secondary { background: var(--bg-card); color: var(--text); box-shadow: var(--shadow); }
+  .btn.ghost { background: transparent; color: var(--text-2); }
+
+  .how-to {
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    margin-top: 8px;
+  }
+  .how-to h2 {
+    font-size: 17px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    letter-spacing: -0.01em;
+  }
+  .how-to ol {
+    font-size: 14px;
+    color: var(--text-2);
+    line-height: 1.6;
+    padding-left: 20px;
+  }
+  .how-to li { margin-bottom: 6px; }
+  .how-to li b { color: var(--text); font-weight: 600; }
+  .how-to li:last-child { margin-bottom: 0; }
+
+  .over {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .over.show { opacity: 1; pointer-events: auto; }
+
+  .over-card {
+    background: white;
+    border-radius: 20px;
+    padding: 32px 28px;
+    max-width: 340px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    transform: scale(0.9);
+    transition: transform 0.3s;
+  }
+  .over.show .over-card { transform: scale(1); }
+
+  .over-title { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+  .over-sub { font-size: 14px; color: var(--text-2); margin-bottom: 18px; }
+  .over-time { font-size: 52px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; margin: 8px 0 18px; letter-spacing: -0.02em; }
+</style>
+</head>
+<body>
+<a class="back" href="../"><span class="arrow">←</span> Back</a>
+
+<div class="wrap">
+  <header>
+    <h1>Number Chain</h1>
+    <p class="subtitle">Draw one path that touches every cell</p>
+  </header>
+
+  <div class="hud">
+    <div class="hud-item">
+      <div class="hud-label">Puzzle</div>
+      <div class="hud-value" id="puzzle-label">1 / 5</div>
+    </div>
+    <div class="hud-item">
+      <div class="hud-label">Time</div>
+      <div class="hud-value" id="timer">0:00</div>
+    </div>
+    <div class="hud-item">
+      <div class="hud-label">Next</div>
+      <div class="hud-value accent" id="next-anchor">1</div>
+    </div>
+  </div>
+
+  <div class="board-wrap" id="board-wrap">
+    <div class="board-inner" id="board-inner">
+      <div class="board" id="board"></div>
+      <svg class="path-overlay" id="path-overlay" preserveAspectRatio="none"></svg>
+    </div>
+  </div>
+
+  <div class="status" id="status">Press on <b>1</b> and drag to draw your path.</div>
+
+  <div class="controls">
+    <button class="btn secondary" id="reset-btn">Reset Path</button>
+    <button class="btn primary" id="skip-btn">Restart Puzzle</button>
+  </div>
+
+  <section class="how-to">
+    <h2>How to Play</h2>
+    <ol>
+      <li>Press on <b>1</b> and drag through adjacent cells (up, down, left, right — no diagonals).</li>
+      <li>Your path must pass anchors in order: <b>1 → 2 → 3</b> and so on.</li>
+      <li>Every cell in the grid must be visited exactly once.</li>
+      <li>Drag back along your own path to undo a step.</li>
+      <li>Clear all five puzzles as fast as you can — the timer runs from the first move of puzzle 1.</li>
+    </ol>
+  </section>
+</div>
+
+<div class="over" id="over">
+  <div class="over-card">
+    <div class="over-title" id="over-title">All Solved!</div>
+    <div class="over-sub">Total time across 5 puzzles</div>
+    <div class="over-time" id="over-time">0:00</div>
+    <button class="btn primary" id="play-again" style="width:100%">Play Again</button>
+  </div>
+</div>
+
+<script>
+  const PUZZLE_DEFS = [
+    { w: 4, h: 4, anchors: 3 },
+    { w: 5, h: 5, anchors: 3 },
+    { w: 5, h: 5, anchors: 4 },
+    { w: 6, h: 6, anchors: 4 },
+    { w: 6, h: 6, anchors: 5 },
+  ];
+
+  const board = document.getElementById('board');
+  const boardInner = document.getElementById('board-inner');
+  const boardWrap = document.getElementById('board-wrap');
+  const overlay = document.getElementById('path-overlay');
+  const puzzleLabel = document.getElementById('puzzle-label');
+  const timerEl = document.getElementById('timer');
+  const nextAnchorEl = document.getElementById('next-anchor');
+  const statusEl = document.getElementById('status');
+  const resetBtn = document.getElementById('reset-btn');
+  const skipBtn = document.getElementById('skip-btn');
+  const overEl = document.getElementById('over');
+  const overTimeEl = document.getElementById('over-time');
+  const overTitleEl = document.getElementById('over-title');
+  const playAgainBtn = document.getElementById('play-again');
+
+  let puzzleIdx = 0;
+  let puzzle = null;
+  let userPath = [];
+  let dragging = false;
+  let totalElapsed = 0;
+  let startTime = null;
+  let timerId = null;
+  let cellRefs = null;
+  let finished = false;
+
+  // --- Hamiltonian path generation ---
+  function generateHamiltonian(w, h) {
+    const cells = w * h;
+    const deadline = performance.now() + 800;
+    for (let attempt = 0; attempt < 400; attempt++) {
+      if (performance.now() > deadline) break;
+      const sx = Math.floor(Math.random() * w);
+      const sy = Math.floor(Math.random() * h);
+      const visited = Array.from({ length: h }, () => Array(w).fill(false));
+      const path = [];
+      if (dfs(sx, sy, visited, path, w, h, cells, deadline)) return path;
+    }
+    // Fallback: simple boustrophedon path guaranteed to work
+    const path = [];
+    for (let y = 0; y < h; y++) {
+      if (y % 2 === 0) {
+        for (let x = 0; x < w; x++) path.push([x, y]);
+      } else {
+        for (let x = w - 1; x >= 0; x--) path.push([x, y]);
+      }
+    }
+    return path;
+  }
+
+  function dfs(x, y, visited, path, w, h, cells, deadline) {
+    visited[y][x] = true;
+    path.push([x, y]);
+    if (path.length === cells) return true;
+    if (performance.now() > deadline) return false;
+    // Warnsdorff-like heuristic: prefer next cell with fewer unvisited neighbors
+    const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    const candidates = [];
+    for (const [dx, dy] of dirs) {
+      const nx = x + dx, ny = y + dy;
+      if (nx >= 0 && nx < w && ny >= 0 && ny < h && !visited[ny][nx]) {
+        let degree = 0;
+        for (const [ex, ey] of dirs) {
+          const mx = nx + ex, my = ny + ey;
+          if (mx >= 0 && mx < w && my >= 0 && my < h && !visited[my][mx]) degree++;
+        }
+        candidates.push({ nx, ny, degree, r: Math.random() });
+      }
+    }
+    candidates.sort((a, b) => (a.degree - b.degree) || (a.r - b.r));
+    for (const c of candidates) {
+      if (dfs(c.nx, c.ny, visited, path, w, h, cells, deadline)) return true;
+    }
+    visited[y][x] = false;
+    path.pop();
+    return false;
+  }
+
+  function makePuzzle(idx) {
+    const def = PUZZLE_DEFS[idx];
+    const solution = generateHamiltonian(def.w, def.h);
+    const total = def.w * def.h;
+    const positions = new Set([0, total - 1]);
+    // Spread middle anchors out
+    const mids = def.anchors - 2;
+    for (let i = 1; i <= mids; i++) {
+      const approx = Math.floor(total * i / (mids + 1));
+      let pos = approx;
+      let offset = 0;
+      while (positions.has(pos) && offset < total) {
+        offset++;
+        pos = (approx + offset) % total;
+      }
+      positions.add(pos);
+    }
+    const sorted = [...positions].sort((a, b) => a - b);
+    const anchors = new Map();
+    sorted.forEach((p, i) => {
+      const [x, y] = solution[p];
+      anchors.set(key(x, y), i + 1);
+    });
+    return { w: def.w, h: def.h, anchors, total, solution, anchorCount: def.anchors };
+  }
+
+  function key(x, y) { return x + ',' + y; }
+
+  // --- Rendering ---
+  function renderBoard() {
+    board.innerHTML = '';
+    board.style.gridTemplateColumns = `repeat(${puzzle.w}, 1fr)`;
+    cellRefs = Array.from({ length: puzzle.h }, () => Array(puzzle.w));
+    for (let y = 0; y < puzzle.h; y++) {
+      for (let x = 0; x < puzzle.w; x++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.x = x;
+        cell.dataset.y = y;
+        const n = puzzle.anchors.get(key(x, y));
+        if (n) {
+          cell.classList.add('anchor');
+          if (n === puzzle.anchorCount) cell.classList.add('final');
+          cell.textContent = n;
+        }
+        board.appendChild(cell);
+        cellRefs[y][x] = cell;
+      }
+    }
+    refreshCellStates();
+    requestAnimationFrame(drawPath);
+  }
+
+  function refreshCellStates() {
+    for (let y = 0; y < puzzle.h; y++) {
+      for (let x = 0; x < puzzle.w; x++) {
+        const c = cellRefs[y][x];
+        c.classList.remove('visited', 'last', 'reached');
+      }
+    }
+    const anchorsReached = countAnchorsReached();
+    for (let i = 0; i < userPath.length; i++) {
+      const [x, y] = userPath[i];
+      const c = cellRefs[y][x];
+      c.classList.add('visited');
+      if (i === userPath.length - 1 && !finished) c.classList.add('last');
+      const n = puzzle.anchors.get(key(x, y));
+      if (n && n <= anchorsReached) c.classList.add('reached');
+    }
+    nextAnchorEl.textContent = anchorsReached >= puzzle.anchorCount ? '✓' : (anchorsReached + 1);
+  }
+
+  function countAnchorsReached() {
+    let count = 0;
+    for (const [x, y] of userPath) {
+      if (puzzle.anchors.has(key(x, y))) count++;
+    }
+    return count;
+  }
+
+  function drawPath() {
+    const rect = boardInner.getBoundingClientRect();
+    const paddedRect = overlay.getBoundingClientRect();
+    overlay.setAttribute('viewBox', `0 0 ${paddedRect.width} ${paddedRect.height}`);
+    overlay.innerHTML = '';
+    if (userPath.length < 1) return;
+    const first = cellRefs[userPath[0][1]][userPath[0][0]].getBoundingClientRect();
+    const ox = paddedRect.left;
+    const oy = paddedRect.top;
+    let d = '';
+    for (let i = 0; i < userPath.length; i++) {
+      const [x, y] = userPath[i];
+      const r = cellRefs[y][x].getBoundingClientRect();
+      const cx = r.left + r.width / 2 - ox;
+      const cy = r.top + r.height / 2 - oy;
+      d += (i === 0 ? 'M' : 'L') + cx.toFixed(2) + ' ' + cy.toFixed(2) + ' ';
+    }
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    line.setAttribute('d', d);
+    line.setAttribute('stroke', '#0071e3');
+    const strokeWidth = Math.max(8, Math.min(first.width, first.height) * 0.45);
+    line.setAttribute('stroke-width', strokeWidth);
+    line.setAttribute('stroke-linecap', 'round');
+    line.setAttribute('stroke-linejoin', 'round');
+    line.setAttribute('fill', 'none');
+    line.setAttribute('opacity', '0.42');
+    overlay.appendChild(line);
+  }
+
+  // --- Interaction ---
+  function getCellFromPoint(clientX, clientY) {
+    const el = document.elementFromPoint(clientX, clientY);
+    if (!el) return null;
+    const cell = el.closest('.cell');
+    if (!cell || !board.contains(cell)) return null;
+    return [parseInt(cell.dataset.x, 10), parseInt(cell.dataset.y, 10)];
+  }
+
+  function isAdjacent(a, b) {
+    return Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) === 1;
+  }
+
+  function tryExtend(cell) {
+    if (finished) return;
+    if (!cell) return;
+    const [x, y] = cell;
+
+    // Starting: only from anchor "1"
+    if (userPath.length === 0) {
+      if (puzzle.anchors.get(key(x, y)) === 1) {
+        userPath = [[x, y]];
+        refreshCellStates();
+        drawPath();
+        startTimer();
+      }
+      return;
+    }
+
+    const last = userPath[userPath.length - 1];
+    if (last[0] === x && last[1] === y) return;
+
+    // Backtrack if moving onto previous cell
+    if (userPath.length >= 2) {
+      const prev = userPath[userPath.length - 2];
+      if (prev[0] === x && prev[1] === y) {
+        userPath.pop();
+        refreshCellStates();
+        drawPath();
+        return;
+      }
+    }
+
+    // Already in path → ignore
+    for (const p of userPath) {
+      if (p[0] === x && p[1] === y) return;
+    }
+
+    if (!isAdjacent(last, [x, y])) return;
+
+    // Anchor order constraint
+    const n = puzzle.anchors.get(key(x, y));
+    if (n != null) {
+      const reached = countAnchorsReached();
+      if (n !== reached + 1) {
+        flashError();
+        return;
+      }
+    }
+
+    userPath.push([x, y]);
+    refreshCellStates();
+    drawPath();
+    checkWin();
+  }
+
+  function flashError() {
+    boardWrap.classList.remove('shake');
+    void boardWrap.offsetWidth;
+    boardWrap.classList.add('shake');
+  }
+
+  function onPointerDown(e) {
+    if (finished) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    e.preventDefault();
+    const cell = getCellFromPoint(e.clientX, e.clientY);
+    if (!cell) return;
+    const [x, y] = cell;
+
+    // If tap on current path end → resume drag
+    if (userPath.length > 0) {
+      const last = userPath[userPath.length - 1];
+      if (last[0] === x && last[1] === y) {
+        dragging = true;
+        try { boardInner.setPointerCapture(e.pointerId); } catch {}
+        return;
+      }
+    }
+
+    // Start path if pressing on 1
+    if (puzzle.anchors.get(key(x, y)) === 1) {
+      userPath = [[x, y]];
+      dragging = true;
+      refreshCellStates();
+      drawPath();
+      startTimer();
+      try { boardInner.setPointerCapture(e.pointerId); } catch {}
+      return;
+    }
+  }
+
+  function onPointerMove(e) {
+    if (!dragging) return;
+    e.preventDefault();
+    const cell = getCellFromPoint(e.clientX, e.clientY);
+    if (!cell) return;
+    tryExtend(cell);
+  }
+
+  function onPointerUp(e) {
+    dragging = false;
+    try { boardInner.releasePointerCapture(e.pointerId); } catch {}
+  }
+
+  // --- Win / flow ---
+  function checkWin() {
+    if (userPath.length !== puzzle.total) return;
+    const reached = countAnchorsReached();
+    if (reached !== puzzle.anchorCount) return;
+    // Ensure last anchor is at path end
+    const lastCell = userPath[userPath.length - 1];
+    if (puzzle.anchors.get(key(lastCell[0], lastCell[1])) !== puzzle.anchorCount) return;
+
+    finished = true;
+    stopTimer();
+    refreshCellStates();
+    const lastEl = cellRefs[lastCell[1]][lastCell[0]];
+    lastEl.classList.add('reached');
+    statusEl.textContent = 'Puzzle solved! Loading next…';
+    statusEl.className = 'status win';
+    setTimeout(nextPuzzle, 900);
+  }
+
+  function nextPuzzle() {
+    puzzleIdx++;
+    if (puzzleIdx >= PUZZLE_DEFS.length) {
+      completeRun();
+      return;
+    }
+    loadPuzzle();
+  }
+
+  function loadPuzzle() {
+    finished = false;
+    userPath = [];
+    dragging = false;
+    puzzle = makePuzzle(puzzleIdx);
+    puzzleLabel.textContent = `${puzzleIdx + 1} / ${PUZZLE_DEFS.length}`;
+    statusEl.textContent = 'Press on 1 and drag to draw your path.';
+    statusEl.className = 'status';
+    renderBoard();
+  }
+
+  function resetPath() {
+    if (finished) return;
+    userPath = [];
+    refreshCellStates();
+    drawPath();
+    statusEl.textContent = 'Press on 1 and drag to draw your path.';
+    statusEl.className = 'status';
+  }
+
+  function restartPuzzle() {
+    if (finished) return;
+    // Regenerate a fresh puzzle of same size
+    puzzle = makePuzzle(puzzleIdx);
+    userPath = [];
+    statusEl.textContent = 'Press on 1 and drag to draw your path.';
+    statusEl.className = 'status';
+    renderBoard();
+  }
+
+  function completeRun() {
+    stopTimer();
+    const seconds = Math.round(totalElapsed / 1000);
+    const priorBest = getLocalBest();
+    setLocalBest(seconds);
+    overTimeEl.textContent = formatTime(seconds);
+    overTitleEl.textContent = (priorBest == null || seconds < priorBest) ? 'New Best!' : 'All Solved!';
+    overEl.classList.add('show');
+    if (window.Leaderboard && Leaderboard.submitScore) {
+      Leaderboard.submitScore(seconds, { lowerIsBetter: true });
+    }
+  }
+
+  function playAgain() {
+    overEl.classList.remove('show');
+    puzzleIdx = 0;
+    totalElapsed = 0;
+    startTime = null;
+    updateTimerDisplay(0);
+    loadPuzzle();
+    // Save personal best locally regardless
+    const best = getLocalBest();
+    if (best != null) {
+      statusEl.textContent = `Personal best: ${formatTime(best)}. Beat it!`;
+    }
+  }
+
+  // --- Timer ---
+  function startTimer() {
+    if (startTime != null) return;
+    startTime = performance.now();
+    timerId = setInterval(() => {
+      const elapsed = totalElapsed + (performance.now() - startTime);
+      updateTimerDisplay(Math.floor(elapsed / 1000));
+    }, 200);
+  }
+
+  function stopTimer() {
+    if (startTime != null) {
+      totalElapsed += performance.now() - startTime;
+      startTime = null;
+    }
+    if (timerId) {
+      clearInterval(timerId);
+      timerId = null;
+    }
+    updateTimerDisplay(Math.round(totalElapsed / 1000));
+  }
+
+  function updateTimerDisplay(sec) {
+    timerEl.textContent = formatTime(sec);
+  }
+
+  function formatTime(sec) {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  // --- Local best ---
+  function getLocalBest() {
+    try {
+      const v = localStorage.getItem('numberchain-best');
+      return v ? parseInt(v, 10) : null;
+    } catch { return null; }
+  }
+  function setLocalBest(sec) {
+    try {
+      const cur = getLocalBest();
+      if (cur == null || sec < cur) {
+        localStorage.setItem('numberchain-best', String(sec));
+      }
+    } catch {}
+  }
+
+  // --- Event wiring ---
+  boardInner.addEventListener('pointerdown', onPointerDown);
+  boardInner.addEventListener('pointermove', onPointerMove);
+  boardInner.addEventListener('pointerup', onPointerUp);
+  boardInner.addEventListener('pointercancel', onPointerUp);
+  boardInner.addEventListener('pointerleave', (e) => { /* keep dragging if captured */ });
+
+  resetBtn.addEventListener('click', resetPath);
+  skipBtn.addEventListener('click', restartPuzzle);
+  playAgainBtn.addEventListener('click', playAgain);
+
+  window.addEventListener('resize', () => {
+    if (puzzle) drawPath();
+  });
+
+  // --- Init ---
+  function init() {
+    puzzleIdx = 0;
+    totalElapsed = 0;
+    startTime = null;
+    updateTimerDisplay(0);
+    loadPuzzle();
+    const best = getLocalBest();
+    if (best != null) {
+      statusEl.innerHTML = `Press on <b>1</b> and drag — personal best ${formatTime(best)}.`;
+    }
+  }
+
+  init();
+</script>
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

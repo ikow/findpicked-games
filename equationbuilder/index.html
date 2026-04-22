@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Equation Builder — FindPicked Games</title>
+<meta name="description" content="Build an equation from numbers and operators to reach the target. Beat the clock across 10 rounds.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ctext x='16' y='22' font-size='16' fill='white' text-anchor='middle' font-family='system-ui' font-weight='700'%3E%3D%3C/text%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-hover: #f5f5f7;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --good: #30b46d;
+  --bad: #e64a45;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+  --radius: 16px;
+}
+
+html, body {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px 20px 40px;
+  touch-action: manipulation;
+}
+
+.back {
+  align-self: flex-start;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 400;
+  padding: 8px 4px;
+  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.back:hover { color: var(--text-primary); }
+.back .arrow { font-size: 18px; line-height: 1; }
+
+.wrap {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+h1 {
+  font-size: clamp(34px, 8vw, 44px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.scores {
+  display: flex;
+  gap: 8px;
+}
+
+.score-box {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 10px 14px;
+  min-width: 78px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.score-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  margin-bottom: 2px;
+}
+
+.score-value {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+.score-value.bump { transform: scale(1.12); }
+.score-value.warn { color: var(--bad); }
+
+.rules-toggle {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--accent);
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+  padding: 0;
+}
+.rules-toggle:hover { text-decoration: underline; }
+
+.rules-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  text-align: left;
+}
+.rules-panel.open { max-height: 500px; }
+.rules-panel ul { margin: 8px 0 0 16px; }
+.rules-panel li { margin-bottom: 4px; }
+
+.target {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  text-align: center;
+  position: relative;
+}
+
+.round-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  margin-bottom: 4px;
+}
+
+.target-value {
+  font-size: clamp(48px, 12vw, 64px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.target-hint {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 6px;
+}
+
+.expr-display {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  box-shadow: var(--shadow);
+  min-height: 96px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+}
+
+.expr {
+  font-size: clamp(22px, 6vw, 28px);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  min-height: 36px;
+  word-break: break-all;
+  line-height: 1.2;
+}
+.expr.empty { color: var(--text-tertiary); font-weight: 400; }
+
+.expr-result {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  min-height: 18px;
+}
+.expr-result.good { color: var(--good); font-weight: 600; }
+.expr-result.bad { color: var(--bad); }
+
+.numbers, .ops {
+  display: grid;
+  gap: 10px;
+}
+.numbers { grid-template-columns: repeat(5, 1fr); }
+.ops { grid-template-columns: repeat(4, 1fr); }
+
+.tile {
+  background: var(--bg-card);
+  border: none;
+  font-family: inherit;
+  font-size: clamp(20px, 5vw, 24px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  height: 56px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.2s ease, opacity 0.2s ease;
+  box-shadow: var(--shadow);
+  -webkit-tap-highlight-color: transparent;
+  font-variant-numeric: tabular-nums;
+  min-width: 44px;
+}
+.tile:hover:not(:disabled) { background: var(--bg-hover); }
+.tile:active:not(:disabled) { transform: scale(0.94); }
+.tile:disabled {
+  opacity: 0.32;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.tile.op {
+  color: var(--accent);
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+.btn {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 22px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease, opacity 0.2s ease;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:hover:not(:disabled) { background: var(--accent-hover); }
+.btn:active:not(:disabled) { transform: scale(0.97); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn.secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
+}
+.btn.secondary:hover:not(:disabled) { background: rgba(0, 113, 227, 0.06); }
+
+.btn.ghost {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  box-shadow: var(--shadow);
+}
+.btn.ghost:hover:not(:disabled) { background: var(--bg-hover); }
+
+.timer-bar {
+  height: 6px;
+  background: var(--bg-hover);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+.timer-fill {
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  transform-origin: left center;
+  transition: transform 0.1s linear, background 0.2s ease;
+}
+.timer-fill.warn { background: var(--bad); }
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.86);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10;
+}
+.overlay.show { opacity: 1; pointer-events: auto; }
+.overlay h2 {
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  text-align: center;
+}
+.overlay p {
+  font-size: 15px;
+  color: var(--text-secondary);
+  text-align: center;
+  max-width: 320px;
+  line-height: 1.5;
+}
+.overlay .big-score {
+  font-size: 56px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  margin: 4px 0;
+}
+.overlay .row {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+footer {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  text-align: center;
+  margin-top: 4px;
+  line-height: 1.6;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+.shake { animation: shake 0.25s ease; }
+
+@keyframes flash-good {
+  0% { background: var(--bg-card); }
+  50% { background: rgba(48, 180, 109, 0.15); }
+  100% { background: var(--bg-card); }
+}
+.flash-good { animation: flash-good 0.5s ease; }
+
+@media (max-width: 420px) {
+  body { padding: 16px 14px 28px; }
+  .wrap { gap: 14px; }
+  .score-box { min-width: 68px; padding: 8px 10px; }
+  .score-value { font-size: 18px; }
+  .target { padding: 16px; }
+  .expr-display { padding: 14px 16px; min-height: 84px; }
+  .tile { height: 52px; border-radius: 12px; }
+  .numbers, .ops { gap: 8px; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="back" href="../" aria-label="Back to games">
+    <span class="arrow">←</span>
+    <span>Games</span>
+  </a>
+
+  <header>
+    <h1>Equation Builder</h1>
+    <div class="scores">
+      <div class="score-box">
+        <div class="score-label">Score</div>
+        <div class="score-value" id="score">0</div>
+      </div>
+      <div class="score-box">
+        <div class="score-label">Best</div>
+        <div class="score-value" id="best">0</div>
+      </div>
+    </div>
+  </header>
+
+  <div style="text-align:center">
+    <button class="rules-toggle" id="rules-btn">How to Play ▾</button>
+    <div class="rules-panel" id="rules-panel">
+      <ul>
+        <li>Tap numbers and operators to build an equation that equals the target.</li>
+        <li>Each number tile can be used at most once per round.</li>
+        <li>Standard math precedence — × and ÷ before + and −.</li>
+        <li>Division must produce a whole number (no fractions).</li>
+        <li>Faster solves earn more points. Skipping costs a small penalty.</li>
+        <li>10 rounds total. Target gets harder as you go.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="target">
+    <div class="round-label" id="round-label">Round 1 of 10</div>
+    <div class="target-value" id="target-value">—</div>
+    <div class="target-hint">Build an equation that equals this</div>
+  </div>
+
+  <div class="timer-bar"><div class="timer-fill" id="timer-fill"></div></div>
+
+  <div class="expr-display">
+    <div class="expr empty" id="expr">tap a number to start</div>
+    <div class="expr-result" id="expr-result">&nbsp;</div>
+  </div>
+
+  <div class="numbers" id="numbers"></div>
+  <div class="ops" id="ops">
+    <button class="tile op" data-op="+">+</button>
+    <button class="tile op" data-op="−">−</button>
+    <button class="tile op" data-op="×">×</button>
+    <button class="tile op" data-op="÷">÷</button>
+  </div>
+
+  <div class="actions">
+    <button class="btn ghost" id="undo-btn">Undo</button>
+    <button class="btn secondary" id="skip-btn">Skip</button>
+    <button class="btn" id="submit-btn">Submit</button>
+  </div>
+
+  <footer>
+    Faster solves score higher · keys: <strong>0–9</strong>, <strong>+ − * /</strong>, <strong>⏎</strong> submit, <strong>⌫</strong> undo
+  </footer>
+</div>
+
+<div class="overlay" id="overlay">
+  <h2 id="overlay-title">Game Over</h2>
+  <p id="overlay-text">Nice run.</p>
+  <div class="big-score" id="overlay-score">0</div>
+  <div class="row">
+    <button class="btn" id="overlay-new">Play Again</button>
+    <a class="btn secondary" href="../" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;">All Games</a>
+  </div>
+</div>
+
+<script>
+(() => {
+  const ROUNDS = 10;
+  const ROUND_TIME = 30;        // seconds per round
+  const SKIP_PENALTY = 25;
+  const STORE_BEST = 'findpicked:equationbuilder:best';
+
+  // DOM
+  const scoreEl = document.getElementById('score');
+  const bestEl = document.getElementById('best');
+  const roundLabel = document.getElementById('round-label');
+  const targetValueEl = document.getElementById('target-value');
+  const exprEl = document.getElementById('expr');
+  const exprResultEl = document.getElementById('expr-result');
+  const numbersEl = document.getElementById('numbers');
+  const opsEl = document.getElementById('ops');
+  const undoBtn = document.getElementById('undo-btn');
+  const skipBtn = document.getElementById('skip-btn');
+  const submitBtn = document.getElementById('submit-btn');
+  const timerFill = document.getElementById('timer-fill');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlay-title');
+  const overlayText = document.getElementById('overlay-text');
+  const overlayScore = document.getElementById('overlay-score');
+  const overlayNew = document.getElementById('overlay-new');
+  const rulesBtn = document.getElementById('rules-btn');
+  const rulesPanel = document.getElementById('rules-panel');
+
+  rulesBtn.addEventListener('click', () => rulesPanel.classList.toggle('open'));
+
+  // State
+  let score = 0;
+  let best = parseInt(localStorage.getItem(STORE_BEST) || '0', 10);
+  let round = 0;            // 1..ROUNDS
+  let roundData = null;     // { numbers: [{value, used}], target }
+  let tokens = [];          // sequence of {kind: 'num'|'op', value, idx?}
+  let timeLeft = ROUND_TIME;
+  let timerId = null;
+  let lastTick = 0;
+  let gameOver = false;
+
+  bestEl.textContent = best;
+
+  // --- Round generation ---
+  function rand(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  function generateRound(roundIdx) {
+    // Difficulty scales with roundIdx (1..ROUNDS)
+    const small = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+    const big = [10, 15, 20, 25, 50, 75, 100];
+    let nums;
+    if (roundIdx <= 3) {
+      nums = Array.from({ length: 5 }, () => pick(small));
+    } else if (roundIdx <= 7) {
+      nums = Array.from({ length: 4 }, () => pick(small));
+      nums.push(pick(big));
+    } else {
+      nums = Array.from({ length: 3 }, () => pick(small));
+      nums.push(pick(big));
+      nums.push(pick(big));
+    }
+
+    // Build a target from a random sub-sequence of these numbers
+    // Try multiple times to find a reachable target.
+    for (let attempt = 0; attempt < 60; attempt++) {
+      const subCount = Math.min(nums.length, rand(2, roundIdx <= 3 ? 3 : roundIdx <= 7 ? 4 : 5));
+      const idxs = shuffle(nums.map((_, i) => i)).slice(0, subCount);
+      const subset = idxs.map(i => nums[i]);
+      const ops = ['+', '−', '×', '÷'];
+      const expr = [String(subset[0])];
+      let valid = true;
+      for (let i = 1; i < subset.length; i++) {
+        const op = pick(ops);
+        expr.push(op, String(subset[i]));
+      }
+      const result = evaluate(expr.join(''));
+      if (result === null) { valid = false; }
+      else if (!Number.isInteger(result)) { valid = false; }
+      else if (result <= 0 || result > 999) { valid = false; }
+      if (valid) {
+        return { numbers: nums.map(v => ({ value: v, used: false })), target: result };
+      }
+    }
+    // Fallback: simple addition
+    const sum = nums.slice(0, 3).reduce((a, b) => a + b, 0);
+    return { numbers: nums.map(v => ({ value: v, used: false })), target: sum };
+  }
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  // --- Expression evaluation ---
+  // Accepts a string with digits and the symbols + − × ÷ (also -, *, /)
+  // Returns a number, or null if invalid (including divide-by-zero or non-integer division).
+  function evaluate(s) {
+    if (!s) return null;
+    // Tokenize
+    const norm = s.replace(/−/g, '-').replace(/×/g, '*').replace(/÷/g, '/');
+    const toks = [];
+    let i = 0;
+    while (i < norm.length) {
+      const c = norm[i];
+      if (c >= '0' && c <= '9') {
+        let j = i;
+        while (j < norm.length && norm[j] >= '0' && norm[j] <= '9') j++;
+        toks.push({ t: 'n', v: parseInt(norm.slice(i, j), 10) });
+        i = j;
+      } else if ('+-*/'.includes(c)) {
+        toks.push({ t: 'o', v: c });
+        i++;
+      } else { return null; }
+    }
+    if (!toks.length) return null;
+    if (toks[0].t !== 'n' || toks[toks.length - 1].t !== 'n') return null;
+    for (let k = 1; k < toks.length; k++) {
+      if (toks[k].t === toks[k - 1].t) return null;
+    }
+    // Pass 1: * and /
+    const pass1 = [toks[0]];
+    for (let k = 1; k < toks.length; k += 2) {
+      const op = toks[k].v;
+      const right = toks[k + 1];
+      if (op === '*' || op === '/') {
+        const left = pass1.pop();
+        if (op === '/') {
+          if (right.v === 0) return null;
+          if (left.v % right.v !== 0) return null;
+          pass1.push({ t: 'n', v: left.v / right.v });
+        } else {
+          pass1.push({ t: 'n', v: left.v * right.v });
+        }
+      } else {
+        pass1.push(toks[k], right);
+      }
+    }
+    // Pass 2: + and -
+    let acc = pass1[0].v;
+    for (let k = 1; k < pass1.length; k += 2) {
+      const op = pass1[k].v;
+      const right = pass1[k + 1].v;
+      if (op === '+') acc += right;
+      else acc -= right;
+    }
+    return acc;
+  }
+
+  // --- Rendering ---
+  function renderNumbers() {
+    numbersEl.innerHTML = '';
+    roundData.numbers.forEach((n, idx) => {
+      const b = document.createElement('button');
+      b.className = 'tile';
+      b.textContent = n.value;
+      b.dataset.idx = idx;
+      b.disabled = n.used;
+      b.addEventListener('click', () => onNumberTap(idx));
+      numbersEl.appendChild(b);
+    });
+  }
+
+  function refreshNumbers() {
+    [...numbersEl.children].forEach((b, idx) => {
+      b.disabled = roundData.numbers[idx].used;
+    });
+  }
+
+  function exprString() {
+    return tokens.map(t => t.value).join(' ');
+  }
+
+  function exprNoSpaces() {
+    return tokens.map(t => t.value).join('');
+  }
+
+  function lastTokenKind() {
+    return tokens.length ? tokens[tokens.length - 1].kind : null;
+  }
+
+  function renderExpr() {
+    if (!tokens.length) {
+      exprEl.textContent = 'tap a number to start';
+      exprEl.classList.add('empty');
+      exprResultEl.textContent = ' ';
+      exprResultEl.className = 'expr-result';
+      return;
+    }
+    exprEl.classList.remove('empty');
+    exprEl.textContent = exprString();
+    // Live preview if last token is a number
+    if (lastTokenKind() === 'num') {
+      const result = evaluate(exprNoSpaces());
+      if (result === null) {
+        exprResultEl.textContent = '= invalid';
+        exprResultEl.className = 'expr-result bad';
+      } else {
+        const matches = result === roundData.target;
+        exprResultEl.textContent = '= ' + result + (matches ? '  ✓' : '');
+        exprResultEl.className = 'expr-result' + (matches ? ' good' : '');
+      }
+    } else {
+      exprResultEl.textContent = ' ';
+      exprResultEl.className = 'expr-result';
+    }
+  }
+
+  // --- Input handlers ---
+  function onNumberTap(idx) {
+    if (gameOver || !roundData) return;
+    const n = roundData.numbers[idx];
+    if (n.used) return;
+    if (lastTokenKind() === 'num') return; // need an operator first
+    n.used = true;
+    tokens.push({ kind: 'num', value: String(n.value), idx });
+    refreshNumbers();
+    renderExpr();
+  }
+
+  function onOpTap(op) {
+    if (gameOver || !roundData) return;
+    if (!tokens.length) return;
+    if (lastTokenKind() === 'op') {
+      // Replace last operator
+      tokens[tokens.length - 1] = { kind: 'op', value: op };
+    } else {
+      tokens.push({ kind: 'op', value: op });
+    }
+    renderExpr();
+  }
+
+  function undo() {
+    if (gameOver || !tokens.length) return;
+    const removed = tokens.pop();
+    if (removed.kind === 'num' && removed.idx != null) {
+      roundData.numbers[removed.idx].used = false;
+      refreshNumbers();
+    }
+    renderExpr();
+  }
+
+  function clearTokens() {
+    while (tokens.length) {
+      const t = tokens.pop();
+      if (t.kind === 'num' && t.idx != null) {
+        roundData.numbers[t.idx].used = false;
+      }
+    }
+    refreshNumbers();
+    renderExpr();
+  }
+
+  function submit() {
+    if (gameOver || !roundData) return;
+    if (lastTokenKind() !== 'num') {
+      flashBad();
+      return;
+    }
+    const result = evaluate(exprNoSpaces());
+    if (result === null) {
+      flashBad();
+      return;
+    }
+    if (result !== roundData.target) {
+      flashBad();
+      return;
+    }
+    // Correct
+    const gained = Math.max(10, Math.round(timeLeft * 10));
+    addScore(gained);
+    flashGood();
+    nextRound(true, gained);
+  }
+
+  function skip() {
+    if (gameOver || !roundData) return;
+    addScore(-SKIP_PENALTY);
+    nextRound(false, -SKIP_PENALTY);
+  }
+
+  function flashBad() {
+    exprEl.parentElement.classList.remove('shake');
+    void exprEl.parentElement.offsetWidth;
+    exprEl.parentElement.classList.add('shake');
+    exprResultEl.textContent = exprResultEl.textContent.replace(/✓/, '');
+    exprResultEl.classList.remove('good');
+    exprResultEl.classList.add('bad');
+    if (lastTokenKind() === 'num') {
+      const r = evaluate(exprNoSpaces());
+      if (r !== null) exprResultEl.textContent = '= ' + r + ' (need ' + roundData.target + ')';
+    }
+  }
+
+  function flashGood() {
+    const wrap = exprEl.parentElement;
+    wrap.classList.remove('flash-good');
+    void wrap.offsetWidth;
+    wrap.classList.add('flash-good');
+  }
+
+  function addScore(delta) {
+    score = Math.max(0, score + delta);
+    scoreEl.textContent = score;
+    scoreEl.classList.remove('bump');
+    void scoreEl.offsetWidth;
+    scoreEl.classList.add('bump');
+    if (score > best) {
+      best = score;
+      bestEl.textContent = best;
+      localStorage.setItem(STORE_BEST, best);
+    }
+  }
+
+  // --- Round flow ---
+  function startRound(idx) {
+    round = idx;
+    tokens = [];
+    roundData = generateRound(idx);
+    roundLabel.textContent = `Round ${idx} of ${ROUNDS}`;
+    targetValueEl.textContent = roundData.target;
+    renderNumbers();
+    renderExpr();
+    timeLeft = ROUND_TIME;
+    updateTimer();
+    startTimer();
+  }
+
+  function nextRound(correct, gained) {
+    stopTimer();
+    if (round >= ROUNDS) {
+      endGame();
+      return;
+    }
+    setTimeout(() => startRound(round + 1), correct ? 320 : 120);
+  }
+
+  function startTimer() {
+    stopTimer();
+    lastTick = performance.now();
+    timerId = requestAnimationFrame(tick);
+  }
+  function stopTimer() {
+    if (timerId) cancelAnimationFrame(timerId);
+    timerId = null;
+  }
+  function tick(now) {
+    const dt = (now - lastTick) / 1000;
+    lastTick = now;
+    timeLeft = Math.max(0, timeLeft - dt);
+    updateTimer();
+    if (timeLeft <= 0) {
+      // Time up — count as skip with no penalty stacking
+      stopTimer();
+      nextRound(false, 0);
+      return;
+    }
+    timerId = requestAnimationFrame(tick);
+  }
+  function updateTimer() {
+    const pct = timeLeft / ROUND_TIME;
+    timerFill.style.transform = `scaleX(${pct})`;
+    if (pct < 0.25) timerFill.classList.add('warn');
+    else timerFill.classList.remove('warn');
+  }
+
+  function endGame() {
+    gameOver = true;
+    overlayTitle.textContent = 'Game Over';
+    overlayText.textContent = score > 0
+      ? 'Nice work. Tap below to play again.'
+      : 'Tough round. Give it another shot.';
+    overlayScore.textContent = score;
+    overlay.classList.add('show');
+    setTimeout(() => window.Leaderboard && Leaderboard.submitScore(score), 500);
+  }
+
+  function newGame() {
+    gameOver = false;
+    score = 0;
+    scoreEl.textContent = 0;
+    overlay.classList.remove('show');
+    startRound(1);
+  }
+
+  // --- Wire up ---
+  opsEl.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => onOpTap(btn.dataset.op));
+  });
+  undoBtn.addEventListener('click', undo);
+  skipBtn.addEventListener('click', skip);
+  submitBtn.addEventListener('click', submit);
+  overlayNew.addEventListener('click', newGame);
+
+  // Keyboard
+  const KEY_OPS = { '+': '+', '-': '−', '*': '×', '/': '÷', 'x': '×', 'X': '×' };
+  window.addEventListener('keydown', (e) => {
+    if (gameOver) {
+      if (e.key === 'Enter') { e.preventDefault(); newGame(); }
+      return;
+    }
+    if (e.key === 'Enter') { e.preventDefault(); submit(); return; }
+    if (e.key === 'Backspace') { e.preventDefault(); undo(); return; }
+    if (e.key === 'Escape') { e.preventDefault(); clearTokens(); return; }
+    if (e.key >= '0' && e.key <= '9') {
+      // Find first unused number with that digit
+      const want = parseInt(e.key, 10);
+      const idx = roundData.numbers.findIndex(n => !n.used && n.value === want);
+      if (idx >= 0) { e.preventDefault(); onNumberTap(idx); }
+      return;
+    }
+    if (KEY_OPS[e.key]) { e.preventDefault(); onOpTap(KEY_OPS[e.key]); }
+  });
+
+  // Start
+  newGame();
+})();
+</script>
+
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

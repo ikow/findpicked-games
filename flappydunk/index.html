@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Flappy Dunk — FindPicked Games</title>
+<meta name="description" content="Flappy Bird meets basketball. Tap to flap, dunk through moving hoops, beat your best.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ctext x='16' y='22' font-size='18' fill='white' text-anchor='middle' font-family='system-ui'%3E%F0%9F%8F%80%3C/text%3E%3C/svg%3E">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #fafafa;
+    --bg-card: #ffffff;
+    --text-primary: #1d1d1f;
+    --text-secondary: #6e6e73;
+    --text-tertiary: #86868b;
+    --accent: #0071e3;
+    --accent-hover: #0077ed;
+    --border: rgba(0,0,0,0.08);
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+    --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+    --court-top: #f4ecde;
+    --court-bottom: #e7dbc3;
+    --ball: #e8712a;
+    --ball-dark: #b44f15;
+    --rim: #d23b2a;
+    --rim-dark: #8a1f10;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px 16px 32px;
+  }
+
+  .back {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 22px;
+    border-radius: 50%;
+    transition: background 0.2s ease, color 0.2s ease;
+    z-index: 10;
+  }
+  .back:hover { background: rgba(0,0,0,0.04); color: var(--text-primary); }
+
+  header {
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+    margin: 56px 0 20px;
+    user-select: none;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+
+  .subtitle {
+    margin-top: 6px;
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  .scorebar {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .stat {
+    flex: 1;
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 12px 16px;
+    box-shadow: var(--shadow);
+    text-align: center;
+  }
+  .stat .label {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 500;
+  }
+  .stat .value {
+    margin-top: 4px;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stage {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    aspect-ratio: 3 / 4;
+    background: linear-gradient(180deg, var(--court-top) 0%, var(--court-bottom) 100%);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    touch-action: manipulation;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    text-align: center;
+    transition: opacity 0.25s ease;
+  }
+  .overlay.hidden { opacity: 0; pointer-events: none; }
+
+  .overlay h2 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+  .overlay p {
+    margin-top: 8px;
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    max-width: 280px;
+  }
+
+  .overlay .result {
+    margin: 20px 0 4px;
+    display: flex;
+    gap: 28px;
+  }
+  .overlay .result .stat {
+    flex: initial;
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+  }
+  .overlay .result .label { color: var(--text-tertiary); }
+  .overlay .result .value { font-size: 32px; }
+
+  .btn {
+    appearance: none;
+    border: none;
+    background: var(--accent);
+    color: #ffffff;
+    min-height: 44px;
+    padding: 0 24px;
+    border-radius: 22px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: background 0.2s ease, transform 0.15s ease;
+  }
+  .btn:hover { background: var(--accent-hover); }
+  .btn:active { transform: scale(0.97); }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  .hint {
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--text-tertiary);
+  }
+
+  footer {
+    margin-top: 24px;
+    font-size: 13px;
+    color: var(--text-tertiary);
+    text-align: center;
+  }
+
+  .rules-toggle {
+    display: inline-block;
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--accent);
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-family: inherit;
+    padding: 0;
+    min-height: 44px;
+  }
+  .rules-toggle:hover { text-decoration: underline; }
+  .rules-panel {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    text-align: left;
+    max-width: 480px;
+    margin: 8px auto 0;
+  }
+  .rules-panel.open { max-height: 500px; }
+  .rules-panel ul { margin: 8px 0 0 16px; }
+  .rules-panel li { margin-bottom: 4px; }
+
+  @media (max-width: 480px) {
+    header { margin-top: 48px; }
+    h1 { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<a class="back" href="../" aria-label="Back">←</a>
+
+<header>
+  <h1>Flappy Dunk</h1>
+  <p class="subtitle">Tap to flap. Dunk through every hoop.</p>
+  <div style="text-align:center;">
+    <button class="rules-toggle" type="button" onclick="this.nextElementSibling.classList.toggle('open')">How to Play ▾</button>
+    <div class="rules-panel">
+      <ul>
+        <li>Tap the screen, click, or press Space to flap the ball upward</li>
+        <li>Guide the ball through each hoop to score a dunk</li>
+        <li>Hoops move up and down — time your flap</li>
+        <li>Do not hit the backboard, the floor, or the ceiling</li>
+        <li>Medals: Bronze 5+, Silver 10+, Gold 20+, Platinum 30+</li>
+      </ul>
+    </div>
+  </div>
+</header>
+
+<div class="scorebar">
+  <div class="stat"><div class="label">Dunks</div><div class="value" id="score">0</div></div>
+  <div class="stat"><div class="label">Best</div><div class="value" id="best">0</div></div>
+</div>
+
+<div class="stage" id="stage" role="button" aria-label="Game area. Tap to flap.">
+  <canvas id="game"></canvas>
+  <div class="overlay" id="overlay">
+    <h2 id="overlayTitle">Ready?</h2>
+    <p id="overlayText">Tap to flap. Sink the ball through every hoop.</p>
+    <div class="result" id="overlayResult" style="display:none;">
+      <div class="stat"><div class="label">Dunks</div><div class="value" id="finalScore">0</div></div>
+      <div class="stat"><div class="label">Best</div><div class="value" id="finalBest">0</div></div>
+    </div>
+    <button class="btn" id="startBtn" type="button">Start</button>
+    <div class="hint" id="hint">Space or ↑ to flap</div>
+  </div>
+</div>
+
+<footer>game.findpicked.com</footer>
+
+<script>
+(() => {
+  const stage = document.getElementById('stage');
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('score');
+  const bestEl = document.getElementById('best');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlayTitle');
+  const overlayText = document.getElementById('overlayText');
+  const overlayResult = document.getElementById('overlayResult');
+  const finalScore = document.getElementById('finalScore');
+  const finalBest = document.getElementById('finalBest');
+  const startBtn = document.getElementById('startBtn');
+  const hint = document.getElementById('hint');
+
+  const STORE_KEY = 'flappydunk.best';
+  let best = parseInt(localStorage.getItem(STORE_KEY) || '0', 10) || 0;
+  bestEl.textContent = best;
+
+  const W = 300;
+  const H = 400;
+
+  const GRAVITY = 1200;
+  const FLAP_V = -380;
+  const HOOP_SPEED = 120;
+  const HOOP_SPACING = 180;
+  const HOOP_WIDTH = 64;      // inner rim width
+  const HOOP_OPENING = 56;    // clear vertical passage through rim
+  const RIM_THICK = 6;
+  const FLOOR_H = 40;
+  const CEIL_H = 0;
+  const BALL_X = 90;
+  const BALL_R = 13;
+
+  let dpr = 1;
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const rect = stage.getBoundingClientRect();
+    canvas.width = Math.round(rect.width * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    const sx = canvas.width / W;
+    const sy = canvas.height / H;
+    ctx.setTransform(sx, 0, 0, sy, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  const state = {
+    mode: 'ready',
+    ball: { y: H / 2, v: 0, rot: 0, spin: 0 },
+    hoops: [],
+    score: 0,
+    t: 0,
+    floorX: 0,
+    flashT: 0,
+    swishT: 0,
+    deadTimer: null,
+  };
+
+  function reset() {
+    state.ball.y = H / 2;
+    state.ball.v = 0;
+    state.ball.rot = 0;
+    state.ball.spin = 0;
+    state.hoops = [];
+    state.score = 0;
+    state.t = 0;
+    state.flashT = 0;
+    state.swishT = 0;
+    scoreEl.textContent = '0';
+    seedHoops();
+  }
+
+  function seedHoops() {
+    const startX = W + 40;
+    for (let i = 0; i < 4; i++) {
+      state.hoops.push(makeHoop(startX + i * HOOP_SPACING));
+    }
+  }
+
+  function makeHoop(x) {
+    const margin = 50;
+    const playArea = H - FLOOR_H - margin * 2;
+    const cy = margin + Math.random() * playArea;
+    // Random oscillation pattern — amplitude grows slightly with score.
+    const amp = 18 + Math.min(40, state.score * 1.2) * Math.random();
+    const phase = Math.random() * Math.PI * 2;
+    const freq = 0.9 + Math.random() * 0.8;
+    return {
+      x,
+      baseY: cy,
+      amp,
+      phase,
+      freq,
+      passed: false,
+      scored: false,
+    };
+  }
+
+  function hoopY(h) {
+    return h.baseY + Math.sin(state.t * h.freq + h.phase) * h.amp;
+  }
+
+  function showReady() {
+    overlayTitle.textContent = 'Ready?';
+    overlayText.textContent = 'Tap to flap. Sink the ball through every hoop.';
+    overlayResult.style.display = 'none';
+    startBtn.textContent = 'Start';
+    hint.textContent = 'Space or ↑ to flap';
+    overlay.classList.remove('hidden');
+  }
+
+  function showDead() {
+    overlayTitle.textContent = 'Game Over';
+    let msg = 'Nice try. One more dunk?';
+    if (state.score >= 30) msg = 'Platinum dunker. Legendary.';
+    else if (state.score >= 20) msg = 'Gold medal. Silky smooth.';
+    else if (state.score >= 10) msg = 'Silver. Keep flapping.';
+    else if (state.score >= 5) msg = 'Bronze. Solid start.';
+    overlayText.textContent = msg;
+    overlayResult.style.display = 'flex';
+    finalScore.textContent = state.score;
+    finalBest.textContent = best;
+    startBtn.textContent = 'Play Again';
+    hint.textContent = 'Space to restart';
+    overlay.classList.remove('hidden');
+  }
+
+  function start() {
+    if (state.deadTimer) { clearTimeout(state.deadTimer); state.deadTimer = null; }
+    reset();
+    state.mode = 'playing';
+    overlay.classList.add('hidden');
+    startBtn.blur();
+    state.ball.v = FLAP_V * 0.75;
+  }
+
+  function flap() {
+    if (state.mode === 'playing') {
+      state.ball.v = FLAP_V;
+      state.ball.spin = -8;
+    } else if (state.mode === 'ready' || state.mode === 'dead') {
+      start();
+    }
+  }
+
+  function die() {
+    if (state.mode !== 'playing') return;
+    state.mode = 'dead';
+    state.flashT = 0.2;
+    if (state.score > best) {
+      best = state.score;
+      localStorage.setItem(STORE_KEY, String(best));
+      bestEl.textContent = best;
+    }
+    setTimeout(() => window.Leaderboard && Leaderboard.submitScore(state.score), 800);
+    state.deadTimer = setTimeout(showDead, 340);
+  }
+
+  function onKey(e) {
+    if (e.code !== 'Space' && e.code !== 'ArrowUp' && e.key !== ' ') return;
+    e.preventDefault();
+    flap();
+  }
+  stage.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('button')) return;
+    e.preventDefault();
+    flap();
+  });
+  window.addEventListener('keydown', onKey);
+  startBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+  startBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    start();
+  });
+
+  function update(dt) {
+    if (state.mode !== 'playing') {
+      if (state.mode === 'ready') {
+        state.t += dt;
+        state.ball.y = H / 2 + Math.sin(state.t * 2.4) * 8;
+        state.ball.rot += dt * 1.5;
+        state.floorX = (state.floorX - HOOP_SPEED * 0.4 * dt) % 24;
+      }
+      if (state.swishT > 0) state.swishT = Math.max(0, state.swishT - dt);
+      return;
+    }
+
+    state.t += dt;
+    state.ball.v += GRAVITY * dt;
+    state.ball.y += state.ball.v * dt;
+    state.ball.rot += (state.ball.v * 0.02 + state.ball.spin) * dt;
+    state.ball.spin *= Math.pow(0.001, dt);
+
+    for (const h of state.hoops) h.x -= HOOP_SPEED * dt;
+
+    // Scoring: the ball must pass the center of the hoop vertically within the opening.
+    const bx = BALL_X;
+    const by = state.ball.y;
+    for (const h of state.hoops) {
+      if (!h.passed && h.x + HOOP_WIDTH / 2 < bx) {
+        h.passed = true;
+        const hy = hoopY(h);
+        // Ball must be inside the clear vertical window at the moment of crossing.
+        const inside = Math.abs(by - hy) < HOOP_OPENING / 2 - BALL_R * 0.2;
+        if (inside) {
+          h.scored = true;
+          state.score++;
+          state.swishT = 0.45;
+          scoreEl.textContent = state.score;
+        }
+      }
+    }
+
+    // Recycle off-screen hoops.
+    while (state.hoops.length && state.hoops[0].x + HOOP_WIDTH < -40) {
+      state.hoops.shift();
+      const lastX = state.hoops[state.hoops.length - 1].x;
+      state.hoops.push(makeHoop(lastX + HOOP_SPACING));
+    }
+
+    state.floorX = (state.floorX - HOOP_SPEED * dt) % 24;
+
+    // Floor collision.
+    if (by + BALL_R >= H - FLOOR_H) {
+      state.ball.y = H - FLOOR_H - BALL_R;
+      die();
+      return;
+    }
+    // Ceiling bounce (don't kill — softer feel).
+    if (by - BALL_R <= 0) {
+      state.ball.y = BALL_R;
+      state.ball.v = Math.max(state.ball.v, 40);
+    }
+
+    // Rim collisions — hitting the rim ends the run.
+    for (const h of state.hoops) {
+      if (h.x + HOOP_WIDTH < bx - BALL_R * 2) continue;
+      if (h.x - HOOP_WIDTH > bx + BALL_R * 2) break;
+      const hy = hoopY(h);
+      const leftRimX = h.x - HOOP_WIDTH / 2;
+      const rightRimX = h.x + HOOP_WIDTH / 2;
+      // Left rim segment (a short horizontal bar on each side of the opening).
+      if (circleRect(bx, by, BALL_R, leftRimX - RIM_THICK, hy - RIM_THICK / 2, RIM_THICK + 8, RIM_THICK) ||
+          circleRect(bx, by, BALL_R, rightRimX - 8, hy - RIM_THICK / 2, RIM_THICK + 8, RIM_THICK)) {
+        die();
+        return;
+      }
+      // Backboard stick (above the rim).
+      const boardX = rightRimX + 2;
+      if (circleRect(bx, by, BALL_R, boardX, hy - 48, 6, 44)) {
+        die();
+        return;
+      }
+    }
+  }
+
+  function circleRect(cx, cy, r, rx, ry, rw, rh) {
+    const nx = Math.max(rx, Math.min(cx, rx + rw));
+    const ny = Math.max(ry, Math.min(cy, ry + rh));
+    const dx = cx - nx, dy = cy - ny;
+    return dx * dx + dy * dy < r * r;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    drawCourtLines();
+
+    for (const h of state.hoops) drawHoopBack(h);
+    drawBall(BALL_X, state.ball.y, state.ball.rot);
+    for (const h of state.hoops) drawHoopFront(h);
+
+    drawFloor();
+
+    if (state.mode === 'playing') {
+      ctx.save();
+      ctx.font = '700 44px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillStyle = 'rgba(29,29,31,0.92)';
+      ctx.fillText(String(state.score), W / 2, 24);
+      ctx.restore();
+    }
+
+    if (state.swishT > 0) {
+      const a = state.swishT / 0.45;
+      ctx.save();
+      ctx.font = '700 22px -apple-system, BlinkMacSystemFont, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = `rgba(226, 88, 34, ${a})`;
+      ctx.fillText('SWISH!', W / 2, 90 - (1 - a) * 20);
+      ctx.restore();
+    }
+
+    if (state.flashT > 0) {
+      ctx.save();
+      ctx.fillStyle = `rgba(255,255,255,${Math.min(0.6, state.flashT * 3)})`;
+      ctx.fillRect(0, 0, W, H);
+      ctx.restore();
+    }
+  }
+
+  function drawCourtLines() {
+    // Soft center stripe + parallax lines on background for court feel.
+    ctx.save();
+    const offset = (state.floorX * 0.25) % 80;
+    ctx.strokeStyle = 'rgba(180, 150, 100, 0.18)';
+    ctx.lineWidth = 1;
+    for (let x = offset; x < W; x += 80) {
+      ctx.beginPath();
+      ctx.moveTo(x, 60);
+      ctx.lineTo(x, H - FLOOR_H - 20);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawHoopBack(h) {
+    // Draw the backboard + pole behind the ball so the ball layers in front of it.
+    const hy = hoopY(h);
+    const rightRimX = h.x + HOOP_WIDTH / 2;
+
+    // Pole stub (backboard support)
+    ctx.fillStyle = 'rgba(60,60,60,0.75)';
+    ctx.fillRect(rightRimX + 8, hy - 40, 4, 36);
+
+    // Backboard
+    const bx = rightRimX + 2;
+    const by = hy - 48;
+    const bw = 6;
+    const bh = 44;
+    const grad = ctx.createLinearGradient(bx, 0, bx + bw, 0);
+    grad.addColorStop(0, '#ffffff');
+    grad.addColorStop(0.5, '#f1f1f3');
+    grad.addColorStop(1, '#c9c9ce');
+    ctx.fillStyle = grad;
+    roundRect(bx, by, bw, bh, 1.5);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(40,40,40,0.35)';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+    // Square marking on backboard.
+    ctx.strokeStyle = 'rgba(60,60,60,0.45)';
+    ctx.lineWidth = 0.6;
+    ctx.strokeRect(bx + 1, hy - 18, bw - 2, 14);
+  }
+
+  function drawHoopFront(h) {
+    const hy = hoopY(h);
+    const leftRimX = h.x - HOOP_WIDTH / 2;
+    const rightRimX = h.x + HOOP_WIDTH / 2;
+
+    // Net — drawn first (behind rim) so the rim sits in front.
+    drawNet(h.x, hy);
+
+    // Rim — two short red horizontal bars framing the opening, drawn as rounded rects.
+    const rimGrad = ctx.createLinearGradient(0, hy - RIM_THICK, 0, hy + RIM_THICK);
+    rimGrad.addColorStop(0, '#ff5a48');
+    rimGrad.addColorStop(0.5, '#d23b2a');
+    rimGrad.addColorStop(1, '#8a1f10');
+    ctx.fillStyle = rimGrad;
+
+    // Left rim bar
+    roundRect(leftRimX - RIM_THICK, hy - RIM_THICK / 2, RIM_THICK + 8, RIM_THICK, 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(80,15,5,0.5)';
+    ctx.lineWidth = 0.6;
+    ctx.stroke();
+
+    // Right rim bar
+    roundRect(rightRimX - 8, hy - RIM_THICK / 2, RIM_THICK + 8, RIM_THICK, 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Rim tips (small highlight on the inner edges)
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.fillRect(leftRimX + 1, hy - RIM_THICK / 2 + 1, 4, 1);
+    ctx.fillRect(rightRimX - 5, hy - RIM_THICK / 2 + 1, 4, 1);
+  }
+
+  function drawNet(cx, cy) {
+    const topY = cy + RIM_THICK / 2;
+    const bottomY = cy + 22;
+    const leftX = cx - HOOP_WIDTH / 2 + 2;
+    const rightX = cx + HOOP_WIDTH / 2 - 2;
+    const innerLeft = leftX + 4;
+    const innerRight = rightX - 4;
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+    ctx.lineWidth = 1;
+    // Vertical strings converging to a slightly narrower bottom.
+    const strings = 6;
+    for (let i = 0; i <= strings; i++) {
+      const tx = leftX + ((rightX - leftX) * i) / strings;
+      const bxp = innerLeft + ((innerRight - innerLeft) * i) / strings;
+      ctx.beginPath();
+      ctx.moveTo(tx, topY);
+      // Slight swing into the net for a sense of depth.
+      const mx = (tx + bxp) / 2;
+      const my = (topY + bottomY) / 2 + 2;
+      ctx.quadraticCurveTo(mx, my, bxp, bottomY);
+      ctx.stroke();
+    }
+    // Horizontal ring bands.
+    for (let j = 1; j <= 2; j++) {
+      const y = topY + ((bottomY - topY) * j) / 3;
+      const ringL = leftX + ((innerLeft - leftX) * j) / 3;
+      const ringR = rightX - ((rightX - innerRight) * j) / 3;
+      ctx.beginPath();
+      ctx.moveTo(ringL, y);
+      ctx.quadraticCurveTo((ringL + ringR) / 2, y + 1.5, ringR, y);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawBall(x, y, rot) {
+    const R = BALL_R;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+
+    // Shadow on the floor
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.ellipse(0, (H - FLOOR_H - y), R * 0.9, R * 0.3, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Ball body — radial gradient for depth.
+    const grad = ctx.createRadialGradient(-3, -3, 2, 0, 0, R + 2);
+    grad.addColorStop(0, '#ff9458');
+    grad.addColorStop(0.6, '#e8712a');
+    grad.addColorStop(1, '#a0420f');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(0, 0, R, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Outline
+    ctx.strokeStyle = 'rgba(90,30,5,0.55)';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+
+    // Seams — basketball pattern (dark lines)
+    ctx.strokeStyle = 'rgba(60,20,5,0.75)';
+    ctx.lineWidth = 1;
+    // Center vertical seam
+    ctx.beginPath();
+    ctx.moveTo(0, -R);
+    ctx.lineTo(0, R);
+    ctx.stroke();
+    // Horizontal curved seam
+    ctx.beginPath();
+    ctx.moveTo(-R, 0);
+    ctx.quadraticCurveTo(0, -4, R, 0);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-R, 0);
+    ctx.quadraticCurveTo(0, 4, R, 0);
+    ctx.stroke();
+    // Side arcs
+    ctx.beginPath();
+    ctx.arc(-R * 0.55, 0, R * 0.85, -Math.PI / 3, Math.PI / 3);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(R * 0.55, 0, R * 0.85, Math.PI - Math.PI / 3, Math.PI + Math.PI / 3);
+    ctx.stroke();
+
+    // Specular highlight
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.beginPath();
+    ctx.ellipse(-R * 0.4, -R * 0.45, R * 0.28, R * 0.18, -0.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawFloor() {
+    const y = H - FLOOR_H;
+    // Wood floor gradient
+    const grad = ctx.createLinearGradient(0, y, 0, H);
+    grad.addColorStop(0, '#cf9e63');
+    grad.addColorStop(0.5, '#b9864a');
+    grad.addColorStop(1, '#9a6a35');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, y, W, FLOOR_H);
+
+    // Top edge
+    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    ctx.fillRect(0, y, W, 1.5);
+
+    // Wood plank grain lines
+    ctx.strokeStyle = 'rgba(70, 40, 15, 0.18)';
+    ctx.lineWidth = 0.6;
+    for (let px = (state.floorX % 24); px < W; px += 24) {
+      ctx.beginPath();
+      ctx.moveTo(px, y + 3);
+      ctx.lineTo(px, H - 3);
+      ctx.stroke();
+    }
+
+    // Court line
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(0, y + 8);
+    ctx.lineTo(W, y + 8);
+    ctx.stroke();
+  }
+
+  function roundRect(x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.033, (now - last) / 1000);
+    last = now;
+    if (state.flashT > 0) state.flashT = Math.max(0, state.flashT - dt);
+    update(dt);
+    draw();
+    requestAnimationFrame(frame);
+  }
+
+  reset();
+  showReady();
+  requestAnimationFrame(frame);
+
+  const ro = new ResizeObserver(resize);
+  ro.observe(stage);
+})();
+</script>
+
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

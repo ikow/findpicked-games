@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Kakuro — FindPicked Games</title>
+<meta name="description" content="Play Kakuro free in your browser. Cross-sum puzzle — fill 1–9 to match each clue without repeating within a run.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Cpath d='M4 4L28 28' stroke='white' stroke-width='2'/%3E%3Ctext x='22' y='12' font-size='9' fill='white' text-anchor='middle' font-family='system-ui' font-weight='700'%3E15%3C/text%3E%3Ctext x='10' y='26' font-size='9' fill='white' text-anchor='middle' font-family='system-ui' font-weight='700'%3E11%3C/text%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-hover: #f5f5f7;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-soft: rgba(0, 113, 227, 0.12);
+  --accent-hover: #0077ed;
+  --success: #34c759;
+  --danger: #ff3b30;
+  --danger-soft: rgba(255, 59, 48, 0.15);
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+  --cell-bg: #ffffff;
+  --cell-border: rgba(0,0,0,0.1);
+  --clue-bg: #2c2c2e;
+  --clue-border: #1c1c1e;
+  --block-bg: #2c2c2e;
+  --cell-size: 52px;
+}
+
+html, body { height: 100%; overflow-x: hidden; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  min-height: 100vh;
+}
+
+.back {
+  position: fixed; top: 20px; left: 20px;
+  width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; background: var(--bg-card);
+  color: var(--text-primary); text-decoration: none;
+  font-size: 20px; box-shadow: var(--shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  z-index: 100;
+}
+.back:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+.back:active { transform: translateY(0); }
+
+.app {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 80px 16px 40px;
+  display: flex; flex-direction: column; gap: 20px;
+}
+
+.header { text-align: center; }
+.header h1 { font-size: 36px; font-weight: 700; letter-spacing: -0.025em; }
+.tagline { color: var(--text-secondary); font-size: 15px; margin-top: 4px; }
+
+.card {
+  background: var(--bg-card);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+
+.toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
+}
+.select {
+  font-family: inherit; font-size: 15px; font-weight: 500;
+  padding: 10px 38px 10px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 5l3 3 3-3' stroke='%231d1d1f' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 12px;
+  min-height: 44px;
+}
+.select:hover { background-color: #ebebf0; }
+
+.stats { display: flex; gap: 10px; }
+.stat {
+  display: flex; flex-direction: column; align-items: center;
+  background: var(--bg-hover); padding: 6px 14px; border-radius: 14px;
+  min-width: 64px;
+}
+.stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); font-weight: 700; }
+.stat-value { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+
+.status {
+  text-align: center; font-size: 15px; font-weight: 500;
+  min-height: 22px; margin-bottom: 12px;
+  color: var(--text-secondary);
+}
+.status.error { color: var(--danger); font-weight: 600; }
+.status.success { color: var(--success); font-weight: 600; }
+
+.board-wrap {
+  display: flex; justify-content: center;
+  margin-bottom: 18px;
+  overflow-x: auto;
+  padding: 4px;
+}
+
+.board {
+  display: grid;
+  gap: 3px;
+  padding: 6px;
+  background: #d2d2d7;
+  border-radius: 12px;
+  touch-action: manipulation;
+}
+
+.cell {
+  width: var(--cell-size); height: var(--cell-size);
+  display: flex; align-items: center; justify-content: center;
+  font-family: inherit;
+  font-size: 24px; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  background: var(--cell-bg);
+  border: 0;
+  border-radius: 6px;
+  padding: 0;
+  cursor: pointer;
+  transition: background-color 0.12s ease, transform 0.08s ease, box-shadow 0.12s ease;
+  position: relative;
+  min-width: 44px; min-height: 44px;
+}
+.cell.fill:hover { background: #f0f4fb; }
+.cell.fill:active { transform: scale(0.94); }
+.cell.fill.selected {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 2px var(--accent);
+  color: var(--accent);
+}
+.cell.fill.violation {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.cell.fill.violation.selected {
+  box-shadow: inset 0 0 0 2px var(--danger);
+}
+
+.cell.block {
+  background: var(--block-bg);
+  cursor: default;
+  border-radius: 6px;
+}
+
+.cell.clue {
+  background: var(--clue-bg);
+  cursor: default;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.cell.clue svg {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+.cell.clue .sum-down {
+  position: absolute;
+  top: 4px; right: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #f5f5f7;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.cell.clue .sum-right {
+  position: absolute;
+  bottom: 4px; left: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #f5f5f7;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.numpad {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.numpad button {
+  font-family: inherit;
+  font-size: 20px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  padding: 0;
+  height: 48px;
+  min-height: 44px;
+  min-width: 44px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background-color 0.12s, transform 0.08s;
+}
+.numpad button:hover { background: #ebebf0; }
+.numpad button:active { transform: scale(0.94); }
+.numpad .erase {
+  grid-column: span 2;
+  background: var(--bg-hover);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.btn {
+  font-family: inherit; font-size: 16px; font-weight: 600;
+  padding: 12px 28px; border-radius: 999px;
+  border: none; cursor: pointer;
+  min-height: 44px;
+  transition: opacity 0.2s, transform 0.08s;
+}
+.btn:hover { opacity: 0.88; }
+.btn:active { transform: scale(0.97); }
+.btn.primary { background: var(--accent); color: white; }
+.btn.secondary { background: var(--bg-hover); color: var(--text-primary); }
+
+.how-to-play h2 {
+  font-size: 20px; font-weight: 600; margin-bottom: 12px; letter-spacing: -0.01em;
+}
+.how-to-play ol {
+  padding-left: 22px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  font-size: 15px;
+}
+.how-to-play li { margin-bottom: 6px; }
+.how-to-play b { color: var(--text-primary); font-weight: 600; }
+.how-to-play .legend {
+  display: flex; align-items: center; gap: 12px;
+  margin-top: 14px; padding: 12px;
+  background: var(--bg-hover); border-radius: 12px;
+  font-size: 14px; color: var(--text-secondary);
+}
+.how-to-play .legend-cell {
+  position: relative;
+  width: 44px; height: 44px;
+  background: var(--clue-bg);
+  border-radius: 6px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.how-to-play .legend-cell svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.how-to-play .legend-cell .sum-down {
+  position: absolute; top: 3px; right: 5px;
+  font-size: 12px; font-weight: 700; color: #f5f5f7; line-height: 1;
+}
+.how-to-play .legend-cell .sum-right {
+  position: absolute; bottom: 3px; left: 5px;
+  font-size: 12px; font-weight: 700; color: #f5f5f7; line-height: 1;
+}
+
+.overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: none; align-items: center; justify-content: center;
+  z-index: 200; padding: 16px;
+}
+.overlay.show { display: flex; }
+.modal {
+  background: white; border-radius: 20px; padding: 32px;
+  max-width: 360px; width: 100%; text-align: center;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+}
+.modal h2 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 6px; }
+.modal .sub { color: var(--text-secondary); font-size: 15px; margin-bottom: 18px; }
+.modal .result {
+  background: var(--bg-hover); border-radius: 14px; padding: 14px;
+  margin-bottom: 20px; display: flex; justify-content: space-around;
+}
+.modal .result > div { display: flex; flex-direction: column; gap: 4px; }
+.modal .result .k { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); font-weight: 700; }
+.modal .result .v { font-size: 20px; font-weight: 600; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+
+@media (max-width: 540px) {
+  :root { --cell-size: 46px; }
+  .app { padding: 72px 12px 40px; }
+  .header h1 { font-size: 30px; }
+  .toolbar { flex-direction: column; align-items: stretch; }
+  .select { width: 100%; }
+  .stats { justify-content: space-between; }
+  .stat { flex: 1; min-width: 0; padding: 6px 8px; }
+  .cell { font-size: 21px; }
+  .cell.clue .sum-down, .cell.clue .sum-right { font-size: 12px; }
+}
+@media (max-width: 400px) {
+  :root { --cell-size: 40px; }
+  .cell { font-size: 19px; }
+  .cell.clue .sum-down, .cell.clue .sum-right { font-size: 11px; }
+  .numpad button { height: 44px; font-size: 18px; }
+}
+@media (max-width: 340px) {
+  :root { --cell-size: 36px; }
+  .cell { font-size: 17px; }
+}
+</style>
+</head>
+<body>
+<a class="back" href="../" aria-label="Back to games">←</a>
+<main class="app">
+  <header class="header">
+    <h1>Kakuro</h1>
+    <p class="tagline">Cross-sum logic — fill 1–9 to hit every clue</p>
+  </header>
+
+  <section class="card">
+    <div class="toolbar">
+      <select id="puzzle-select" class="select" aria-label="Choose puzzle"></select>
+      <div class="stats">
+        <div class="stat"><span class="stat-label">Time</span><span id="timer" class="stat-value">0s</span></div>
+        <div class="stat"><span class="stat-label">Solved</span><span id="solved-count" class="stat-value">0</span></div>
+        <div class="stat"><span class="stat-label">Score</span><span id="score" class="stat-value">0</span></div>
+      </div>
+    </div>
+
+    <div id="status" class="status">Tap a white cell, then tap a number.</div>
+
+    <div class="board-wrap">
+      <div id="board" class="board" role="grid"></div>
+    </div>
+
+    <div class="numpad" id="numpad">
+      <button type="button" data-n="1">1</button>
+      <button type="button" data-n="2">2</button>
+      <button type="button" data-n="3">3</button>
+      <button type="button" data-n="4">4</button>
+      <button type="button" data-n="5">5</button>
+      <button type="button" data-n="6">6</button>
+      <button type="button" data-n="7">7</button>
+      <button type="button" data-n="8">8</button>
+      <button type="button" data-n="9">9</button>
+      <button type="button" class="erase" data-n="0" aria-label="Erase">⌫ Erase</button>
+    </div>
+
+    <div class="actions">
+      <button class="btn secondary" id="clear-btn">Clear</button>
+      <button class="btn primary" id="restart-btn">Restart Puzzle</button>
+    </div>
+  </section>
+
+  <section class="card how-to-play">
+    <h2>How to Play</h2>
+    <ol>
+      <li>Fill every <b>white cell</b> with a digit from <b>1 to 9</b>.</li>
+      <li><b>Dark clue cells</b> show sums: the number in the <b>bottom-left</b> is the target for the across run to the right; the number in the <b>top-right</b> is the target for the down run below.</li>
+      <li>Digits in a single run must be <b>unique</b> — no repeats in any across or down sum group.</li>
+      <li>Tap a white cell to select it, then tap a number (or press 1–9 on a keyboard). Use <b>Erase</b> or <b>Backspace</b> to clear.</li>
+      <li>Mistakes highlight in <b>red</b>. Fill every cell correctly to win — faster solves earn more points.</li>
+    </ol>
+    <div class="legend">
+      <div class="legend-cell" aria-hidden="true">
+        <svg viewBox="0 0 44 44" preserveAspectRatio="none"><line x1="0" y1="0" x2="44" y2="44" stroke="rgba(255,255,255,0.35)" stroke-width="1.2"/></svg>
+        <span class="sum-down">15</span>
+        <span class="sum-right">11</span>
+      </div>
+      <div><b style="color:var(--text-primary)">15</b> = the down run sums to 15. <b style="color:var(--text-primary)">11</b> = the across run sums to 11.</div>
+    </div>
+  </section>
+</main>
+
+<div class="overlay" id="win-modal" aria-hidden="true">
+  <div class="modal">
+    <h2>Solved!</h2>
+    <p class="sub">Every run checks out.</p>
+    <div class="result">
+      <div><span class="k">Time</span><span class="v" id="final-time">0s</span></div>
+      <div><span class="k">Earned</span><span class="v" id="final-earned">0</span></div>
+      <div><span class="k">Total</span><span class="v" id="final-total">0</span></div>
+    </div>
+    <button class="btn primary" id="play-again" style="width: 100%;">Play Again</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  // --- Puzzle definitions ---
+  // Cell types:
+  //   B      = block (no clue, no fill)
+  //   [r,d]  = clue, r = across sum (0 if none), d = down sum (0 if none)
+  //   digit  = fill cell, stores the solution answer
+  // Every puzzle is hand-verified: row sums, column sums, distinct digits per run.
+  const B = 'B';
+  const C = (r, d) => ({ clue: true, r, d });
+
+  const puzzles = [
+    {
+      name: 'Puzzle 1 — Tutorial (4×4)',
+      difficulty: 1,
+      grid: [
+        [ B,        C(0, 8),  C(0,15),  B        ],
+        [ C(11,0),  3,        8,        C(0,11)  ],
+        [ C(15,0),  5,        1,        9        ],
+        [ B,        C(8, 0),  6,        2        ]
+      ]
+    },
+    {
+      name: 'Puzzle 2 — Warm up (4×4)',
+      difficulty: 1,
+      grid: [
+        [ B,        C(0, 4),  C(0,16),  B        ],
+        [ C(6, 0),  1,        5,        C(0,10)  ],
+        [ C(18,0),  3,        9,        6        ],
+        [ B,        C(6, 0),  2,        4        ]
+      ]
+    },
+    {
+      name: 'Puzzle 3 — Classic (5×5)',
+      difficulty: 2,
+      grid: [
+        [ B,        C(0,10),  C(0,22),  B,        B        ],
+        [ C(16,0),  7,        9,        C(0,19),  B        ],
+        [ C(20,0),  3,        8,        9,        C(0, 3)  ],
+        [ B,        C(12,0),  5,        6,        1        ],
+        [ B,        B,        C(6, 0),  4,        2        ]
+      ]
+    },
+    {
+      name: 'Puzzle 4 — Grid shift (5×5)',
+      difficulty: 2,
+      grid: [
+        [ B,        C(0, 8),  C(0,15),  B,        B        ],
+        [ C(11,0),  3,        8,        C(0,17),  C(0,18)  ],
+        [ C(22,0),  5,        1,        7,        9        ],
+        [ B,        C(12,0),  6,        2,        4        ],
+        [ B,        B,        C(13,0),  8,        5        ]
+      ]
+    },
+    {
+      name: 'Puzzle 5 — Wide open (5×5)',
+      difficulty: 3,
+      grid: [
+        [ B,        B,        C(0,20),  C(0,24),  C(0,16)  ],
+        [ B,        C(12,8),  2,        9,        1        ],
+        [ C(24,0),  5,        4,        7,        8        ],
+        [ C(21,0),  3,        6,        5,        7        ],
+        [ B,        C(11,0),  8,        3,        B        ]
+      ]
+    }
+  ];
+
+  // --- DOM refs ---
+  const boardEl = document.getElementById('board');
+  const selectEl = document.getElementById('puzzle-select');
+  const timerEl = document.getElementById('timer');
+  const solvedEl = document.getElementById('solved-count');
+  const scoreEl = document.getElementById('score');
+  const statusEl = document.getElementById('status');
+  const numpadEl = document.getElementById('numpad');
+  const clearBtn = document.getElementById('clear-btn');
+  const restartBtn = document.getElementById('restart-btn');
+  const winModal = document.getElementById('win-modal');
+  const playAgainBtn = document.getElementById('play-again');
+  const finalTimeEl = document.getElementById('final-time');
+  const finalEarnedEl = document.getElementById('final-earned');
+  const finalTotalEl = document.getElementById('final-total');
+
+  // --- Storage keys ---
+  const LS_SCORE = 'kakuro-total-score';
+  const LS_SOLVED = 'kakuro-solved-set';
+  const LS_BEST = 'kakuro-best-';
+
+  // --- State ---
+  let puzzleIndex = 0;
+  let puzzle = null;     // active puzzle definition
+  let rows = 0, cols = 0;
+  let kind = null;       // 'block' | 'clue' | 'fill' per cell
+  let answer = null;     // solution digit for fill cells
+  let user = null;       // user-entered digit for fill cells (0 = empty)
+  let runs = [];         // list of { cells: [[r,c]...], sum, dir }
+  let cellRuns = null;   // for each fill cell: [acrossRunId, downRunId]
+  let selected = null;   // {r,c} of selected fill cell
+  let startTime = null;
+  let timerInterval = null;
+  let solvedNow = false;
+  let totalScore = loadTotalScore();
+  let solvedSet = loadSolvedSet();
+
+  // --- Storage helpers ---
+  function loadTotalScore() {
+    try { return parseInt(localStorage.getItem(LS_SCORE)) || 0; } catch { return 0; }
+  }
+  function saveTotalScore() {
+    try { localStorage.setItem(LS_SCORE, String(totalScore)); } catch {}
+  }
+  function loadSolvedSet() {
+    try {
+      const raw = localStorage.getItem(LS_SOLVED);
+      if (!raw) return new Set();
+      return new Set(JSON.parse(raw));
+    } catch { return new Set(); }
+  }
+  function saveSolvedSet() {
+    try { localStorage.setItem(LS_SOLVED, JSON.stringify([...solvedSet])); } catch {}
+  }
+  function getBestTime(idx) {
+    try { return parseInt(localStorage.getItem(LS_BEST + idx)) || null; } catch { return null; }
+  }
+  function setBestTime(idx, secs) {
+    try { localStorage.setItem(LS_BEST + idx, String(secs)); } catch {}
+  }
+
+  // --- Load puzzle: build runs index ---
+  function loadPuzzle(idx) {
+    puzzleIndex = idx;
+    puzzle = puzzles[idx];
+    const g = puzzle.grid;
+    rows = g.length;
+    cols = g[0].length;
+    kind = Array.from({length: rows}, () => Array(cols).fill(null));
+    answer = Array.from({length: rows}, () => Array(cols).fill(0));
+    user = Array.from({length: rows}, () => Array(cols).fill(0));
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const cell = g[r][c];
+        if (cell === B) {
+          kind[r][c] = 'block';
+        } else if (typeof cell === 'object' && cell.clue) {
+          kind[r][c] = 'clue';
+        } else {
+          kind[r][c] = 'fill';
+          answer[r][c] = cell;
+        }
+      }
+    }
+
+    // Build runs
+    runs = [];
+    cellRuns = Array.from({length: rows}, () => Array.from({length: cols}, () => [null, null]));
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        if (kind[r][c] !== 'clue') continue;
+        const clue = g[r][c];
+        if (clue.r && clue.r > 0) {
+          // across run to the right
+          const cells = [];
+          let cc = c + 1;
+          while (cc < cols && kind[r][cc] === 'fill') {
+            cells.push([r, cc]);
+            cc++;
+          }
+          if (cells.length) {
+            const id = runs.length;
+            runs.push({ cells, sum: clue.r, dir: 'across' });
+            cells.forEach(([rr, cc2]) => { cellRuns[rr][cc2][0] = id; });
+          }
+        }
+        if (clue.d && clue.d > 0) {
+          // down run below
+          const cells = [];
+          let rr = r + 1;
+          while (rr < rows && kind[rr][c] === 'fill') {
+            cells.push([rr, c]);
+            rr++;
+          }
+          if (cells.length) {
+            const id = runs.length;
+            runs.push({ cells, sum: clue.d, dir: 'down' });
+            cells.forEach(([r2, cc2]) => { cellRuns[r2][cc2][1] = id; });
+          }
+        }
+      }
+    }
+
+    selected = null;
+    solvedNow = false;
+    resetTimer();
+    render();
+    const best = getBestTime(puzzleIndex);
+    statusEl.className = 'status';
+    statusEl.textContent = best !== null
+      ? `Best time for this puzzle: ${best}s. Tap a white cell to begin.`
+      : 'Tap a white cell, then tap a number.';
+  }
+
+  // --- Violation detection ---
+  // A run is "violating" if:
+  //   - any two filled cells in it share a digit, OR
+  //   - all cells filled but sum != target, OR
+  //   - partial fill already exceeds target (sum of filled > target)
+  function computeBadCells() {
+    const bad = Array.from({length: rows}, () => Array(cols).fill(false));
+    let allFilled = true;
+    let anyBad = false;
+    for (let i = 0; i < runs.length; i++) {
+      const run = runs[i];
+      let sum = 0, filled = 0;
+      const seen = {};
+      const duplicates = new Set();
+      for (const [r, c] of run.cells) {
+        const v = user[r][c];
+        if (v === 0) { allFilled = false; continue; }
+        filled++;
+        sum += v;
+        if (seen[v] !== undefined) {
+          duplicates.add(v);
+        } else {
+          seen[v] = [r, c];
+        }
+      }
+      // Mark duplicates
+      if (duplicates.size > 0) {
+        for (const [r, c] of run.cells) {
+          if (duplicates.has(user[r][c])) { bad[r][c] = true; anyBad = true; }
+        }
+      }
+      const full = filled === run.cells.length;
+      if (full && sum !== run.sum) {
+        for (const [r, c] of run.cells) { bad[r][c] = true; }
+        anyBad = true;
+      } else if (!full && sum > run.sum) {
+        // Partial but already over
+        for (const [r, c] of run.cells) {
+          if (user[r][c] !== 0) bad[r][c] = true;
+        }
+        anyBad = true;
+      }
+    }
+    return { bad, allFilled, anyBad };
+  }
+
+  function isSolved() {
+    const { allFilled, anyBad } = computeBadCells();
+    return allFilled && !anyBad;
+  }
+
+  // --- Render ---
+  function render() {
+    boardEl.style.gridTemplateColumns = `repeat(${cols}, var(--cell-size))`;
+    boardEl.innerHTML = '';
+    const { bad } = computeBadCells();
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const kind_ = kind[r][c];
+        if (kind_ === 'block') {
+          const div = document.createElement('div');
+          div.className = 'cell block';
+          div.setAttribute('aria-hidden', 'true');
+          boardEl.appendChild(div);
+        } else if (kind_ === 'clue') {
+          const div = document.createElement('div');
+          div.className = 'cell clue';
+          const clue = puzzle.grid[r][c];
+          div.setAttribute('role', 'gridcell');
+          const parts = [];
+          if (clue.r) parts.push(`across ${clue.r}`);
+          if (clue.d) parts.push(`down ${clue.d}`);
+          div.setAttribute('aria-label', `Clue: ${parts.join(', ')}`);
+          const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          svg.setAttribute('viewBox', '0 0 52 52');
+          svg.setAttribute('preserveAspectRatio', 'none');
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', '0'); line.setAttribute('y1', '0');
+          line.setAttribute('x2', '52'); line.setAttribute('y2', '52');
+          line.setAttribute('stroke', 'rgba(255,255,255,0.35)');
+          line.setAttribute('stroke-width', '1.2');
+          svg.appendChild(line);
+          div.appendChild(svg);
+          if (clue.d) {
+            const sd = document.createElement('span');
+            sd.className = 'sum-down';
+            sd.textContent = String(clue.d);
+            div.appendChild(sd);
+          }
+          if (clue.r) {
+            const sr = document.createElement('span');
+            sr.className = 'sum-right';
+            sr.textContent = String(clue.r);
+            div.appendChild(sr);
+          }
+          boardEl.appendChild(div);
+        } else {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'cell fill';
+          btn.dataset.r = r;
+          btn.dataset.c = c;
+          btn.setAttribute('role', 'gridcell');
+          const v = user[r][c];
+          btn.textContent = v === 0 ? '' : String(v);
+          btn.setAttribute('aria-label', `Row ${r+1} column ${c+1}, ${v === 0 ? 'empty' : v}`);
+          if (selected && selected.r === r && selected.c === c) btn.classList.add('selected');
+          if (bad[r][c]) btn.classList.add('violation');
+          boardEl.appendChild(btn);
+        }
+      }
+    }
+    updateStatus();
+  }
+
+  function updateStatus() {
+    if (solvedNow) return;
+    const { allFilled, anyBad } = computeBadCells();
+    if (anyBad) {
+      statusEl.className = 'status error';
+      statusEl.textContent = 'Red cells break a rule — wrong sum or a repeat.';
+    } else if (allFilled) {
+      statusEl.className = 'status';
+      statusEl.textContent = 'All filled — checking…';
+    } else {
+      let remaining = 0;
+      for (let r = 0; r < rows; r++)
+        for (let c = 0; c < cols; c++)
+          if (kind[r][c] === 'fill' && user[r][c] === 0) remaining++;
+      statusEl.className = 'status';
+      statusEl.textContent = `${remaining} cell${remaining === 1 ? '' : 's'} remaining.`;
+    }
+  }
+
+  // --- Input ---
+  function selectCell(r, c) {
+    if (solvedNow) return;
+    if (kind[r][c] !== 'fill') return;
+    selected = { r, c };
+    render();
+  }
+
+  function enterDigit(n) {
+    if (solvedNow) return;
+    if (!selected) {
+      statusEl.className = 'status';
+      statusEl.textContent = 'Select a white cell first.';
+      return;
+    }
+    const { r, c } = selected;
+    user[r][c] = n;
+    if (!startTime) startTimer();
+    // Auto-advance to next empty cell in current across run, then down run
+    if (n !== 0) advanceSelection();
+    render();
+    if (isSolved()) onSolved();
+  }
+
+  function advanceSelection() {
+    if (!selected) return;
+    const { r, c } = selected;
+    const [aId, dId] = cellRuns[r][c];
+    const tryRun = (id) => {
+      if (id === null) return false;
+      const run = runs[id];
+      const idx = run.cells.findIndex(([rr, cc]) => rr === r && cc === c);
+      for (let i = idx + 1; i < run.cells.length; i++) {
+        const [rr, cc] = run.cells[i];
+        if (user[rr][cc] === 0) { selected = { r: rr, c: cc }; return true; }
+      }
+      return false;
+    };
+    if (tryRun(aId)) return;
+    if (tryRun(dId)) return;
+    // No empty cell in current runs — leave selection as is.
+  }
+
+  function moveSelection(dr, dc) {
+    if (!selected) {
+      // Pick first fill cell
+      for (let r = 0; r < rows; r++)
+        for (let c = 0; c < cols; c++)
+          if (kind[r][c] === 'fill') { selected = { r, c }; render(); return; }
+      return;
+    }
+    let { r, c } = selected;
+    for (let step = 0; step < rows * cols; step++) {
+      r += dr; c += dc;
+      if (r < 0 || r >= rows || c < 0 || c >= cols) return;
+      if (kind[r][c] === 'fill') {
+        selected = { r, c };
+        render();
+        return;
+      }
+    }
+  }
+
+  // --- Timer ---
+  function startTimer() {
+    startTime = Date.now();
+    timerInterval = setInterval(() => {
+      const secs = Math.floor((Date.now() - startTime) / 1000);
+      timerEl.textContent = `${secs}s`;
+    }, 250);
+  }
+  function stopTimer() {
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  }
+  function resetTimer() {
+    stopTimer();
+    startTime = null;
+    timerEl.textContent = '0s';
+  }
+
+  // --- Win ---
+  function onSolved() {
+    solvedNow = true;
+    stopTimer();
+    const secs = startTime ? Math.floor((Date.now() - startTime) / 1000) : 0;
+    const d = puzzle.difficulty;
+    const base = d === 1 ? 500 : d === 2 ? 900 : 1400;
+    const timeBonus = Math.max(0, base - secs * (d === 1 ? 4 : d === 2 ? 5 : 6));
+    const earned = Math.max(d * 100, timeBonus);
+    totalScore += earned;
+    saveTotalScore();
+    scoreEl.textContent = totalScore;
+    solvedSet.add(puzzleIndex);
+    saveSolvedSet();
+    solvedEl.textContent = `${solvedSet.size}/${puzzles.length}`;
+    const prev = getBestTime(puzzleIndex);
+    if (prev === null || secs < prev) setBestTime(puzzleIndex, secs);
+    statusEl.className = 'status success';
+    statusEl.textContent = `Solved in ${secs}s! +${earned} points.`;
+    finalTimeEl.textContent = `${secs}s`;
+    finalEarnedEl.textContent = `+${earned}`;
+    finalTotalEl.textContent = String(totalScore);
+    winModal.classList.add('show');
+    winModal.setAttribute('aria-hidden', 'false');
+    if (window.Leaderboard && Leaderboard.submitScore) {
+      Leaderboard.submitScore(totalScore);
+    }
+  }
+
+  function hideWin() {
+    winModal.classList.remove('show');
+    winModal.setAttribute('aria-hidden', 'true');
+  }
+
+  function nextPuzzle() {
+    hideWin();
+    const nextIdx = (puzzleIndex + 1) % puzzles.length;
+    selectEl.value = String(nextIdx);
+    loadPuzzle(nextIdx);
+  }
+
+  function restart() {
+    hideWin();
+    loadPuzzle(puzzleIndex);
+  }
+
+  function clearUser() {
+    if (solvedNow) return;
+    for (let r = 0; r < rows; r++)
+      for (let c = 0; c < cols; c++)
+        if (kind[r][c] === 'fill') user[r][c] = 0;
+    resetTimer();
+    render();
+    statusEl.className = 'status';
+    statusEl.textContent = 'Board cleared. Tap a cell to start again.';
+  }
+
+  // --- Events ---
+  boardEl.addEventListener('click', (e) => {
+    const btn = e.target.closest('.cell.fill');
+    if (!btn) return;
+    selectCell(parseInt(btn.dataset.r), parseInt(btn.dataset.c));
+  });
+
+  numpadEl.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-n]');
+    if (!btn) return;
+    enterDigit(parseInt(btn.dataset.n));
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (winModal.classList.contains('show')) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); nextPuzzle(); }
+      return;
+    }
+    if (e.key >= '1' && e.key <= '9') { enterDigit(parseInt(e.key)); e.preventDefault(); }
+    else if (e.key === '0' || e.key === 'Backspace' || e.key === 'Delete') { enterDigit(0); e.preventDefault(); }
+    else if (e.key === 'ArrowUp') { moveSelection(-1, 0); e.preventDefault(); }
+    else if (e.key === 'ArrowDown') { moveSelection(1, 0); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft') { moveSelection(0, -1); e.preventDefault(); }
+    else if (e.key === 'ArrowRight') { moveSelection(0, 1); e.preventDefault(); }
+  });
+
+  selectEl.addEventListener('change', () => {
+    loadPuzzle(parseInt(selectEl.value));
+  });
+  restartBtn.addEventListener('click', restart);
+  clearBtn.addEventListener('click', clearUser);
+  playAgainBtn.addEventListener('click', nextPuzzle);
+  winModal.addEventListener('click', (e) => { if (e.target === winModal) hideWin(); });
+
+  // --- Init ---
+  puzzles.forEach((p, i) => {
+    const opt = document.createElement('option');
+    opt.value = String(i);
+    opt.textContent = p.name;
+    selectEl.appendChild(opt);
+  });
+  scoreEl.textContent = totalScore;
+  solvedEl.textContent = `${solvedSet.size}/${puzzles.length}`;
+  loadPuzzle(0);
+})();
+</script>
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>
