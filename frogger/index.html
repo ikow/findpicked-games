@@ -477,6 +477,15 @@ canvas { display: block; width: 100%; height: 100%; }
     }
   }
 
+  // Wrap-aware horizontal hit test. Tests [fxLeft, fxRight] vs item at item.x on torus width COLS.
+  function itemIntersects(fxLeft, fxRight, item) {
+    for (const off of [0, COLS, -COLS]) {
+      const ix = item.x + off;
+      if (fxRight > ix && fxLeft < ix + item.len) return true;
+    }
+    return false;
+  }
+
   function itemVisibleOnScreen(item, lane) {
     // For turtle diving: at given phase, determine state (swimming / warning / under)
     if (lane.kind !== 'turtle') return { visible: true, diving: false };
@@ -489,12 +498,12 @@ canvas { display: block; width: 100%; height: 100%; }
   function update(dt) {
     if (state === 'paused') return;
 
-    // Move lane items (wrap when fully off screen)
+    // Move lane items on a torus of width COLS so phantom draws line up
     for (const lane of lanes) {
       for (const item of lane.items) {
         item.x += lane.dir * lane.speed * dt;
-        if (lane.dir > 0 && item.x >= COLS) item.x -= (COLS + item.len);
-        if (lane.dir < 0 && item.x + item.len <= 0) item.x += (COLS + item.len);
+        if (item.x >= COLS) item.x -= COLS;
+        if (item.x + item.len <= 0) item.x += COLS;
         if (lane.kind === 'turtle') {
           item.divePhase = (item.divePhase + dt) % 6;
         }
@@ -552,7 +561,8 @@ canvas { display: block; width: 100%; height: 100%; }
         for (const item of lane.items) {
           const vis = itemVisibleOnScreen(item, lane);
           if (!vis.visible) continue;
-          if (frog.x + 0.5 >= item.x && frog.x + 0.5 < item.x + item.len) {
+          // Frog center point
+          if (itemIntersects(frog.x + 0.5, frog.x + 0.5 + 0.001, item)) {
             onItem = item;
             break;
           }
@@ -561,7 +571,7 @@ canvas { display: block; width: 100%; height: 100%; }
           frog.x += lane.dir * lane.speed * dt;
           frog.gx = Math.round(frog.x);
           frog.hopFromX = frog.x;
-          if (frog.x < -0.2 || frog.x + 1 > COLS + 0.2) {
+          if (frog.x < -0.2 || frog.x + 0.9 > COLS) {
             die('The current swept you away.');
             return;
           }
@@ -590,9 +600,9 @@ canvas { display: block; width: 100%; height: 100%; }
     }
     const lane = laneAt(gy);
     if (lane && lane.type === 'road') {
-      // Any car overlap?
+      // Any car overlap (wrap-aware)?
       for (const item of lane.items) {
-        if (fx + 0.85 > item.x && fx + 0.15 < item.x + item.len) {
+        if (itemIntersects(fx + 0.15, fx + 0.85, item)) {
           die('Squished!');
           return;
         }

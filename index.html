@@ -4,105 +4,85 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FindPicked Games — Free Classic Games You Can Play Right Now</title>
-<meta name="description" content="Play the best classic games for free — no downloads, no sign-ups, no ads. Gomoku, Snake, 2048, Tetris, Pacman, Solitaire, Sudoku, Wordle and more.">
-<meta name="keywords" content="free online games, classic games, play gomoku online, snake game, 2048, minesweeper, pacman, solitaire, sudoku, wordle, browser games, no download games">
+<meta name="description" content="Play 21+ free classic games — no downloads, no sign-ups, no ads. Snake, 2048, Pacman, Sudoku, Wordle, Space Invaders and more.">
+<meta name="keywords" content="free online games, classic games, browser games, no download games, play free">
 <meta property="og:title" content="FindPicked Games — Free Classic Games">
-<meta property="og:description" content="Play the best classic games for free. No downloads, no sign-ups. Works on any device.">
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://game.findpicked.com">
+<meta property="og:description" content="21+ free games. No downloads, no sign-ups. Works on any device.">
 <link rel="canonical" href="https://game.findpicked.com">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ctext x='16' y='22' font-size='18' fill='white' text-anchor='middle' font-family='system-ui'%3EG%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%278%27 fill=%27%230071e3%27/%3E%3Ctext x=%2716%27 y=%2722%27 font-size=%2718%27 fill=%27white%27 text-anchor=%27middle%27 font-family=%27system-ui%27%3EG%3C/text%3E%3C/svg%3E">
 <style>
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-:root {
-  --bg: #fafafa; --bg-card: #ffffff; --text-primary: #1d1d1f;
-  --text-secondary: #6e6e73; --text-tertiary: #86868b; --accent: #0071e3;
-  --shadow: 0 2px 12px rgba(0,0,0,0.08); --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
-  --radius: 16px; --max-width: 1080px;
-}
-body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif; background: var(--bg); color: var(--text-primary); -webkit-font-smoothing: antialiased; }
-.hero { text-align: center; padding: 80px 24px 60px; max-width: var(--max-width); margin: 0 auto; }
-.hero h1 { font-size: clamp(36px, 6vw, 56px); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; }
-.hero p { font-size: clamp(17px, 2.5vw, 21px); color: var(--text-secondary); margin-top: 16px; font-weight: 400; line-height: 1.5; }
-.hero-actions { margin-top: 24px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-.hero-btn { padding: 10px 24px; border-radius: 100px; text-decoration: none; font-size: 14px; font-weight: 500; transition: opacity 0.2s; }
-.hero-btn.primary { background: var(--accent); color: white; }
-.hero-btn.secondary { background: #f5f5f7; color: var(--text-secondary); }
-.hero-btn:hover { opacity: 0.85; }
-.sub { display: block; margin-top: 16px; font-size: 13px; color: var(--text-tertiary); }
-.games { max-width: var(--max-width); margin: 0 auto; padding: 0 24px 80px; }
-.section-label { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-tertiary); margin-bottom: 20px; margin-top: 40px; }
-.section-label:first-child { margin-top: 0; }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
-.card { background: var(--bg-card); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; transition: transform 0.3s ease, box-shadow 0.3s ease; text-decoration: none; color: inherit; display: block; }
-.card:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
-.card-thumb { height: 140px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-.card-thumb svg { width: 100%; height: 100%; }
-.card-body { padding: 16px 20px 20px; }
-.card-body h3 { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 6px; }
-.card-body p { font-size: 13px; color: var(--text-secondary); line-height: 1.4; }
-.tags { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
-.tag { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 100px; background: #f5f5f7; color: var(--text-secondary); }
-.tag.play { background: var(--accent); color: white; }
-footer { text-align: center; padding: 40px 24px; font-size: 13px; color: var(--text-tertiary); border-top: 1px solid rgba(0,0,0,0.08); max-width: var(--max-width); margin: 0 auto; line-height: 1.8; }
-footer a { color: var(--accent); text-decoration: none; }
-@media (max-width: 480px) { .hero { padding: 60px 16px 40px; } .games { padding: 0 16px 60px; } .grid { grid-template-columns: 1fr 1fr; gap: 12px; } .card-thumb { height: 100px; } .card-body { padding: 12px 14px 16px; } .card-body h3 { font-size: 15px; } .card-body p { font-size: 12px; } }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-.card { animation: fadeIn 0.4s ease both; }
-.card:nth-child(2) { animation-delay: 0.03s; } .card:nth-child(3) { animation-delay: 0.06s; }
-.card:nth-child(4) { animation-delay: 0.09s; } .card:nth-child(5) { animation-delay: 0.12s; }
-.card:nth-child(6) { animation-delay: 0.15s; } .card:nth-child(7) { animation-delay: 0.18s; }
-.card:nth-child(8) { animation-delay: 0.21s; } .card:nth-child(9) { animation-delay: 0.24s; }
-.card:nth-child(10) { animation-delay: 0.27s; } .card:nth-child(11) { animation-delay: 0.30s; }
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#fafafa;--card:#fff;--text:#1d1d1f;--sub:#6e6e73;--dim:#86868b;--accent:#0071e3;--shadow:0 2px 12px rgba(0,0,0,0.08);--hover:0 8px 30px rgba(0,0,0,0.12);--r:16px;--max:1080px}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+.hero{text-align:center;padding:80px 24px 48px;max-width:var(--max);margin:0 auto}
+.hero h1{font-size:clamp(32px,5vw,48px);font-weight:700;letter-spacing:-0.03em;line-height:1.1}
+.hero p{font-size:clamp(16px,2.5vw,20px);color:var(--sub);margin-top:12px}
+.hero-actions{margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.hero-btn{padding:10px 22px;border-radius:100px;text-decoration:none;font-size:14px;font-weight:500;transition:opacity 0.2s}
+.hero-btn.primary{background:var(--accent);color:#fff}
+.hero-btn:hover{opacity:0.85}
+.count{display:block;margin-top:12px;font-size:13px;color:var(--dim)}
+.games{max-width:var(--max);margin:0 auto;padding:0 24px 80px}
+.section-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--dim);margin:32px 0 16px}
+.section-label:first-child{margin-top:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;transition:transform 0.3s,box-shadow 0.3s;text-decoration:none;color:inherit;display:block}
+.card:hover{transform:translateY(-2px);box-shadow:var(--hover)}
+.card-thumb{height:100px;display:flex;align-items:center;justify-content:center}
+.card-body{padding:12px 16px 16px}
+.card-body h3{font-size:15px;font-weight:600;margin-bottom:4px}
+.card-body p{font-size:12px;color:var(--sub);line-height:1.4}
+.tags{display:flex;gap:5px;margin-top:10px;flex-wrap:wrap}
+.tag{font-size:10px;font-weight:500;padding:2px 8px;border-radius:100px;background:#f5f5f7;color:var(--sub)}
+.tag.play{background:var(--accent);color:#fff}
+footer{text-align:center;padding:32px 24px;font-size:13px;color:var(--dim);border-top:1px solid rgba(0,0,0,0.08);max-width:var(--max);margin:0 auto}
+footer a{color:var(--accent);text-decoration:none}
+@media(max-width:480px){.hero{padding:56px 16px 32px}.games{padding:0 16px 60px}.grid{grid-template-columns:1fr 1fr;gap:10px}.card-thumb{height:70px}.card-body{padding:10px 12px 12px}.card-body h3{font-size:14px}.card-body p{font-size:11px}}
 </style>
 </head>
 <body>
 <section class="hero">
-  <h1>Your favorite games, ready to play.</h1>
-  <p>No downloads. No sign-ups. No ads. Just pick a game and start playing.</p>
-  <div class="hero-actions">
-    <a class="hero-btn primary" href="./leaderboard/">Leaderboard</a>
-  </div>
-  <span class="sub">11 games · Free forever · Works on phone, tablet, and desktop</span>
+<h1>Your favorite games, ready to play.</h1>
+<p>No downloads. No sign-ups. No ads. Just pick a game and start playing.</p>
+<div class="hero-actions"><a class="hero-btn primary" href="./leaderboard/">Leaderboard</a></div>
+<span class="count">21 games · Free forever · Works on phone, tablet, and desktop</span>
 </section>
-
 <section class="games">
 <p class="section-label">Puzzle</p>
 <div class="grid">
-  <a class="card" href="./2048/"><div class="card-thumb"><svg viewBox="0 0 400 140" fill="none"><rect width="400" height="140" fill="#fff3e0"/><rect x="120" y="20" width="48" height="48" rx="8" fill="#eee4da"/><text x="144" y="52" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="20" fill="#776e65">2</text><rect x="176" y="20" width="48" height="48" rx="8" fill="#ede0c8"/><text x="200" y="52" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="20" fill="#776e65">4</text><rect x="232" y="20" width="48" height="48" rx="8" fill="#f2b179"/><text x="256" y="52" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="18" fill="#fff">128</text><rect x="120" y="76" width="48" height="48" rx="8" fill="#edc22e"/><text x="144" y="108" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="14" fill="#fff">2048</text><rect x="176" y="76" width="48" height="48" rx="8" fill="#f67c5f"/><text x="200" y="108" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="18" fill="#fff">64</text><rect x="232" y="76" width="48" height="48" rx="8" fill="#edc850"/><text x="256" y="108" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="16" fill="#fff">512</text></svg></div><div class="card-body"><h3>2048</h3><p>Swipe to merge numbers. Easy to start, nearly impossible to stop.</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Puzzle</span></div></div></a>
-
-  <a class="card" href="./sudoku/"><div class="card-thumb"><svg viewBox="0 0 400 140" fill="none"><rect width="400" height="140" fill="#f3f0ff"/><rect x="140" y="20" width="120" height="100" rx="4" fill="white" stroke="#d0d0d0" stroke-width="1"/><line x1="180" y1="20" x2="180" y2="120" stroke="#d0d0d0"/><line x1="220" y1="20" x2="220" y2="120" stroke="#d0d0d0"/><line x1="140" y1="53" x2="260" y2="53" stroke="#d0d0d0"/><line x1="140" y1="87" x2="260" y2="87" stroke="#d0d0d0"/><text x="160" y="43" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="16" fill="#1d1d1f">5</text><text x="200" y="43" text-anchor="middle" font-family="system-ui" font-weight="400" font-size="16" fill="#0071e3">3</text><text x="240" y="77" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="16" fill="#1d1d1f">8</text><text x="160" y="110" text-anchor="middle" font-family="system-ui" font-weight="400" font-size="16" fill="#0071e3">1</text><text x="200" y="77" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="16" fill="#1d1d1f">7</text></svg></div><div class="card-body"><h3>Sudoku</h3><p>Fill the grid. No repeats in any row, column, or box.</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Puzzle</span></div></div></a>
-
-  <a class="card" href="./wordle/"><div class="card-thumb"><svg viewBox="0 0 400 140" fill="none"><rect width="400" height="140" fill="#f0f4f0"/><rect x="130" y="30" width="36" height="36" rx="4" fill="#6aaa64"/><text x="148" y="55" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="18" fill="white">W</text><rect x="170" y="30" width="36" height="36" rx="4" fill="#c9b458"/><text x="188" y="55" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="18" fill="white">O</text><rect x="210" y="30" width="36" height="36" rx="4" fill="#787c7e"/><text x="228" y="55" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="18" fill="white">R</text><rect x="250" y="30" width="36" height="36" rx="4" fill="#6aaa64"/><text x="268" y="55" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="18" fill="white">D</text><rect x="130" y="74" width="36" height="36" rx="4" fill="#787c7e"/><rect x="170" y="74" width="36" height="36" rx="4" fill="#6aaa64"/><rect x="210" y="74" width="36" height="36" rx="4" fill="#c9b458"/><rect x="250" y="74" width="36" height="36" rx="4" fill="#787c7e"/></svg></div><div class="card-body"><h3>Word Quest</h3><p>Guess the 5-letter word in 6 tries. A new challenge every day.</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Word</span></div></div></a>
-
-  <a class="card" href="./minesweeper/"><div class="card-thumb"><svg viewBox="0 0 400 140" fill="none"><rect width="400" height="140" fill="#efebe9"/><rect x="155" y="25" width="26" height="26" rx="2" fill="#d7ccc8" stroke="#bcaaa4"/><rect x="183" y="25" width="26" height="26" rx="2" fill="#efebe9" stroke="#bcaaa4"/><text x="196" y="44" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="14" fill="#1565c0">1</text><rect x="211" y="25" width="26" height="26" rx="2" fill="#efebe9" stroke="#bcaaa4"/><text x="224" y="44" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="14" fill="#2e7d32">2</text><rect x="155" y="53" width="26" height="26" rx="2" fill="#efebe9" stroke="#bcaaa4"/><text x="168" y="72" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="14" fill="#1565c0">1</text><rect x="183" y="53" width="26" height="26" rx="2" fill="#d7ccc8" stroke="#bcaaa4"/><rect x="211" y="53" width="26" height="26" rx="2" fill="#d7ccc8" stroke="#bcaaa4"/><circle cx="260" cy="66" r="10" fill="#424242"/></svg></div><div class="card-body"><h3>Minesweeper</h3><p>Think before you click. One wrong move and it's game over.</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Puzzle</span></div></div></a>
-
-  <a class="card" href="./hextris/"><div class="card-thumb"><svg viewBox="0 0 400 140" fill="none"><rect width="400" height="140" fill="#fce4ec"/><polygon points="200,30 230,47 230,83 200,100 170,83 170,47" fill="none" stroke="#e0e0e0" stroke-width="2"/><rect x="170" y="83" width="30" height="12" rx="2" fill="#e57373"/><rect x="200" y="83" width="30" height="12" rx="2" fill="#64b5f6"/><rect x="170" y="95" width="30" height="12" rx="2" fill="#81c784"/><rect x="230" y="47" width="12" height="36" rx="2" fill="#ffb74d"/><rect x="158" y="47" width="12" height="36" rx="2" fill="#ba68c8"/></svg></div><div class="card-body"><h3>Hextris</h3><p>Rotate the hexagon, catch the blocks, match colors to clear.</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Puzzle</span></div></div></a>
+  <a class="card" href="./2048/"><div class="card-thumb" style="background:#fff3e0"></div><div class="card-body"><h3>2048</h3><p>Swipe to merge numbers. Easy to start, nearly impossible to stop.</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Puzzle</span></div></div></a>
+  <a class="card" href="./sudoku/"><div class="card-thumb" style="background:#f3f0ff"></div><div class="card-body"><h3>Sudoku</h3><p>Fill the grid. No repeats in any row, column, or box.</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Puzzle</span></div></div></a>
+  <a class="card" href="./wordle/"><div class="card-thumb" style="background:#f0f4f0"></div><div class="card-body"><h3>Word Quest</h3><p>Guess the 5-letter word in 6 tries. A new challenge every day.</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Puzzle</span></div></div></a>
+  <a class="card" href="./minesweeper/"><div class="card-thumb" style="background:#efebe9"></div><div class="card-body"><h3>Minesweeper</h3><p>Think before you click. One wrong move and it's game over.</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Puzzle</span></div></div></a>
+  <a class="card" href="./hextris/"><div class="card-thumb" style="background:#fce4ec"></div><div class="card-body"><h3>Hextris</h3><p>Rotate the hexagon, catch the blocks, match colors to clear.</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Puzzle</span></div></div></a>
 </div>
-
 <p class="section-label">Arcade</p>
 <div class="grid">
-  <a class="card" href="./snake/"><div class="card-thumb"><svg viewBox="0 0 400 140" fill="none"><rect width="400" height="140" fill="#e8f5e9"/><rect x="140" y="55" width="18" height="18" rx="4" fill="#43a047"/><rect x="158" y="55" width="18" height="18" rx="4" fill="#4caf50"/><rect x="176" y="55" width="18" height="18" rx="4" fill="#66bb6a"/><rect x="194" y="55" width="18" height="18" rx="4" fill="#81c784"/><rect x="194" y="73" width="18" height="18" rx="4" fill="#a5d6a7"/><rect x="122" y="55" width="18" height="18" rx="4" fill="#2e7d32"/><circle cx="128" cy="61" r="2.5" fill="white"/><circle cx="134" cy="61" r="2.5" fill="white"/><circle cx="260" cy="64" r="8" fill="#e53935"/></svg></div><div class="card-body"><h3>Snake</h3><p>Eat the apple, grow longer, don't crash. How long can you survive?</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Arcade</span></div></div></a>
-
-  <a class="card" href="./pacman/"><div class="card-thumb"><svg viewBox="0 0 400 140" fill="none"><rect width="400" height="140" fill="#1a1a2e"/><circle cx="170" cy="70" r="22" fill="#ffd23f"/><polygon points="170,70 195,55 195,85" fill="#1a1a2e"/><circle cx="175" cy="60" r="3" fill="#1a1a2e"/><circle cx="230" cy="70" r="6" fill="#ff6b6b"/><circle cx="230" cy="62" r="3" fill="white"/><circle cx="231" cy="62" r="1.5" fill="#1a1a2e"/><circle cx="260" cy="70" r="6" fill="#4ecdc4"/><circle cx="260" cy="62" r="3" fill="white"/><circle cx="261" cy="62" r="1.5" fill="#1a1a2e"/><circle cx="200" cy="100" r="3" fill="#ffd23f" opacity="0.6"/><circle cx="215" cy="100" r="3" fill="#ffd23f" opacity="0.6"/><circle cx="230" cy="100" r="3" fill="#ffd23f" opacity="0.6"/></svg></div><div class="card-body"><h3>Pacman</h3><p>Eat the dots, dodge the ghosts, grab the power pellets.</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Arcade</span></div></div></a>
-
-  <a class="card" href="./flappybird/"><div class="card-thumb"><svg viewBox="0 0 400 140" fill="none"><rect width="400" height="140" fill="#e0f7fa"/><rect x="240" y="0" width="30" height="50" rx="4" fill="#66bb6a" stroke="#43a047" stroke-width="1.5"/><rect x="236" y="44" width="38" height="10" rx="3" fill="#66bb6a" stroke="#43a047" stroke-width="1.5"/><rect x="240" y="90" width="30" height="50" rx="4" fill="#66bb6a" stroke="#43a047" stroke-width="1.5"/><rect x="236" y="86" width="38" height="10" rx="3" fill="#66bb6a" stroke="#43a047" stroke-width="1.5"/><ellipse cx="160" cy="65" rx="14" ry="12" fill="#ffd23f"/><circle cx="166" cy="61" r="4" fill="white"/><circle cx="167" cy="61" r="2" fill="#1d1d1f"/><polygon points="172,64 180,66 172,68" fill="#ef6c00"/><rect x="0" y="125" width="400" height="15" fill="#a5d6a7"/></svg></div><div class="card-body"><h3>Flappy Bird</h3><p>Tap to fly. Dodge the pipes. Beat your best score — if you can.</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Arcade</span></div></div></a>
-
-  <a class="card" href="./blockdrop/"><div class="card-thumb"><svg viewBox="0 0 400 140" fill="none"><rect width="400" height="140" fill="#e3f2fd"/><rect x="170" y="80" width="22" height="22" rx="3" fill="#42a5f5" stroke="#1e88e5"/><rect x="192" y="80" width="22" height="22" rx="3" fill="#42a5f5" stroke="#1e88e5"/><rect x="192" y="58" width="22" height="22" rx="3" fill="#42a5f5" stroke="#1e88e5"/><rect x="214" y="58" width="22" height="22" rx="3" fill="#42a5f5" stroke="#1e88e5"/><rect x="148" y="102" width="22" height="22" rx="3" fill="#ef5350" stroke="#e53935"/><rect x="170" y="102" width="22" height="22" rx="3" fill="#ef5350" stroke="#e53935"/><rect x="192" y="102" width="22" height="22" rx="3" fill="#ffa726" stroke="#fb8c00"/><rect x="214" y="102" width="22" height="22" rx="3" fill="#66bb6a" stroke="#43a047"/></svg></div><div class="card-body"><h3>Block Drop</h3><p>Rotate, drop, clear lines. The game that never gets old.</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Arcade</span></div></div></a>
+  <a class="card" href="./snake/"><div class="card-thumb" style="background:#e8f5e9"></div><div class="card-body"><h3>Snake</h3><p>Eat the apple, grow longer, don't crash.</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Arcade</span></div></div></a>
+  <a class="card" href="./pacman/"><div class="card-thumb" style="background:#1a1a2e"></div><div class="card-body"><h3>Pacman</h3><p>Eat the dots, dodge the ghosts, grab the power pellets.</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Arcade</span></div></div></a>
+  <a class="card" href="./flappybird/"><div class="card-thumb" style="background:#e0f7fa"></div><div class="card-body"><h3>Flappy Bird</h3><p>Tap to fly. Dodge the pipes. Beat your best score.</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Arcade</span></div></div></a>
+  <a class="card" href="./blockdrop/"><div class="card-thumb" style="background:#e3f2fd"></div><div class="card-body"><h3>Block Drop</h3><p>Rotate, drop, clear lines. The game that never gets old.</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Arcade</span></div></div></a>
+  <a class="card" href="./breakout/"><div class="card-thumb" style="background:#fff8e1"></div><div class="card-body"><h3>Breakout</h3><p>Bounce the ball, break the bricks, clear every level.</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Arcade</span></div></div></a>
+  <a class="card" href="./pong/"><div class="card-thumb" style="background:#e8eaf6"></div><div class="card-body"><h3>Pong</h3><p>The original video game. Play against AI or a friend.</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Arcade</span></div></div></a>
+  <a class="card" href="./spaceinvaders/"><div class="card-thumb" style="background:#1a1a2e"></div><div class="card-body"><h3>Space Invaders</h3><p>Defend Earth. Shoot the aliens before they reach you.</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Arcade</span></div></div></a>
+  <a class="card" href="./asteroids/"><div class="card-thumb" style="background:#0d1117"></div><div class="card-body"><h3>Asteroids</h3><p>Fly through space, shoot asteroids, survive as long as you can.</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Arcade</span></div></div></a>
+  <a class="card" href="./frogger/"><div class="card-thumb" style="background:#e8f5e9"></div><div class="card-body"><h3>Frogger</h3><p>Cross the road and river. Dodge cars, ride logs, reach home.</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Arcade</span></div></div></a>
+  <a class="card" href="./doodlejump/"><div class="card-thumb" style="background:#f1f8e9"></div><div class="card-body"><h3>Doodle Jump</h3><p>Bounce higher and higher. How far can you go?</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Arcade</span></div></div></a>
+  <a class="card" href="./fruitninja/"><div class="card-thumb" style="background:#fce4ec"></div><div class="card-body"><h3>Fruit Slash</h3><p>Swipe to slice fruits. Avoid the bombs.</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Arcade</span></div></div></a>
+  <a class="card" href="./whackamole/"><div class="card-thumb" style="background:#efebe9"></div><div class="card-body"><h3>Whack-a-Mole</h3><p>Moles pop up. Whack them fast. Don't miss the golden ones.</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Arcade</span></div></div></a>
+  <a class="card" href="./helicopter/"><div class="card-thumb" style="background:#e3f2fd"></div><div class="card-body"><h3>Helicopter</h3><p>Hold to fly up, release to fall. Navigate the cave.</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Arcade</span></div></div></a>
+  <a class="card" href="./trexrunner/"><div class="card-thumb" style="background:#f5f5f7"></div><div class="card-body"><h3>Dino Dash</h3><p>Jump over cacti, duck under birds. How far can you run?</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Arcade</span></div></div></a>
 </div>
-
-<p class="section-label">Strategy & Cards</p>
+<p class="section-label">Strategy</p>
 <div class="grid">
-  <a class="card" href="./gomoku/"><div class="card-thumb"><svg viewBox="0 0 400 140" fill="none"><rect width="400" height="140" fill="#f0ebe3"/><g stroke="#c4a882" stroke-width="1"><line x1="150" y1="25" x2="150" y2="115"/><line x1="180" y1="25" x2="180" y2="115"/><line x1="210" y1="25" x2="210" y2="115"/><line x1="240" y1="25" x2="240" y2="115"/><line x1="150" y1="40" x2="240" y2="40"/><line x1="150" y1="70" x2="240" y2="70"/><line x1="150" y1="100" x2="240" y2="100"/></g><circle cx="180" cy="40" r="12" fill="#1d1d1f"/><circle cx="210" cy="70" r="12" fill="#1d1d1f"/><circle cx="180" cy="70" r="12" fill="#fff" stroke="#ccc"/><circle cx="240" cy="40" r="12" fill="#fff" stroke="#ccc"/></svg></div><div class="card-body"><h3>Gomoku</h3><p>Get five in a row to win. Play against AI or challenge a friend.</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Strategy</span></div></div></a>
-
-  <a class="card" href="./solitaire/"><div class="card-thumb"><svg viewBox="0 0 400 140" fill="none"><rect width="400" height="140" fill="#f5f5f7"/><rect x="140" y="20" width="40" height="56" rx="4" fill="white" stroke="#e0e0e0"/><text x="148" y="40" font-family="system-ui" font-weight="700" font-size="14" fill="#e53935">A</text><text x="148" y="65" font-family="system-ui" font-size="16" fill="#e53935">♥</text><rect x="155" y="30" width="40" height="56" rx="4" fill="white" stroke="#e0e0e0"/><text x="163" y="50" font-family="system-ui" font-weight="700" font-size="14" fill="#1d1d1f">K</text><text x="163" y="75" font-family="system-ui" font-size="16" fill="#1d1d1f">♠</text><rect x="210" y="20" width="40" height="56" rx="4" fill="#0071e3" rx="4"/><rect x="225" y="30" width="40" height="56" rx="4" fill="#0071e3"/><rect x="200" y="60" width="40" height="56" rx="4" fill="white" stroke="#e0e0e0"/><text x="208" y="80" font-family="system-ui" font-weight="700" font-size="14" fill="#e53935">Q</text><text x="208" y="105" font-family="system-ui" font-size="16" fill="#e53935">♦</text></svg></div><div class="card-body"><h3>Solitaire</h3><p>The classic card game. Sort all cards into the four foundation piles.</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Cards</span></div></div></a>
+  <a class="card" href="./gomoku/"><div class="card-thumb" style="background:#f0ebe3"></div><div class="card-body"><h3>Gomoku</h3><p>Get five in a row to win. Play against AI or a friend.</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Strategy</span></div></div></a>
 </div>
-</section>
+<p class="section-label">Cards</p>
+<div class="grid">
+  <a class="card" href="./solitaire/"><div class="card-thumb" style="background:#f5f5f7"></div><div class="card-body"><h3>Solitaire</h3><p>The classic card game. Sort all cards to the foundations.</p><div class="tags"><span class="tag play">Play Free</span><span class="tag">Cards</span></div></div></a>
+</div>
 
-<footer>
-  game.findpicked.com<br>
-  Free games you can play anywhere, anytime.<br>
-  <a href="./leaderboard/">Leaderboard</a>
-</footer>
+</section>
+<footer>game.findpicked.com<br>Free games you can play anywhere, anytime.<br><a href="./leaderboard/">Leaderboard</a></footer>
 </body>
 </html>
