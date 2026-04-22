@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Dots and Boxes</title>
+<meta name="description" content="Play Dots and Boxes free online. Connect dots, complete boxes, and outscore the AI. Three grid sizes, mobile friendly.">
+<style>
+  :root {
+    --bg: #fafafa;
+    --surface: #ffffff;
+    --text: #1d1d1f;
+    --text-2: #6e6e73;
+    --text-3: #86868b;
+    --accent: #0071e3;
+    --accent-hover: #0077ed;
+    --p1: #0071e3;
+    --p1-fill: rgba(0, 113, 227, 0.82);
+    --p2: #ff9500;
+    --p2-fill: rgba(255, 149, 0, 0.82);
+    --edge: #d8d8dd;
+    --edge-hover: rgba(0, 113, 227, 0.35);
+    --border: rgba(0, 0, 0, 0.08);
+    --shadow: 0 2px 14px rgba(0, 0, 0, 0.06);
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 56px 20px 48px;
+  }
+
+  .back {
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-2);
+    text-decoration: none;
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: saturate(180%) blur(14px);
+    -webkit-backdrop-filter: saturate(180%) blur(14px);
+    border: 1px solid var(--border);
+    z-index: 50;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    transition: color 0.2s, transform 0.1s;
+  }
+  .back:hover { color: var(--text); }
+  .back:active { transform: scale(0.97); }
+
+  .title {
+    font-size: 38px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 6px 0 4px;
+    text-align: center;
+  }
+  .subtitle {
+    font-size: 15px;
+    color: var(--text-2);
+    margin: 0 0 24px;
+    text-align: center;
+  }
+
+  .controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 18px;
+    width: 100%;
+    max-width: 560px;
+  }
+
+  .pill-group {
+    display: inline-flex;
+    background: #ececec;
+    border-radius: 999px;
+    padding: 3px;
+    gap: 2px;
+  }
+  .pill {
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 10px 18px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    font-family: inherit;
+    white-space: nowrap;
+    min-height: 44px;
+  }
+  .pill.active {
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+  .pill:not(.active):hover { color: var(--text-2); }
+
+  .scoreboard {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    max-width: 520px;
+    margin-bottom: 14px;
+  }
+  .score-card {
+    flex: 1;
+    background: var(--surface);
+    border-radius: 14px;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: box-shadow 0.2s, transform 0.2s;
+  }
+  .score-card.active { transform: translateY(-1px); }
+  .score-card.p1.active { box-shadow: 0 0 0 2px var(--p1), var(--shadow); }
+  .score-card.p2.active { box-shadow: 0 0 0 2px var(--p2), var(--shadow); }
+
+  .score-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .score-dot.p1 { background: var(--p1); }
+  .score-dot.p2 { background: var(--p2); }
+
+  .score-meta { flex: 1; min-width: 0; }
+  .score-label { font-size: 12px; color: var(--text-2); letter-spacing: 0.02em; text-transform: uppercase; }
+  .score-value { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
+
+  .status {
+    font-size: 15px;
+    color: var(--text-2);
+    min-height: 22px;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  .status.you { color: var(--p1); font-weight: 600; }
+  .status.ai { color: var(--p2); font-weight: 600; }
+
+  .board-wrap {
+    width: min(92vw, 500px);
+    margin: 0 0 20px;
+  }
+  .board {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: var(--surface);
+    border-radius: 18px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    touch-action: manipulation;
+    user-select: none;
+  }
+
+  .dot {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #1d1d1f;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 4;
+  }
+
+  .edge {
+    position: absolute;
+    cursor: pointer;
+    z-index: 2;
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+    display: block;
+  }
+  .edge-visible {
+    position: absolute;
+    background: var(--edge);
+    border-radius: 3px;
+    pointer-events: none;
+    transition: background 0.18s;
+  }
+  .h-edge .edge-visible {
+    top: 50%;
+    left: 6%;
+    right: 6%;
+    height: 4px;
+    transform: translateY(-50%);
+  }
+  .v-edge .edge-visible {
+    left: 50%;
+    top: 6%;
+    bottom: 6%;
+    width: 4px;
+    transform: translateX(-50%);
+  }
+  @media (hover: hover) {
+    .edge:not(.drawn):not(.locked):hover .edge-visible {
+      background: var(--edge-hover);
+    }
+  }
+  .edge.drawn { cursor: default; }
+  .edge.drawn.p1 .edge-visible { background: var(--p1); }
+  .edge.drawn.p2 .edge-visible { background: var(--p2); }
+  .edge.drawn.just-drawn .edge-visible { animation: drawLine 0.22s ease-out; }
+
+  .box {
+    position: absolute;
+    pointer-events: none;
+    z-index: 1;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.95);
+    opacity: 0;
+    transform: scale(0.85);
+    transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+  }
+  .box.filled { opacity: 1; transform: scale(1); }
+  .box.p1 { background: var(--p1-fill); }
+  .box.p2 { background: var(--p2-fill); }
+
+  @keyframes drawLine {
+    from { transform: translateY(-50%) scaleX(0.2); opacity: 0; }
+    to   { transform: translateY(-50%) scaleX(1); opacity: 1; }
+  }
+  .v-edge.drawn.just-drawn .edge-visible { animation: drawLineV 0.22s ease-out; }
+  @keyframes drawLineV {
+    from { transform: translateX(-50%) scaleY(0.2); opacity: 0; }
+    to   { transform: translateX(-50%) scaleY(1); opacity: 1; }
+  }
+
+  .buttons-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 26px;
+    border-radius: 999px;
+    border: none;
+    font-size: 15px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    min-height: 44px;
+    transition: background 0.2s, transform 0.08s, opacity 0.2s;
+  }
+  .btn.primary { background: var(--accent); color: #fff; }
+  .btn.primary:hover { background: var(--accent-hover); }
+  .btn.secondary { background: #e8e8ed; color: var(--text); }
+  .btn.secondary:hover { background: #dcdce1; }
+  .btn:active { transform: scale(0.97); }
+
+  .how-to {
+    max-width: 560px;
+    width: 100%;
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 22px 26px;
+    border: 1px solid var(--border);
+  }
+  .how-to h2 {
+    font-size: 19px;
+    margin: 0 0 10px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .how-to ol {
+    padding-left: 20px;
+    margin: 0;
+    color: var(--text-2);
+    line-height: 1.6;
+    font-size: 15px;
+  }
+  .how-to li { margin: 5px 0; }
+  .how-to strong { color: var(--text); }
+
+  .result-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.32);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+  }
+  .result-overlay.show { opacity: 1; pointer-events: auto; }
+  .result-modal {
+    background: #fff;
+    border-radius: 20px;
+    padding: 30px 32px 28px;
+    max-width: 340px;
+    width: 88%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
+    transform: scale(0.92);
+    transition: transform 0.25s;
+  }
+  .result-overlay.show .result-modal { transform: scale(1); }
+  .result-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .result-title.win { color: var(--p1); }
+  .result-title.lose { color: var(--p2); }
+  .result-score {
+    font-size: 44px;
+    font-weight: 700;
+    margin: 10px 0 4px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+  .result-subtitle { font-size: 14px; color: var(--text-2); margin-bottom: 22px; }
+  .result-btn-row { display: flex; flex-direction: column; gap: 10px; }
+
+  @media (max-width: 500px) {
+    body { padding: 48px 14px 40px; }
+    .title { font-size: 30px; }
+    .subtitle { font-size: 14px; margin-bottom: 20px; }
+    .score-value { font-size: 22px; }
+    .how-to { padding: 18px 20px; }
+  }
+</style>
+</head>
+<body>
+  <a class="back" href="../">← Back</a>
+
+  <h1 class="title">Dots and Boxes</h1>
+  <p class="subtitle">Draw lines, complete boxes, beat the AI.</p>
+
+  <div class="controls">
+    <div class="pill-group" id="sizeGroup" role="tablist" aria-label="Grid size">
+      <button class="pill active" data-size="3">Small · 3×3</button>
+      <button class="pill" data-size="5">Medium · 5×5</button>
+      <button class="pill" data-size="7">Large · 7×7</button>
+    </div>
+  </div>
+
+  <div class="scoreboard">
+    <div class="score-card p1 active" id="cardP1">
+      <span class="score-dot p1"></span>
+      <div class="score-meta">
+        <div class="score-label">You</div>
+        <div class="score-value" id="scoreP1">0</div>
+      </div>
+    </div>
+    <div class="score-card p2" id="cardP2">
+      <span class="score-dot p2"></span>
+      <div class="score-meta">
+        <div class="score-label">AI</div>
+        <div class="score-value" id="scoreP2">0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="status" id="status">Your turn</div>
+
+  <div class="board-wrap">
+    <div class="board" id="board"></div>
+  </div>
+
+  <div class="buttons-row">
+    <button class="btn secondary" id="newGameBtn">New Game</button>
+  </div>
+
+  <section class="how-to">
+    <h2>How to Play</h2>
+    <ol>
+      <li>On your turn, tap an empty line between two adjacent dots to draw it.</li>
+      <li>When you draw the <strong>fourth side</strong> of a box, you claim it and earn a point.</li>
+      <li>Completing a box gives you <strong>another turn</strong>. Chain captures whenever you can.</li>
+      <li>If your move does not complete a box, play passes to the AI.</li>
+      <li>When every box is claimed, whoever has <strong>more boxes wins</strong>.</li>
+      <li>Tip: avoid drawing the third side of a box — it hands your opponent a free point and sets up a chain.</li>
+    </ol>
+  </section>
+
+  <div class="result-overlay" id="resultOverlay" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+    <div class="result-modal">
+      <div class="result-title" id="resultTitle">You win!</div>
+      <div class="result-score" id="resultScore">6 – 3</div>
+      <div class="result-subtitle" id="resultSubtitle">Nice game.</div>
+      <div class="result-btn-row">
+        <button class="btn primary" id="playAgainBtn">Play Again</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function() {
+    'use strict';
+
+    const HUMAN = 0, AI = 1;
+    const PREFS_KEY = 'dotsandboxes-prefs-v1';
+    const STATS_KEY = 'dotsandboxes-stats-v1';
+
+    const board = document.getElementById('board');
+    const scoreP1El = document.getElementById('scoreP1');
+    const scoreP2El = document.getElementById('scoreP2');
+    const cardP1 = document.getElementById('cardP1');
+    const cardP2 = document.getElementById('cardP2');
+    const statusEl = document.getElementById('status');
+    const sizeGroup = document.getElementById('sizeGroup');
+    const newGameBtn = document.getElementById('newGameBtn');
+    const resultOverlay = document.getElementById('resultOverlay');
+    const resultTitle = document.getElementById('resultTitle');
+    const resultScore = document.getElementById('resultScore');
+    const resultSubtitle = document.getElementById('resultSubtitle');
+    const playAgainBtn = document.getElementById('playAgainBtn');
+
+    let SIZE = 3;
+    let state;
+    let scores;
+    let currentPlayer;
+    let gameOver;
+    let aiBusy;
+    let lastDrawn = null;
+
+    function loadPrefs() {
+      try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}; }
+      catch { return {}; }
+    }
+    function savePrefs(p) {
+      try { localStorage.setItem(PREFS_KEY, JSON.stringify(p)); } catch {}
+    }
+    function loadStats() {
+      try { return JSON.parse(localStorage.getItem(STATS_KEY)) || { wins: 0, losses: 0, ties: 0 }; }
+      catch { return { wins: 0, losses: 0, ties: 0 }; }
+    }
+    function saveStats(s) {
+      try { localStorage.setItem(STATS_KEY, JSON.stringify(s)); } catch {}
+    }
+
+    const prefs = loadPrefs();
+    if (prefs.size && [3,5,7].includes(prefs.size)) SIZE = prefs.size;
+
+    function freshState(size) {
+      return {
+        h: Array.from({ length: size + 1 }, () => new Array(size).fill(null)),
+        v: Array.from({ length: size }, () => new Array(size + 1).fill(null)),
+        b: Array.from({ length: size }, () => new Array(size).fill(null)),
+      };
+    }
+
+    function cloneState(s) {
+      return {
+        h: s.h.map(r => r.slice()),
+        v: s.v.map(r => r.slice()),
+        b: s.b.map(r => r.slice()),
+      };
+    }
+
+    function countSides(s, r, c) {
+      let n = 0;
+      if (s.h[r][c] !== null) n++;
+      if (s.h[r + 1][c] !== null) n++;
+      if (s.v[r][c] !== null) n++;
+      if (s.v[r][c + 1] !== null) n++;
+      return n;
+    }
+
+    function missingEdge(s, r, c) {
+      if (s.h[r][c] === null) return ['h', r, c];
+      if (s.h[r + 1][c] === null) return ['h', r + 1, c];
+      if (s.v[r][c] === null) return ['v', r, c];
+      return ['v', r, c + 1];
+    }
+
+    function applyEdge(s, type, r, c, player, sz) {
+      if (type === 'h') s.h[r][c] = player;
+      else s.v[r][c] = player;
+
+      const boxes = [];
+      if (type === 'h') {
+        if (r > 0) boxes.push([r - 1, c]);
+        if (r < sz) boxes.push([r, c]);
+      } else {
+        if (c > 0) boxes.push([r, c - 1]);
+        if (c < sz) boxes.push([r, c]);
+      }
+      let captured = 0;
+      for (const [br, bc] of boxes) {
+        if (s.b[br][bc] === null && countSides(s, br, bc) === 4) {
+          s.b[br][bc] = player;
+          captured++;
+        }
+      }
+      return captured;
+    }
+
+    function availableEdges(s, sz) {
+      const list = [];
+      for (let r = 0; r <= sz; r++)
+        for (let c = 0; c < sz; c++)
+          if (s.h[r][c] === null) list.push(['h', r, c]);
+      for (let r = 0; r < sz; r++)
+        for (let c = 0; c <= sz; c++)
+          if (s.v[r][c] === null) list.push(['v', r, c]);
+      return list;
+    }
+
+    function findThreeSidedBox(s, sz) {
+      for (let r = 0; r < sz; r++)
+        for (let c = 0; c < sz; c++)
+          if (s.b[r][c] === null && countSides(s, r, c) === 3)
+            return [r, c];
+      return null;
+    }
+
+    function wouldGiveBox(s, sz, type, r, c) {
+      const affected = type === 'h'
+        ? [[r - 1, c], [r, c]]
+        : [[r, c - 1], [r, c]];
+      for (const [br, bc] of affected) {
+        if (br < 0 || br >= sz || bc < 0 || bc >= sz) continue;
+        if (countSides(s, br, bc) === 2) return true;
+      }
+      return false;
+    }
+
+    function computeAiMove() {
+      const three = findThreeSidedBox(state, SIZE);
+      if (three) return missingEdge(state, three[0], three[1]);
+
+      const all = availableEdges(state, SIZE);
+      const safe = all.filter(e => !wouldGiveBox(state, SIZE, e[0], e[1], e[2]));
+      if (safe.length) return safe[Math.floor(Math.random() * safe.length)];
+
+      let best = all[0];
+      let bestLoss = Infinity;
+      for (const edge of all) {
+        const clone = cloneState(state);
+        applyEdge(clone, edge[0], edge[1], edge[2], HUMAN, SIZE);
+        let taken = 0;
+        while (true) {
+          const tb = findThreeSidedBox(clone, SIZE);
+          if (!tb) break;
+          const me = missingEdge(clone, tb[0], tb[1]);
+          taken += applyEdge(clone, me[0], me[1], me[2], HUMAN, SIZE);
+        }
+        if (taken < bestLoss) {
+          bestLoss = taken;
+          best = edge;
+        }
+      }
+      return best;
+    }
+
+    function render() {
+      board.innerHTML = '';
+      const margin = 8;
+      const span = 100 - 2 * margin;
+      const step = span / SIZE;
+      const posX = c => margin + c * step;
+      const posY = r => margin + r * step;
+      const frag = document.createDocumentFragment();
+
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+          const box = document.createElement('div');
+          box.className = 'box';
+          box.style.left = posX(c) + '%';
+          box.style.top = posY(r) + '%';
+          box.style.width = step + '%';
+          box.style.height = step + '%';
+          if (state.b[r][c] !== null) {
+            box.classList.add('filled', state.b[r][c] === HUMAN ? 'p1' : 'p2');
+          }
+          frag.appendChild(box);
+        }
+      }
+
+      for (let r = 0; r <= SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+          const edge = document.createElement('button');
+          edge.className = 'edge h-edge';
+          edge.type = 'button';
+          edge.setAttribute('aria-label', 'Draw line');
+          edge.style.left = posX(c) + '%';
+          edge.style.top = `calc(${posY(r)}% - 22px)`;
+          edge.style.width = step + '%';
+          edge.style.height = '44px';
+          edge.dataset.type = 'h';
+          edge.dataset.r = r;
+          edge.dataset.c = c;
+          const vis = document.createElement('div');
+          vis.className = 'edge-visible';
+          edge.appendChild(vis);
+          const owner = state.h[r][c];
+          if (owner !== null) {
+            edge.classList.add('drawn', owner === HUMAN ? 'p1' : 'p2');
+            if (lastDrawn && lastDrawn[0] === 'h' && lastDrawn[1] === r && lastDrawn[2] === c) {
+              edge.classList.add('just-drawn');
+            }
+          } else {
+            edge.addEventListener('click', onEdgeClick);
+          }
+          frag.appendChild(edge);
+        }
+      }
+
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c <= SIZE; c++) {
+          const edge = document.createElement('button');
+          edge.className = 'edge v-edge';
+          edge.type = 'button';
+          edge.setAttribute('aria-label', 'Draw line');
+          edge.style.top = posY(r) + '%';
+          edge.style.left = `calc(${posX(c)}% - 22px)`;
+          edge.style.width = '44px';
+          edge.style.height = step + '%';
+          edge.dataset.type = 'v';
+          edge.dataset.r = r;
+          edge.dataset.c = c;
+          const vis = document.createElement('div');
+          vis.className = 'edge-visible';
+          edge.appendChild(vis);
+          const owner = state.v[r][c];
+          if (owner !== null) {
+            edge.classList.add('drawn', owner === HUMAN ? 'p1' : 'p2');
+            if (lastDrawn && lastDrawn[0] === 'v' && lastDrawn[1] === r && lastDrawn[2] === c) {
+              edge.classList.add('just-drawn');
+            }
+          } else {
+            edge.addEventListener('click', onEdgeClick);
+          }
+          frag.appendChild(edge);
+        }
+      }
+
+      for (let r = 0; r <= SIZE; r++) {
+        for (let c = 0; c <= SIZE; c++) {
+          const dot = document.createElement('div');
+          dot.className = 'dot';
+          dot.style.left = posX(c) + '%';
+          dot.style.top = posY(r) + '%';
+          frag.appendChild(dot);
+        }
+      }
+
+      board.appendChild(frag);
+    }
+
+    function updateUI() {
+      scoreP1El.textContent = scores[HUMAN];
+      scoreP2El.textContent = scores[AI];
+      cardP1.classList.toggle('active', !gameOver && currentPlayer === HUMAN);
+      cardP2.classList.toggle('active', !gameOver && currentPlayer === AI);
+      if (gameOver) {
+        statusEl.className = 'status';
+        statusEl.textContent = '';
+      } else if (currentPlayer === HUMAN) {
+        statusEl.className = 'status you';
+        statusEl.textContent = 'Your turn';
+      } else {
+        statusEl.className = 'status ai';
+        statusEl.textContent = 'AI is thinking…';
+      }
+    }
+
+    function onEdgeClick(e) {
+      if (gameOver || aiBusy || currentPlayer !== HUMAN) return;
+      const btn = e.currentTarget;
+      const type = btn.dataset.type;
+      const r = +btn.dataset.r;
+      const c = +btn.dataset.c;
+      const owner = type === 'h' ? state.h[r][c] : state.v[r][c];
+      if (owner !== null) return;
+
+      const captured = applyEdge(state, type, r, c, HUMAN, SIZE);
+      scores[HUMAN] += captured;
+      lastDrawn = [type, r, c];
+      render();
+      updateUI();
+
+      if (isBoardComplete()) {
+        finishGame();
+        return;
+      }
+      if (captured === 0) {
+        currentPlayer = AI;
+        updateUI();
+        aiBusy = true;
+        setTimeout(aiTurn, 420);
+      }
+    }
+
+    function aiTurn() {
+      if (gameOver) { aiBusy = false; return; }
+      const move = computeAiMove();
+      if (!move) { aiBusy = false; return; }
+      const [type, r, c] = move;
+      const captured = applyEdge(state, type, r, c, AI, SIZE);
+      scores[AI] += captured;
+      lastDrawn = [type, r, c];
+      render();
+      updateUI();
+
+      if (isBoardComplete()) {
+        aiBusy = false;
+        finishGame();
+        return;
+      }
+      if (captured > 0) {
+        setTimeout(aiTurn, 360);
+      } else {
+        currentPlayer = HUMAN;
+        aiBusy = false;
+        updateUI();
+      }
+    }
+
+    function isBoardComplete() {
+      return scores[HUMAN] + scores[AI] === SIZE * SIZE;
+    }
+
+    function finishGame() {
+      gameOver = true;
+      updateUI();
+
+      const you = scores[HUMAN];
+      const ai = scores[AI];
+      const stats = loadStats();
+      if (you > ai) stats.wins++;
+      else if (you < ai) stats.losses++;
+      else stats.ties++;
+      saveStats(stats);
+
+      let title, cls, sub;
+      if (you > ai) {
+        title = 'You win!';
+        cls = 'win';
+        sub = you - ai >= Math.ceil(SIZE * SIZE / 3) ? 'Dominant victory.' : 'Well played.';
+      } else if (you < ai) {
+        title = 'AI wins';
+        cls = 'lose';
+        sub = 'Try a new strategy.';
+      } else {
+        title = "It's a tie";
+        cls = '';
+        sub = 'A perfectly even match.';
+      }
+
+      resultTitle.textContent = title;
+      resultTitle.className = 'result-title ' + cls;
+      resultScore.textContent = you + ' – ' + ai;
+      resultSubtitle.textContent = sub;
+
+      setTimeout(() => resultOverlay.classList.add('show'), 480);
+
+      if (you > ai && window.Leaderboard && Leaderboard.submitScore) {
+        setTimeout(() => {
+          try { Leaderboard.submitScore(you); } catch (e) {}
+        }, 900);
+      }
+    }
+
+    function startGame(size) {
+      SIZE = size;
+      state = freshState(SIZE);
+      scores = [0, 0];
+      currentPlayer = HUMAN;
+      gameOver = false;
+      aiBusy = false;
+      lastDrawn = null;
+      resultOverlay.classList.remove('show');
+      render();
+      updateUI();
+    }
+
+    sizeGroup.addEventListener('click', e => {
+      const btn = e.target.closest('.pill');
+      if (!btn) return;
+      const size = +btn.dataset.size;
+      if (!size) return;
+      sizeGroup.querySelectorAll('.pill').forEach(p => p.classList.toggle('active', p === btn));
+      savePrefs({ size });
+      startGame(size);
+    });
+
+    newGameBtn.addEventListener('click', () => startGame(SIZE));
+    playAgainBtn.addEventListener('click', () => startGame(SIZE));
+
+    sizeGroup.querySelectorAll('.pill').forEach(p => {
+      p.classList.toggle('active', +p.dataset.size === SIZE);
+    });
+
+    startGame(SIZE);
+  })();
+  </script>
+  <script src="../shared-leaderboard.js"></script>
+</body>
+</html>

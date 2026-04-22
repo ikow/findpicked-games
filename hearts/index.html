@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Hearts — FindPicked Games</title>
+<meta name="description" content="Play Hearts free — the classic trick-taking card game. Avoid hearts and the Queen of Spades. No downloads, no sign-ups.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Cpath d='M16 24s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 23 14c0 5.5-7 10-7 10z' fill='white'/%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-felt: #f3efe8;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --red: #d72d2d;
+  --green: #00875a;
+  --gold: #d4a637;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-card: 0 4px 14px rgba(0,0,0,0.10);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.14);
+  --radius: 16px;
+}
+
+html, body { height: 100%; overscroll-behavior: none; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px 16px 40px;
+  touch-action: manipulation;
+}
+
+.back {
+  align-self: flex-start;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 400;
+  padding: 8px 4px;
+  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+}
+.back:hover { color: var(--text-primary); }
+.back .arrow { font-size: 18px; line-height: 1; }
+
+.wrap {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+header h1 {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-bottom: 4px;
+}
+
+header p {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.scoreboard {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.score-cell {
+  text-align: center;
+  border-right: 1px solid var(--border);
+  padding: 2px 4px;
+}
+.score-cell:last-child { border-right: none; }
+
+.score-cell .name {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+.score-cell .val {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.score-cell.leader .val { color: var(--green); }
+.score-cell.danger .val { color: var(--red); }
+
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding: 0 4px;
+}
+.meta-row .pill {
+  background: var(--bg-card);
+  padding: 6px 12px;
+  border-radius: 100px;
+  font-weight: 500;
+  color: var(--text-primary);
+  box-shadow: var(--shadow);
+  font-size: 12px;
+}
+
+.table {
+  background: var(--bg-felt);
+  border-radius: 20px;
+  padding: 16px 12px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 320px;
+}
+
+.ai-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.ai-chip {
+  background: rgba(255,255,255,0.7);
+  border-radius: 12px;
+  padding: 8px 6px;
+  text-align: center;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+.ai-chip.active {
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 113, 227, 0.4);
+}
+.ai-chip .ai-name {
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+.ai-chip .ai-cards {
+  font-size: 11px;
+  opacity: 0.8;
+  font-variant-numeric: tabular-nums;
+}
+.ai-chip .ai-pts {
+  font-size: 11px;
+  margin-top: 2px;
+  opacity: 0.9;
+  font-variant-numeric: tabular-nums;
+}
+
+.trick-area {
+  min-height: 110px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  align-items: center;
+  justify-items: center;
+  padding: 8px 0;
+}
+
+.trick-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-height: 100px;
+  justify-content: center;
+}
+
+.trick-slot .slot-label {
+  font-size: 10px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 500;
+}
+
+.trick-slot.lead .slot-label { color: var(--accent); }
+.trick-slot.winner .card { box-shadow: 0 0 0 2px var(--green), var(--shadow-card); }
+
+.card-face-empty {
+  width: 48px;
+  height: 68px;
+  border: 1.5px dashed rgba(0,0,0,0.12);
+  border-radius: 8px;
+}
+
+.status {
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-secondary);
+  min-height: 20px;
+  padding: 4px;
+  font-weight: 500;
+}
+.status strong { color: var(--text-primary); }
+
+.hand {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  height: 94px;
+  margin: 4px 0 8px;
+  padding: 10px 8px 0;
+  position: relative;
+}
+
+.hand .card {
+  position: relative;
+  margin-left: -20px;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.hand .card:first-child { margin-left: 0; }
+
+.card {
+  width: 48px;
+  height: 72px;
+  background: var(--bg-card);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  user-select: none;
+  -webkit-user-select: none;
+  min-width: 48px;
+}
+
+.card .rank {
+  font-size: 18px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.card .suit {
+  font-size: 18px;
+  line-height: 1;
+  margin-top: 2px;
+}
+.card.red { color: var(--red); }
+.card.black { color: var(--text-primary); }
+
+.hand .card.selected {
+  transform: translateY(-14px);
+  box-shadow: 0 8px 20px rgba(0, 113, 227, 0.3);
+  border-color: var(--accent);
+}
+.hand .card:not(.disabled):hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-hover);
+}
+.hand .card.selected:hover {
+  transform: translateY(-18px);
+}
+.hand .card.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 12px 24px;
+  border-radius: 100px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 44px;
+  min-width: 100px;
+  letter-spacing: -0.01em;
+}
+.btn.primary {
+  background: var(--accent);
+  color: white;
+}
+.btn.primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 113, 227, 0.3);
+}
+.btn.secondary {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  box-shadow: var(--shadow);
+}
+.btn.secondary:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-hover);
+}
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.how {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 4px 18px;
+  box-shadow: var(--shadow);
+}
+.how summary {
+  padding: 14px 0;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 15px;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+}
+.how summary::-webkit-details-marker { display: none; }
+.how summary::after {
+  content: '+';
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  transition: transform 0.2s ease;
+}
+.how[open] summary::after { transform: rotate(45deg); }
+.how ul {
+  list-style: none;
+  padding: 0 0 16px;
+}
+.how li {
+  font-size: 14px;
+  color: var(--text-secondary);
+  padding: 6px 0 6px 20px;
+  position: relative;
+  line-height: 1.5;
+}
+.how li::before {
+  content: '—';
+  position: absolute;
+  left: 0;
+  color: var(--text-tertiary);
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.modal-backdrop[hidden] { display: none; }
+
+.modal {
+  background: var(--bg-card);
+  border-radius: 20px;
+  padding: 28px 24px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+.modal h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  letter-spacing: -0.02em;
+}
+.modal p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 18px;
+}
+.modal .final-scores {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+.modal .final-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--bg);
+  border-radius: 10px;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.modal .final-row.winner {
+  background: rgba(0, 135, 90, 0.08);
+  color: var(--green);
+  font-weight: 600;
+}
+.modal .final-row .place {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-right: 8px;
+  min-width: 20px;
+}
+
+.round-summary {
+  background: var(--bg-card);
+  border-radius: 14px;
+  padding: 14px;
+  margin: 6px 0;
+  box-shadow: var(--shadow);
+}
+.round-summary h3 {
+  font-size: 14px;
+  margin-bottom: 8px;
+  text-align: center;
+}
+.round-summary .row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 2px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.round-summary .row .delta {
+  color: var(--text-secondary);
+}
+.round-summary .moon {
+  text-align: center;
+  font-size: 13px;
+  color: var(--gold);
+  font-weight: 600;
+  margin: 6px 0;
+}
+
+@media (max-width: 420px) {
+  .card { width: 44px; height: 64px; min-width: 44px; }
+  .card .rank, .card .suit { font-size: 16px; }
+  .hand .card { margin-left: -22px; }
+  .card-face-empty { width: 44px; height: 64px; }
+  header h1 { font-size: 26px; }
+  .score-cell .val { font-size: 18px; }
+  .trick-slot { min-height: 90px; }
+  .trick-area { min-height: 100px; }
+  body { padding: 16px 10px 32px; }
+}
+
+@media (max-width: 340px) {
+  .hand .card { margin-left: -26px; }
+}
+</style>
+</head>
+<body>
+<a href="../" class="back"><span class="arrow">←</span> Back to games</a>
+
+<div class="wrap">
+  <header>
+    <h1>Hearts</h1>
+    <p>Avoid hearts and the Queen of Spades. First to 100 loses.</p>
+  </header>
+
+  <div class="scoreboard" id="scoreboard"></div>
+
+  <div class="meta-row">
+    <span>Round <strong id="roundNum">1</strong> · <span id="passLabel">Pass left</span></span>
+    <span class="pill">Best: <span id="bestScore">—</span></span>
+  </div>
+
+  <div class="table">
+    <div class="ai-row" id="aiRow"></div>
+    <div class="trick-area" id="trickArea"></div>
+    <div class="status" id="status">Select 3 cards to pass</div>
+    <div class="hand" id="hand"></div>
+    <div class="actions" id="actions">
+      <button class="btn primary" id="actionBtn" disabled>Pass cards</button>
+    </div>
+  </div>
+
+  <div id="summaryMount"></div>
+
+  <details class="how">
+    <summary>How to Play</summary>
+    <ul>
+      <li>Four players, 13 cards each. The goal is to score as few points as possible.</li>
+      <li>Each heart (♥) is worth 1 point. The Queen of Spades (Q♠) is worth 13 points.</li>
+      <li>Before each round, pass 3 cards: left, then right, then across, then hold (no pass), repeating.</li>
+      <li>The player holding the 2 of clubs leads the first trick by playing it.</li>
+      <li>You must follow the suit that was led if you can. If not, play any card.</li>
+      <li>The highest card of the suit led wins the trick. That player leads the next.</li>
+      <li>You cannot lead hearts until hearts have been "broken" (played on another suit).</li>
+      <li>No hearts or Q♠ may be discarded on the very first trick.</li>
+      <li>Shoot the Moon: take every heart and the Q♠ in one round — all other players get 26 points.</li>
+      <li>The game ends when any player reaches 100 points. Lowest score wins.</li>
+    </ul>
+  </details>
+</div>
+
+<div class="modal-backdrop" id="gameOverModal" hidden>
+  <div class="modal">
+    <h2 id="gameOverTitle">Game Over</h2>
+    <p id="gameOverSub"></p>
+    <div class="final-scores" id="finalScores"></div>
+    <div class="actions">
+      <button class="btn primary" id="playAgainBtn">Play again</button>
+    </div>
+  </div>
+</div>
+
+<script src="../shared-leaderboard.js"></script>
+<script>
+(function() {
+'use strict';
+
+const SUITS = ['♣', '♦', '♠', '♥'];
+const RANKS = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+const PLAYERS = ['You', 'West', 'North', 'East'];
+const STORAGE_KEY = 'hearts_v1';
+
+const state = {
+  scores: [0,0,0,0],
+  roundPoints: [0,0,0,0],
+  taken: [[],[],[],[]],
+  hands: [[],[],[],[]],
+  passDir: 0,
+  phase: 'deal',
+  passSelected: new Set(),
+  pending: null,
+  trick: [],
+  trickLead: 0,
+  currentPlayer: 0,
+  heartsBroken: false,
+  isFirstTrick: true,
+  roundNum: 1,
+  trickCount: 0,
+  best: null,
+  gamesWon: 0,
+  gamesPlayed: 0,
+  locked: false
+};
+
+function loadStats() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const d = JSON.parse(raw);
+    state.best = (typeof d.best === 'number') ? d.best : null;
+    state.gamesWon = d.gamesWon || 0;
+    state.gamesPlayed = d.gamesPlayed || 0;
+  } catch(e) {}
+}
+
+function saveStats() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      best: state.best,
+      gamesWon: state.gamesWon,
+      gamesPlayed: state.gamesPlayed
+    }));
+  } catch(e) {}
+}
+
+function rankVal(r) { return RANKS.indexOf(r); }
+function cardId(c) { return c.suit + c.rank; }
+function isRed(suit) { return suit === '♥' || suit === '♦'; }
+
+function makeDeck() {
+  const deck = [];
+  for (const s of SUITS) for (const r of RANKS) deck.push({suit: s, rank: r});
+  return deck;
+}
+
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function sortHand(hand) {
+  const order = ['♣','♦','♠','♥'];
+  return hand.slice().sort((a,b) => {
+    const sa = order.indexOf(a.suit), sb = order.indexOf(b.suit);
+    if (sa !== sb) return sa - sb;
+    return rankVal(a.rank) - rankVal(b.rank);
+  });
+}
+
+function passTarget(from, dir) {
+  if (dir === 0) return (from + 1) % 4;
+  if (dir === 1) return (from + 3) % 4;
+  if (dir === 2) return (from + 2) % 4;
+  return from;
+}
+
+function passLabel(dir) {
+  return ['Pass left', 'Pass right', 'Pass across', 'Hold (no pass)'][dir];
+}
+
+function deal() {
+  const deck = shuffle(makeDeck());
+  state.hands = [[],[],[],[]];
+  for (let i = 0; i < 52; i++) state.hands[i % 4].push(deck[i]);
+  for (let i = 0; i < 4; i++) state.hands[i] = sortHand(state.hands[i]);
+  state.roundPoints = [0,0,0,0];
+  state.taken = [[],[],[],[]];
+  state.trick = [];
+  state.heartsBroken = false;
+  state.isFirstTrick = true;
+  state.trickCount = 0;
+  state.passSelected = new Set();
+}
+
+function newRound() {
+  deal();
+  state.passDir = (state.roundNum - 1) % 4;
+  if (state.passDir === 3) {
+    startPlayPhase();
+  } else {
+    state.phase = 'pass';
+    render();
+  }
+}
+
+function newGame() {
+  state.scores = [0,0,0,0];
+  state.roundNum = 1;
+  document.getElementById('gameOverModal').hidden = true;
+  const summary = document.getElementById('summaryMount');
+  if (summary) summary.innerHTML = '';
+  newRound();
+}
+
+// ───── Pass phase ─────
+
+function togglePassCard(idx) {
+  if (state.phase !== 'pass') return;
+  if (state.passSelected.has(idx)) {
+    state.passSelected.delete(idx);
+  } else {
+    if (state.passSelected.size >= 3) return;
+    state.passSelected.add(idx);
+  }
+  render();
+}
+
+function submitPass() {
+  if (state.passSelected.size !== 3) return;
+  const dir = state.passDir;
+  const outgoing = [[],[],[],[]];
+  // Human (player 0)
+  const mine = [...state.passSelected].sort((a,b) => b - a);
+  const myPass = mine.map(i => state.hands[0][i]);
+  mine.forEach(i => state.hands[0].splice(i, 1));
+  outgoing[0] = myPass;
+  // AI passes
+  for (let p = 1; p < 4; p++) {
+    const aiPass = aiPickPass(state.hands[p]);
+    aiPass.forEach(c => {
+      const idx = state.hands[p].findIndex(x => cardId(x) === cardId(c));
+      if (idx >= 0) state.hands[p].splice(idx, 1);
+    });
+    outgoing[p] = aiPass;
+  }
+  // Distribute
+  for (let p = 0; p < 4; p++) {
+    const target = passTarget(p, dir);
+    state.hands[target] = state.hands[target].concat(outgoing[p]);
+  }
+  for (let p = 0; p < 4; p++) state.hands[p] = sortHand(state.hands[p]);
+  state.passSelected = new Set();
+  startPlayPhase();
+}
+
+function aiPickPass(hand) {
+  const scored = hand.map(c => {
+    let d = rankVal(c.rank);
+    if (c.suit === '♠' && (c.rank === 'Q' || c.rank === 'K' || c.rank === 'A')) d += 40;
+    if (c.suit === '♥' && rankVal(c.rank) >= 8) d += 12;
+    if (c.suit === '♥') d += 3;
+    return {c, d};
+  });
+  scored.sort((a, b) => b.d - a.d);
+  return scored.slice(0, 3).map(x => x.c);
+}
+
+// ───── Play phase ─────
+
+function startPlayPhase() {
+  state.phase = 'play';
+  // Find 2 of clubs
+  let starter = 0;
+  for (let p = 0; p < 4; p++) {
+    if (state.hands[p].some(c => c.suit === '♣' && c.rank === '2')) {
+      starter = p;
+      break;
+    }
+  }
+  state.currentPlayer = starter;
+  state.trickLead = starter;
+  render();
+  if (starter !== 0) {
+    setTimeout(aiTurn, 600);
+  }
+}
+
+function legalPlays(player) {
+  const hand = state.hands[player];
+  if (state.isFirstTrick && state.trick.length === 0) {
+    return hand.filter(c => c.suit === '♣' && c.rank === '2');
+  }
+  if (state.trick.length === 0) {
+    if (state.heartsBroken) return hand.slice();
+    const nonHearts = hand.filter(c => c.suit !== '♥');
+    return nonHearts.length ? nonHearts : hand.slice();
+  }
+  const leadSuit = state.trick[0].card.suit;
+  const sameSuit = hand.filter(c => c.suit === leadSuit);
+  if (sameSuit.length) return sameSuit;
+  if (state.isFirstTrick) {
+    const safe = hand.filter(c => c.suit !== '♥' && !(c.suit === '♠' && c.rank === 'Q'));
+    return safe.length ? safe : hand.slice();
+  }
+  return hand.slice();
+}
+
+function playCard(player, card) {
+  const idx = state.hands[player].findIndex(c => cardId(c) === cardId(card));
+  if (idx < 0) return;
+  state.hands[player].splice(idx, 1);
+  state.trick.push({player, card});
+  if (card.suit === '♥') state.heartsBroken = true;
+  render();
+  if (state.trick.length === 4) {
+    state.locked = true;
+    setTimeout(resolveTrick, 950);
+  } else {
+    state.currentPlayer = (state.currentPlayer + 1) % 4;
+    if (state.currentPlayer !== 0) {
+      setTimeout(aiTurn, 550);
+    }
+  }
+}
+
+function onHandCardClick(idx) {
+  if (state.locked) return;
+  if (state.phase === 'pass') {
+    togglePassCard(idx);
+    return;
+  }
+  if (state.phase !== 'play') return;
+  if (state.currentPlayer !== 0) return;
+  const card = state.hands[0][idx];
+  const legal = legalPlays(0);
+  if (!legal.some(c => cardId(c) === cardId(card))) return;
+  playCard(0, card);
+}
+
+function aiTurn() {
+  if (state.phase !== 'play') return;
+  const p = state.currentPlayer;
+  if (p === 0) return;
+  const card = aiPickPlay(p);
+  playCard(p, card);
+}
+
+function aiPickPlay(player) {
+  const legal = legalPlays(player);
+  if (legal.length === 1) return legal[0];
+
+  if (state.trick.length === 0) {
+    // Leading
+    const hand = state.hands[player];
+    const hasQs = hand.some(c => c.suit === '♠' && c.rank === 'Q');
+    const highSpades = hand.filter(c => c.suit === '♠' && rankVal(c.rank) >= rankVal('Q'));
+    const lowSpades = hand.filter(c => c.suit === '♠' && rankVal(c.rank) < rankVal('Q'));
+    // Prefer leading low non-heart, non-spade if dangerous spade exposure
+    const byRank = (a, b) => rankVal(a.rank) - rankVal(b.rank);
+    const clubs = legal.filter(c => c.suit === '♣').sort(byRank);
+    const diamonds = legal.filter(c => c.suit === '♦').sort(byRank);
+    const spades = legal.filter(c => c.suit === '♠').sort(byRank);
+    const hearts = legal.filter(c => c.suit === '♥').sort(byRank);
+    // If we have Q♠ without protection, don't lead spades
+    const spadeRisky = hasQs && lowSpades.length <= 1;
+    if (clubs.length) return clubs[0];
+    if (diamonds.length) return diamonds[0];
+    if (!spadeRisky && spades.length) return spades[0];
+    if (hearts.length) return hearts[0];
+    return legal.sort(byRank)[0];
+  }
+
+  // Following
+  const leadSuit = state.trick[0].card.suit;
+  const sameSuit = legal.filter(c => c.suit === leadSuit);
+  const byRankAsc = (a, b) => rankVal(a.rank) - rankVal(b.rank);
+  const byRankDesc = (a, b) => rankVal(b.rank) - rankVal(a.rank);
+
+  if (sameSuit.length) {
+    // Find currently-winning card
+    let winning = state.trick[0].card;
+    for (const t of state.trick) {
+      if (t.card.suit === leadSuit && rankVal(t.card.rank) > rankVal(winning.rank)) {
+        winning = t.card;
+      }
+    }
+    const trickPoints = state.trick.reduce((n, t) => {
+      if (t.card.suit === '♥') return n + 1;
+      if (t.card.suit === '♠' && t.card.rank === 'Q') return n + 13;
+      return n;
+    }, 0);
+    const isLast = state.trick.length === 3;
+    // If last to play and no points, may take
+    const safeTake = isLast && trickPoints === 0 && !(leadSuit === '♠');
+    // Queen of spades avoidance when spades led
+    if (leadSuit === '♠') {
+      const qs = sameSuit.find(c => c.rank === 'Q');
+      const below = sameSuit.filter(c => rankVal(c.rank) < rankVal(winning.rank)).sort(byRankDesc);
+      // If someone else played Q or higher, avoid taking
+      if (below.length) return below[0];
+      // Can't play below — dump lowest (may include Q♠)
+      // Prefer to not play Q♠ if not forced
+      const nonQ = sameSuit.filter(c => c.rank !== 'Q').sort(byRankAsc);
+      if (nonQ.length) return nonQ[0];
+      return sameSuit[0];
+    }
+    if (safeTake) {
+      // Play highest
+      return sameSuit.sort(byRankDesc)[0];
+    }
+    // Play highest below winning, else lowest
+    const below = sameSuit.filter(c => rankVal(c.rank) < rankVal(winning.rank)).sort(byRankDesc);
+    if (below.length) return below[0];
+    return sameSuit.sort(byRankAsc)[0];
+  }
+
+  // Can't follow — dump
+  if (!state.isFirstTrick) {
+    // Queen of spades if we have it
+    const qs = legal.find(c => c.suit === '♠' && c.rank === 'Q');
+    if (qs) return qs;
+    // High spades (A, K)
+    const highSp = legal.filter(c => c.suit === '♠' && (c.rank === 'A' || c.rank === 'K')).sort(byRankDesc);
+    if (highSp.length) return highSp[0];
+    // Highest heart
+    const hearts = legal.filter(c => c.suit === '♥').sort(byRankDesc);
+    if (hearts.length) return hearts[0];
+  }
+  // Highest of any suit
+  return legal.sort(byRankDesc)[0];
+}
+
+function resolveTrick() {
+  const leadSuit = state.trick[0].card.suit;
+  let winner = state.trick[0];
+  for (const t of state.trick) {
+    if (t.card.suit === leadSuit && rankVal(t.card.rank) > rankVal(winner.card.rank)) {
+      winner = t;
+    }
+  }
+  let points = 0;
+  for (const t of state.trick) {
+    state.taken[winner.player].push(t.card);
+    if (t.card.suit === '♥') points++;
+    if (t.card.suit === '♠' && t.card.rank === 'Q') points += 13;
+  }
+  state.roundPoints[winner.player] += points;
+  state.trick = [];
+  state.trickLead = winner.player;
+  state.currentPlayer = winner.player;
+  state.isFirstTrick = false;
+  state.trickCount++;
+  state.locked = false;
+  if (state.trickCount === 13) {
+    endRound();
+    return;
+  }
+  render();
+  if (winner.player !== 0) {
+    setTimeout(aiTurn, 500);
+  }
+}
+
+function endRound() {
+  // Shoot the moon check
+  const shooter = state.roundPoints.findIndex(p => p === 26);
+  let shot = false;
+  if (shooter !== -1) {
+    shot = true;
+    for (let i = 0; i < 4; i++) {
+      state.scores[i] += (i === shooter ? 0 : 26);
+    }
+  } else {
+    for (let i = 0; i < 4; i++) state.scores[i] += state.roundPoints[i];
+  }
+  state.phase = 'roundEnd';
+  renderRoundSummary(shot, shooter);
+  render();
+  if (Math.max(...state.scores) >= 100) {
+    setTimeout(endGame, 400);
+  }
+}
+
+function endGame() {
+  state.phase = 'gameOver';
+  state.gamesPlayed++;
+  const minScore = Math.min(...state.scores);
+  const winner = state.scores.indexOf(minScore);
+  const playerWon = winner === 0;
+  if (playerWon) state.gamesWon++;
+  if (playerWon) {
+    if (state.best === null || state.scores[0] < state.best) {
+      state.best = state.scores[0];
+    }
+    const submitVal = Math.max(0, 100 - state.scores[0]);
+    if (window.Leaderboard && Leaderboard.submitScore) {
+      try { Leaderboard.submitScore(submitVal); } catch(e) {}
+    }
+  }
+  saveStats();
+  renderGameOver(winner, playerWon);
+}
+
+function nextRound() {
+  state.roundNum++;
+  document.getElementById('summaryMount').innerHTML = '';
+  newRound();
+}
+
+// ───── Rendering ─────
+
+function render() {
+  renderScoreboard();
+  renderMeta();
+  renderAiRow();
+  renderTrick();
+  renderHand();
+  renderStatus();
+  renderActionButton();
+}
+
+function renderScoreboard() {
+  const board = document.getElementById('scoreboard');
+  const minScore = Math.min(...state.scores);
+  const maxScore = Math.max(...state.scores);
+  board.innerHTML = PLAYERS.map((name, i) => {
+    const isLeader = state.scores[i] === minScore && minScore !== maxScore;
+    const isDanger = state.scores[i] >= 80 && state.scores[i] === maxScore;
+    const cls = isLeader ? 'leader' : (isDanger ? 'danger' : '');
+    return `<div class="score-cell ${cls}"><div class="name">${name}</div><div class="val">${state.scores[i]}</div></div>`;
+  }).join('');
+}
+
+function renderMeta() {
+  document.getElementById('roundNum').textContent = state.roundNum;
+  document.getElementById('passLabel').textContent = passLabel(state.passDir);
+  document.getElementById('bestScore').textContent = state.best !== null ? state.best : '—';
+}
+
+function renderAiRow() {
+  const row = document.getElementById('aiRow');
+  const activeP = state.phase === 'play' ? state.currentPlayer : -1;
+  row.innerHTML = [1, 2, 3].map(p => {
+    const active = activeP === p ? 'active' : '';
+    return `<div class="ai-chip ${active}">
+      <div class="ai-name">${PLAYERS[p]}</div>
+      <div class="ai-cards">${state.hands[p].length} cards</div>
+      <div class="ai-pts">+${state.roundPoints[p]} this round</div>
+    </div>`;
+  }).join('');
+}
+
+function renderTrick() {
+  const area = document.getElementById('trickArea');
+  const winningInfo = getWinningTrickCard();
+  area.innerHTML = PLAYERS.map((name, p) => {
+    const played = state.trick.find(t => t.player === p);
+    const isLead = state.trick.length > 0 && state.trick[0].player === p;
+    const isWinning = winningInfo && winningInfo.player === p && state.trick.length === 4;
+    let inner;
+    if (played) {
+      const redClass = isRed(played.card.suit) ? 'red' : 'black';
+      inner = `<div class="card ${redClass}"><span class="rank">${played.card.rank}</span><span class="suit">${played.card.suit}</span></div>`;
+    } else {
+      inner = `<div class="card-face-empty"></div>`;
+    }
+    const leadCls = isLead ? 'lead' : '';
+    const winCls = isWinning ? 'winner' : '';
+    return `<div class="trick-slot ${leadCls} ${winCls}">
+      <span class="slot-label">${name}${isLead ? ' · lead' : ''}</span>
+      ${inner}
+    </div>`;
+  }).join('');
+}
+
+function getWinningTrickCard() {
+  if (state.trick.length === 0) return null;
+  const leadSuit = state.trick[0].card.suit;
+  let winner = state.trick[0];
+  for (const t of state.trick) {
+    if (t.card.suit === leadSuit && rankVal(t.card.rank) > rankVal(winner.card.rank)) winner = t;
+  }
+  return winner;
+}
+
+function renderHand() {
+  const el = document.getElementById('hand');
+  const hand = state.hands[0];
+  const legal = state.phase === 'play' && state.currentPlayer === 0 ? legalPlays(0) : null;
+  const legalIds = legal ? new Set(legal.map(cardId)) : null;
+  el.innerHTML = hand.map((card, i) => {
+    const redClass = isRed(card.suit) ? 'red' : 'black';
+    let cls = `card ${redClass}`;
+    if (state.phase === 'pass') {
+      if (state.passSelected.has(i)) cls += ' selected';
+    } else if (state.phase === 'play') {
+      if (state.currentPlayer !== 0 || (legalIds && !legalIds.has(cardId(card)))) cls += ' disabled';
+    } else {
+      cls += ' disabled';
+    }
+    return `<div class="${cls}" data-idx="${i}"><span class="rank">${card.rank}</span><span class="suit">${card.suit}</span></div>`;
+  }).join('');
+  el.querySelectorAll('.card').forEach(node => {
+    node.addEventListener('click', () => onHandCardClick(parseInt(node.dataset.idx, 10)));
+  });
+}
+
+function renderStatus() {
+  const s = document.getElementById('status');
+  if (state.phase === 'pass') {
+    const need = 3 - state.passSelected.size;
+    if (need > 0) s.innerHTML = `Select <strong>${need}</strong> more card${need === 1 ? '' : 's'} to ${passLabel(state.passDir).toLowerCase()}`;
+    else s.innerHTML = `<strong>${passLabel(state.passDir)}</strong> · Ready`;
+  } else if (state.phase === 'play') {
+    if (state.trick.length === 0 && state.isFirstTrick && state.currentPlayer === 0) {
+      s.innerHTML = `Lead with the <strong>2♣</strong>`;
+    } else if (state.currentPlayer === 0) {
+      s.innerHTML = `<strong>Your turn</strong> · ${state.trick.length === 0 ? 'Lead a card' : 'Follow ' + state.trick[0].card.suit}`;
+    } else {
+      s.innerHTML = `${PLAYERS[state.currentPlayer]} is playing…`;
+    }
+  } else if (state.phase === 'roundEnd') {
+    s.innerHTML = `Round ${state.roundNum} complete`;
+  }
+}
+
+function renderActionButton() {
+  const btn = document.getElementById('actionBtn');
+  const actions = document.getElementById('actions');
+  if (state.phase === 'pass') {
+    actions.innerHTML = `<button class="btn primary" id="actionBtn" ${state.passSelected.size === 3 ? '' : 'disabled'}>${passLabel(state.passDir)}</button>`;
+    document.getElementById('actionBtn').addEventListener('click', submitPass);
+  } else if (state.phase === 'roundEnd') {
+    actions.innerHTML = `<button class="btn primary" id="actionBtn">Next round</button>`;
+    document.getElementById('actionBtn').addEventListener('click', nextRound);
+  } else {
+    actions.innerHTML = `<button class="btn secondary" id="actionBtn">New game</button>`;
+    document.getElementById('actionBtn').addEventListener('click', () => {
+      if (confirm('Start a new game? Current scores will be lost.')) newGame();
+    });
+  }
+}
+
+function renderRoundSummary(shot, shooter) {
+  const mount = document.getElementById('summaryMount');
+  const moonNote = shot ? `<div class="moon">🌙 ${PLAYERS[shooter]} shot the moon!</div>` : '';
+  const rows = PLAYERS.map((name, i) => {
+    const delta = shot ? (i === shooter ? 0 : 26) : state.roundPoints[i];
+    return `<div class="row"><span>${name}</span><span><span class="delta">+${delta}</span> &nbsp;→&nbsp; ${state.scores[i]}</span></div>`;
+  }).join('');
+  mount.innerHTML = `<div class="round-summary"><h3>Round ${state.roundNum} Summary</h3>${moonNote}${rows}</div>`;
+}
+
+function renderGameOver(winner, playerWon) {
+  const title = document.getElementById('gameOverTitle');
+  const sub = document.getElementById('gameOverSub');
+  title.textContent = playerWon ? 'You win!' : 'Game Over';
+  sub.textContent = playerWon
+    ? `Finished with ${state.scores[0]} points. ${state.best === state.scores[0] ? 'New best!' : ''}`
+    : `${PLAYERS[winner]} wins with ${state.scores[winner]} points.`;
+  // Build sorted standings
+  const order = PLAYERS.map((name, i) => ({name, i, score: state.scores[i]}))
+    .sort((a, b) => a.score - b.score);
+  const medals = ['1st', '2nd', '3rd', '4th'];
+  const finalEl = document.getElementById('finalScores');
+  finalEl.innerHTML = order.map((p, idx) => {
+    const isWin = idx === 0;
+    return `<div class="final-row ${isWin ? 'winner' : ''}"><span><span class="place">${medals[idx]}</span>${p.name}</span><span>${p.score} pts</span></div>`;
+  }).join('');
+  document.getElementById('gameOverModal').hidden = false;
+}
+
+document.getElementById('playAgainBtn').addEventListener('click', newGame);
+
+loadStats();
+newGame();
+
+})();
+</script>
+</body>
+</html>

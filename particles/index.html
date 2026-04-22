@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Particles — FindPicked Games</title>
+<meta name="description" content="Particle Playground — click or tap to spawn colorful particles. Fireworks, fountain, and trail modes with gravity and bounce.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231d1d1f'/%3E%3Ccircle cx='10' cy='10' r='3' fill='%23ff3b30'/%3E%3Ccircle cx='22' cy='11' r='3' fill='%23ffcc00'/%3E%3Ccircle cx='16' cy='20' r='3' fill='%2334c759'/%3E%3Ccircle cx='8' cy='22' r='2.5' fill='%230071e3'/%3E%3Ccircle cx='24' cy='22' r='2.5' fill='%23af52de'/%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-stage: #0b0b10;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+  --radius: 16px;
+}
+
+html, body {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px 20px 40px;
+  touch-action: manipulation;
+}
+
+.back {
+  align-self: flex-start;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 400;
+  padding: 8px 4px;
+  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.back:hover { color: var(--text-primary); }
+.back .arrow { font-size: 18px; line-height: 1; }
+
+.wrap {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+h1 {
+  font-size: clamp(36px, 9vw, 48px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.scores {
+  display: flex;
+  gap: 8px;
+}
+
+.score-box {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 10px 14px;
+  min-width: 76px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.score-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  margin-bottom: 2px;
+}
+
+.score-value {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  transition: transform 0.2s ease;
+}
+
+.score-value.bump { transform: scale(1.1); }
+.score-value.warn { color: #ff9500; }
+.score-value.danger { color: #ff3b30; }
+
+.subhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.subhead p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.btn {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 22px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn:active { transform: scale(0.97); }
+
+.btn.secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
+}
+.btn.secondary:hover { background: rgba(0, 113, 227, 0.06); }
+
+.stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  max-height: 70vh;
+  background: var(--bg-stage);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+#canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: crosshair;
+}
+
+.hint {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(255,255,255,0.55);
+  font-size: 15px;
+  text-align: center;
+  pointer-events: none;
+  letter-spacing: -0.01em;
+  transition: opacity 0.4s ease;
+  padding: 0 24px;
+  line-height: 1.5;
+}
+.hint.hidden { opacity: 0; }
+
+.stage-hud {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.pill {
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #fff;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.pill .dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #34c759;
+}
+.pill.warn .dot { background: #ff9500; }
+.pill.danger .dot { background: #ff3b30; }
+
+.modes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.mode-btn {
+  border: 1.5px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  min-height: 52px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease, color 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+.mode-btn .emoji { font-size: 18px; }
+.mode-btn .label { font-size: 13px; }
+.mode-btn:hover { border-color: var(--accent); }
+.mode-btn:active { transform: scale(0.97); }
+.mode-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(11, 11, 16, 0.78);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 28px;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #fff;
+}
+.overlay.show { opacity: 1; pointer-events: auto; }
+
+.overlay h2 {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.overlay p {
+  font-size: 15px;
+  color: rgba(255,255,255,0.8);
+  line-height: 1.5;
+  max-width: 340px;
+}
+
+.overlay .big {
+  font-size: 52px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: #fff;
+  margin: 4px 0 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.overlay .row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 6px;
+}
+
+.overlay .btn.secondary {
+  color: #fff;
+  border-color: rgba(255,255,255,0.4);
+}
+.overlay .btn.secondary:hover { background: rgba(255,255,255,0.08); }
+
+footer {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  text-align: center;
+  margin-top: 4px;
+  line-height: 1.6;
+}
+
+.rules-toggle {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--accent);
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+  padding: 6px 10px;
+  min-height: 44px;
+}
+.rules-toggle:hover { text-decoration: underline; }
+
+.rules-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  text-align: left;
+}
+.rules-panel.open { max-height: 600px; }
+.rules-panel ul { margin: 8px 0 0 18px; }
+.rules-panel li { margin-bottom: 6px; }
+
+@media (max-width: 420px) {
+  body { padding: 16px 14px 32px; }
+  .wrap { gap: 14px; }
+  .score-box { min-width: 70px; padding: 8px 12px; }
+  .score-value { font-size: 18px; }
+  .stage { aspect-ratio: 3 / 4; }
+  .mode-btn { min-height: 48px; font-size: 13px; }
+  .mode-btn .emoji { font-size: 16px; }
+  .overlay h2 { font-size: 28px; }
+  .overlay .big { font-size: 44px; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="back" href="../" aria-label="Back to games">
+    <span class="arrow">←</span>
+    <span>Games</span>
+  </a>
+
+  <header>
+    <h1>Particles</h1>
+    <div class="scores">
+      <div class="score-box">
+        <div class="score-label">Score</div>
+        <div class="score-value" id="score">0</div>
+      </div>
+      <div class="score-box">
+        <div class="score-label">Best</div>
+        <div class="score-value" id="best">—</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="subhead">
+    <p>Click or tap to spawn particles. Rack up the biggest score before time runs out.</p>
+  </div>
+
+  <div class="stage" id="stage">
+    <canvas id="canvas"></canvas>
+    <div class="stage-hud">
+      <div class="pill" id="time-pill"><span class="dot"></span><span id="time">60s</span></div>
+      <div class="pill"><span id="count">0</span>&nbsp;particles</div>
+    </div>
+    <div class="hint" id="hint">Tap anywhere to spawn particles</div>
+
+    <div class="overlay" id="overlay">
+      <h2 id="overlay-title">Time's Up</h2>
+      <div class="big" id="overlay-score">0</div>
+      <p id="overlay-text">Particles spawned.</p>
+      <div class="row">
+        <button class="btn" id="overlay-new">Play Again</button>
+        <button class="btn secondary" id="overlay-free">Free Play</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modes" id="modes" role="tablist" aria-label="Particle mode">
+    <button class="mode-btn active" data-mode="fireworks" role="tab" aria-selected="true">
+      <span class="emoji">✨</span><span class="label">Fireworks</span>
+    </button>
+    <button class="mode-btn" data-mode="fountain" role="tab" aria-selected="false">
+      <span class="emoji">⛲</span><span class="label">Fountain</span>
+    </button>
+    <button class="mode-btn" data-mode="trail" role="tab" aria-selected="false">
+      <span class="emoji">🌠</span><span class="label">Trail</span>
+    </button>
+  </div>
+
+  <div class="controls">
+    <button class="btn secondary" id="reset">New Round</button>
+    <button class="btn" id="clear">Clear</button>
+  </div>
+
+  <div style="text-align:center">
+    <button class="rules-toggle" onclick="this.nextElementSibling.classList.toggle('open')">How to Play ▾</button>
+    <div class="rules-panel">
+      <ul>
+        <li><strong>Goal:</strong> Spawn as many particles as you can in 60 seconds.</li>
+        <li><strong>Fireworks:</strong> Tap to burst a ring of colorful sparks that float and fade.</li>
+        <li><strong>Fountain:</strong> Hold or tap to jet particles upward — gravity pulls them down and they bounce off the floor.</li>
+        <li><strong>Trail:</strong> Drag across the stage to paint a glowing trail of particles.</li>
+        <li><strong>Score:</strong> Every particle spawned counts. Switch modes anytime to mix the effect.</li>
+        <li><strong>Free Play</strong> removes the timer for a relaxing sandbox — no score is submitted in this mode.</li>
+        <li>Keys: <strong>1/2/3</strong> change mode · <strong>C</strong> clear · <strong>R</strong> new round.</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>
+    Tap to spawn · drag to trail · beat your best score
+  </footer>
+</div>
+
+<script>
+(() => {
+  const STORE_BEST = 'findpicked:particles:best';
+  const ROUND_SECONDS = 60;
+  const MAX_PARTICLES = 1400;
+
+  const stage = document.getElementById('stage');
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('score');
+  const bestEl = document.getElementById('best');
+  const timeEl = document.getElementById('time');
+  const timePill = document.getElementById('time-pill');
+  const countEl = document.getElementById('count');
+  const hintEl = document.getElementById('hint');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlay-title');
+  const overlayText = document.getElementById('overlay-text');
+  const overlayScore = document.getElementById('overlay-score');
+  const overlayNew = document.getElementById('overlay-new');
+  const overlayFree = document.getElementById('overlay-free');
+  const resetBtn = document.getElementById('reset');
+  const clearBtn = document.getElementById('clear');
+  const modeButtons = Array.from(document.querySelectorAll('.mode-btn'));
+
+  let W = 0, H = 0, DPR = 1;
+  const particles = [];
+  let score = 0;
+  let mode = 'fireworks';
+  let timeLeft = ROUND_SECONDS;
+  let running = false;
+  let freePlay = false;
+  let timerHandle = null;
+  let best = parseInt(localStorage.getItem(STORE_BEST) || '0', 10);
+  bestEl.textContent = best > 0 ? best : '—';
+
+  const PALETTE = [
+    '#ff3b30', '#ff9500', '#ffcc00', '#34c759',
+    '#30c0c6', '#0071e3', '#5e5ce6', '#af52de', '#ff375f'
+  ];
+
+  function resize() {
+    const rect = stage.getBoundingClientRect();
+    DPR = Math.max(1, Math.min(2.5, window.devicePixelRatio || 1));
+    W = rect.width;
+    H = rect.height;
+    canvas.width = Math.round(W * DPR);
+    canvas.height = Math.round(H * DPR);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+  window.addEventListener('orientationchange', () => setTimeout(resize, 100));
+
+  function pickColor() {
+    return PALETTE[(Math.random() * PALETTE.length) | 0];
+  }
+
+  function addParticle(p) {
+    if (particles.length >= MAX_PARTICLES) {
+      particles.shift();
+    }
+    particles.push(p);
+    if (running) {
+      score++;
+      scoreEl.classList.remove('bump');
+      void scoreEl.offsetWidth;
+      scoreEl.classList.add('bump');
+      scoreEl.textContent = score;
+    }
+  }
+
+  function spawnFireworks(x, y) {
+    const count = 22 + ((Math.random() * 10) | 0);
+    const color = pickColor();
+    const speed = 2.2 + Math.random() * 1.6;
+    for (let i = 0; i < count; i++) {
+      const a = (i / count) * Math.PI * 2 + Math.random() * 0.25;
+      const v = speed * (0.7 + Math.random() * 0.6);
+      addParticle({
+        x, y,
+        vx: Math.cos(a) * v,
+        vy: Math.sin(a) * v,
+        r: 2 + Math.random() * 2,
+        color,
+        life: 1,
+        decay: 0.008 + Math.random() * 0.012,
+        gravity: 0.06,
+        bounce: 0.55,
+        drag: 0.992,
+        trail: 0.18
+      });
+    }
+  }
+
+  function spawnFountain(x, y) {
+    const count = 6 + ((Math.random() * 4) | 0);
+    for (let i = 0; i < count; i++) {
+      const a = -Math.PI / 2 + (Math.random() - 0.5) * 0.7;
+      const v = 4 + Math.random() * 3.5;
+      addParticle({
+        x: x + (Math.random() - 0.5) * 6,
+        y,
+        vx: Math.cos(a) * v,
+        vy: Math.sin(a) * v,
+        r: 2.2 + Math.random() * 2,
+        color: pickColor(),
+        life: 1,
+        decay: 0.006 + Math.random() * 0.008,
+        gravity: 0.14,
+        bounce: 0.5,
+        drag: 0.996,
+        trail: 0.22
+      });
+    }
+  }
+
+  function spawnTrail(x, y, dx, dy) {
+    const count = 3;
+    for (let i = 0; i < count; i++) {
+      const jitter = 0.8;
+      addParticle({
+        x: x + (Math.random() - 0.5) * 4,
+        y: y + (Math.random() - 0.5) * 4,
+        vx: dx * 0.15 + (Math.random() - 0.5) * jitter,
+        vy: dy * 0.15 + (Math.random() - 0.5) * jitter,
+        r: 2 + Math.random() * 2.2,
+        color: pickColor(),
+        life: 1,
+        decay: 0.012 + Math.random() * 0.015,
+        gravity: 0.02,
+        bounce: 0.4,
+        drag: 0.97,
+        trail: 0.28
+      });
+    }
+  }
+
+  function step() {
+    // Soft fade of the stage for trails
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = 'rgba(11, 11, 16, 0.22)';
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.vx *= p.drag;
+      p.vy = p.vy * p.drag + p.gravity;
+      p.x += p.vx;
+      p.y += p.vy;
+
+      if (p.y + p.r > H) {
+        p.y = H - p.r;
+        p.vy = -p.vy * p.bounce;
+        if (Math.abs(p.vy) < 0.35) p.vy = 0;
+        p.vx *= 0.88;
+      }
+      if (p.x < p.r) { p.x = p.r; p.vx = -p.vx * p.bounce; }
+      else if (p.x > W - p.r) { p.x = W - p.r; p.vx = -p.vx * p.bounce; }
+
+      p.life -= p.decay;
+      if (p.life <= 0) {
+        particles.splice(i, 1);
+        continue;
+      }
+
+      const alpha = Math.max(0, Math.min(1, p.life));
+      // Glow ring
+      ctx.globalAlpha = alpha * p.trail;
+      ctx.beginPath();
+      ctx.fillStyle = p.color;
+      ctx.arc(p.x, p.y, p.r * 2.8, 0, Math.PI * 2);
+      ctx.fill();
+      // Core dot
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      ctx.fillStyle = p.color;
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+
+    countEl.textContent = particles.length;
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+
+  // Input handling
+  let pointerDown = false;
+  let lastX = 0, lastY = 0;
+  let holdTimer = null;
+
+  function stagePos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const t = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]) || e;
+    return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+  }
+
+  function startHold() {
+    stopHold();
+    holdTimer = setInterval(() => {
+      if (!pointerDown) return stopHold();
+      if (mode === 'fountain') spawnFountain(lastX, lastY);
+    }, 55);
+  }
+  function stopHold() {
+    if (holdTimer) { clearInterval(holdTimer); holdTimer = null; }
+  }
+
+  function onPointerDown(e) {
+    if (overlay.classList.contains('show')) return;
+    e.preventDefault();
+    const { x, y } = stagePos(e);
+    lastX = x; lastY = y;
+    pointerDown = true;
+    hintEl.classList.add('hidden');
+
+    if (mode === 'fireworks') spawnFireworks(x, y);
+    else if (mode === 'fountain') { spawnFountain(x, y); startHold(); }
+    else if (mode === 'trail') spawnTrail(x, y, 0, 0);
+  }
+
+  function onPointerMove(e) {
+    if (!pointerDown) return;
+    e.preventDefault();
+    const { x, y } = stagePos(e);
+    const dx = x - lastX;
+    const dy = y - lastY;
+    if (mode === 'trail') {
+      // Interpolate along the drag for a continuous line
+      const dist = Math.hypot(dx, dy);
+      const steps = Math.min(8, Math.max(1, Math.round(dist / 6)));
+      for (let i = 1; i <= steps; i++) {
+        const t = i / steps;
+        spawnTrail(lastX + dx * t, lastY + dy * t, dx, dy);
+      }
+    } else if (mode === 'fountain') {
+      // Update fountain origin as pointer moves
+    } else if (mode === 'fireworks') {
+      // Occasional bursts while dragging
+      if (Math.hypot(dx, dy) > 40) {
+        spawnFireworks(x, y);
+        lastX = x; lastY = y;
+        return;
+      }
+    }
+    lastX = x; lastY = y;
+  }
+
+  function onPointerUp(e) {
+    pointerDown = false;
+    stopHold();
+  }
+
+  canvas.addEventListener('mousedown', onPointerDown);
+  canvas.addEventListener('mousemove', onPointerMove);
+  window.addEventListener('mouseup', onPointerUp);
+  canvas.addEventListener('touchstart', onPointerDown, { passive: false });
+  canvas.addEventListener('touchmove', onPointerMove, { passive: false });
+  canvas.addEventListener('touchend', onPointerUp);
+  canvas.addEventListener('touchcancel', onPointerUp);
+
+  // Modes
+  function setMode(m) {
+    mode = m;
+    modeButtons.forEach(b => {
+      const active = b.dataset.mode === m;
+      b.classList.toggle('active', active);
+      b.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+  }
+  modeButtons.forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
+
+  // Timer & rounds
+  function updateTime() {
+    if (freePlay) {
+      timeEl.textContent = '∞';
+      timePill.classList.remove('warn', 'danger');
+      return;
+    }
+    timeEl.textContent = timeLeft + 's';
+    timePill.classList.remove('warn', 'danger');
+    if (timeLeft <= 5) timePill.classList.add('danger');
+    else if (timeLeft <= 15) timePill.classList.add('warn');
+  }
+
+  function tick() {
+    if (!running || freePlay) return;
+    timeLeft--;
+    updateTime();
+    if (timeLeft <= 0) {
+      endRound();
+    }
+  }
+
+  function startRound(opts) {
+    freePlay = !!(opts && opts.freePlay);
+    // Clear existing particles & score
+    particles.length = 0;
+    score = 0;
+    scoreEl.textContent = '0';
+    timeLeft = ROUND_SECONDS;
+    updateTime();
+    hintEl.classList.remove('hidden');
+    overlay.classList.remove('show');
+    if (timerHandle) clearInterval(timerHandle);
+    if (!freePlay) {
+      timerHandle = setInterval(tick, 1000);
+    } else {
+      timerHandle = null;
+    }
+    running = true;
+  }
+
+  function endRound() {
+    running = false;
+    if (timerHandle) { clearInterval(timerHandle); timerHandle = null; }
+    stopHold();
+    pointerDown = false;
+
+    const finalScore = score;
+    overlayScore.textContent = finalScore;
+    let isBest = false;
+    if (finalScore > best) {
+      best = finalScore;
+      localStorage.setItem(STORE_BEST, best);
+      bestEl.textContent = best;
+      isBest = true;
+    }
+
+    overlayTitle.textContent = "Time's Up";
+    const pb = isBest ? ' · New personal best!' : (best > 0 ? ` · Best: ${best}` : '');
+    overlayText.textContent = `You spawned ${finalScore} particle${finalScore === 1 ? '' : 's'}.${pb}`;
+    setTimeout(() => {
+      if (finalScore > 0 && window.Leaderboard && Leaderboard.submitScore) {
+        Leaderboard.submitScore(finalScore);
+      }
+      overlay.classList.add('show');
+    }, 350);
+  }
+
+  function clearStage() {
+    particles.length = 0;
+    ctx.fillStyle = '#0b0b10';
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  resetBtn.addEventListener('click', () => startRound({ freePlay: false }));
+  clearBtn.addEventListener('click', clearStage);
+  overlayNew.addEventListener('click', () => startRound({ freePlay: false }));
+  overlayFree.addEventListener('click', () => startRound({ freePlay: true }));
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === '1') { e.preventDefault(); setMode('fireworks'); }
+    else if (e.key === '2') { e.preventDefault(); setMode('fountain'); }
+    else if (e.key === '3') { e.preventDefault(); setMode('trail'); }
+    else if (e.key === 'c' || e.key === 'C') { e.preventDefault(); clearStage(); }
+    else if (e.key === 'r' || e.key === 'R') { e.preventDefault(); startRound({ freePlay: false }); }
+    else if ((e.key === 'Enter' || e.key === ' ') && overlay.classList.contains('show')) {
+      e.preventDefault();
+      startRound({ freePlay: false });
+    }
+  });
+
+  // Kick off first round
+  startRound({ freePlay: false });
+})();
+</script>
+
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

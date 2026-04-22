@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Fibonacci — FindPicked Games</title>
+<meta name="description" content="Spot the Fibonacci numbers before time runs out. A fast-paced math reflex game — free, no downloads.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Cpath d='M22 22 a8 8 0 0 1 -8 -8 a4 4 0 0 1 4 -4 a2 2 0 0 1 2 2' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --good: #34c759;
+  --bad: #ff3b30;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.06);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+  --radius: 16px;
+}
+
+html, body { height: 100%; overscroll-behavior: none; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px 20px 40px;
+  touch-action: manipulation;
+}
+
+.back {
+  align-self: flex-start;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 400;
+  padding: 8px 4px;
+  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+}
+.back:hover { color: var(--text-primary); }
+.back .arrow { font-size: 18px; line-height: 1; }
+
+.wrap {
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+header {
+  margin-top: 4px;
+  text-align: center;
+}
+
+h1 {
+  font-size: clamp(36px, 9vw, 48px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.subhead {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-top: 8px;
+}
+
+.hud {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  background: white;
+  border-radius: var(--radius);
+  padding: 14px;
+  box-shadow: var(--shadow);
+}
+.hud-box { text-align: center; }
+.hud-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 4px;
+}
+.hud-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.stage {
+  position: relative;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 28px 20px 24px;
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  overflow: hidden;
+}
+
+.timer-track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: rgba(0,0,0,0.05);
+}
+.timer-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  background: var(--accent);
+  transform-origin: left center;
+  transition: background 0.2s ease;
+}
+.timer-bar.warn { background: #ff9500; }
+.timer-bar.danger { background: var(--bad); }
+
+.prompt {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.number {
+  font-size: clamp(64px, 18vw, 96px);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: var(--text-primary);
+  transition: color 0.18s ease, transform 0.18s ease;
+}
+.number.flash-good { color: var(--good); animation: pop 0.32s ease; }
+.number.flash-bad { color: var(--bad); animation: shake 0.32s ease; }
+
+@keyframes pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(6px); }
+}
+
+.feedback {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  min-height: 18px;
+  text-align: center;
+}
+.feedback.good { color: var(--good); }
+.feedback.bad { color: var(--bad); }
+
+.choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.choice {
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 18px 14px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  min-height: 56px;
+  color: white;
+  -webkit-tap-highlight-color: transparent;
+}
+.choice.yes { background: var(--good); }
+.choice.no { background: var(--bad); }
+.choice:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,0,0,0.12); }
+.choice:active { transform: translateY(0); }
+.choice:disabled { opacity: 0.5; cursor: default; transform: none; box-shadow: none; }
+
+.controls {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.btn {
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 12px 22px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 44px;
+  background: var(--accent);
+  color: white;
+}
+.btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+.btn.secondary {
+  background: white;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+.btn.secondary:hover { background: #f5f5f7; }
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.94);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 5;
+  text-align: center;
+}
+.overlay.show { opacity: 1; pointer-events: auto; }
+.overlay h2 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.overlay .stat-row {
+  display: flex;
+  gap: 22px;
+  margin: 6px 0 4px;
+}
+.overlay .stat {
+  text-align: center;
+}
+.overlay .stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.overlay .stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+.overlay .badge {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  background: rgba(0,113,227,0.1);
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.start-overlay {
+  background: rgba(255,255,255,0.96);
+}
+.start-overlay h2 { font-size: 26px; }
+.start-overlay p { font-size: 15px; color: var(--text-secondary); max-width: 280px; line-height: 1.5; }
+
+footer {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  text-align: center;
+  margin-top: 4px;
+  line-height: 1.6;
+}
+
+.rules-toggle {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--accent);
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+  padding: 4px;
+  min-height: 44px;
+}
+.rules-toggle:hover { text-decoration: underline; }
+.rules-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  text-align: left;
+  max-width: 400px;
+  margin: 0 auto;
+}
+.rules-panel.open { max-height: 600px; }
+.rules-panel ul { margin: 8px 0 0 16px; }
+.rules-panel li { margin-bottom: 4px; }
+.rules-panel .seq {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(0,113,227,0.08);
+  border-radius: 8px;
+  font-family: 'SF Mono', Menlo, monospace;
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+@media (max-width: 420px) {
+  body { padding: 16px 14px 32px; }
+  .wrap { gap: 14px; }
+  .stage { padding: 24px 16px 20px; min-height: 240px; }
+  .hud-value { font-size: 20px; }
+  .overlay h2 { font-size: 24px; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="back" href="../" aria-label="Back to games">
+    <span class="arrow">←</span>
+    <span>Games</span>
+  </a>
+
+  <header>
+    <h1>Fibonacci</h1>
+    <div class="subhead">Spot the sequence. Beat the clock.</div>
+  </header>
+
+  <div class="hud" aria-label="Stats">
+    <div class="hud-box">
+      <div class="hud-label">Score</div>
+      <div class="hud-value" id="score">0</div>
+    </div>
+    <div class="hud-box">
+      <div class="hud-label">Streak</div>
+      <div class="hud-value" id="streak">0</div>
+    </div>
+    <div class="hud-box">
+      <div class="hud-label">Best</div>
+      <div class="hud-value" id="best">0</div>
+    </div>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="timer-track" aria-hidden="true">
+      <div class="timer-bar" id="timer-bar"></div>
+    </div>
+
+    <div class="prompt">Is this a Fibonacci number?</div>
+    <div class="number" id="number">—</div>
+    <div class="feedback" id="feedback">&nbsp;</div>
+
+    <div class="choices">
+      <button class="choice yes" id="btn-yes" aria-label="Yes, it is Fibonacci">Yes</button>
+      <button class="choice no" id="btn-no" aria-label="No, it is not Fibonacci">No</button>
+    </div>
+
+    <div class="overlay start-overlay show" id="start-overlay" role="dialog">
+      <h2>Ready?</h2>
+      <p>Tap <strong>Yes</strong> if the number is in the Fibonacci sequence, <strong>No</strong> if not. Speed increases as you go.</p>
+      <button class="btn" id="start-btn">Start</button>
+    </div>
+
+    <div class="overlay" id="end-overlay" role="dialog" aria-live="polite">
+      <h2 id="end-title">Game Over</h2>
+      <div class="stat-row">
+        <div class="stat">
+          <div class="stat-label">Score</div>
+          <div class="stat-value" id="end-score">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Best Streak</div>
+          <div class="stat-value" id="end-streak">0</div>
+        </div>
+      </div>
+      <div class="badge" id="end-badge" style="display:none;">New best!</div>
+      <button class="btn" id="play-again">Play Again</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn secondary" id="restart">Restart</button>
+  </div>
+
+  <div style="text-align:center">
+    <button class="rules-toggle" onclick="this.nextElementSibling.classList.toggle('open')">How to Play ▾</button>
+    <div class="rules-panel">
+      <ul>
+        <li>A number flashes on screen — decide whether it belongs to the Fibonacci sequence</li>
+        <li>Tap <strong>Yes</strong> if it does, <strong>No</strong> if it doesn't</li>
+        <li>Each round you have a few seconds to answer — the timer shrinks as your streak grows</li>
+        <li>Correct answers add points (longer streaks = bigger bonus); a wrong answer or running out of time ends the game</li>
+        <li>The Fibonacci sequence: each number is the sum of the two before it</li>
+      </ul>
+      <span class="seq">1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233…</span>
+    </div>
+  </div>
+
+  <footer>
+    Trust the sequence. Move fast.
+  </footer>
+</div>
+
+<script>
+(function() {
+  const LS_BEST = 'fibonacci-best';
+  const LS_BEST_STREAK = 'fibonacci-best-streak';
+
+  const numberEl = document.getElementById('number');
+  const scoreEl = document.getElementById('score');
+  const streakEl = document.getElementById('streak');
+  const bestEl = document.getElementById('best');
+  const feedbackEl = document.getElementById('feedback');
+  const timerBar = document.getElementById('timer-bar');
+  const btnYes = document.getElementById('btn-yes');
+  const btnNo = document.getElementById('btn-no');
+  const startOverlay = document.getElementById('start-overlay');
+  const startBtn = document.getElementById('start-btn');
+  const endOverlay = document.getElementById('end-overlay');
+  const endTitle = document.getElementById('end-title');
+  const endScore = document.getElementById('end-score');
+  const endStreak = document.getElementById('end-streak');
+  const endBadge = document.getElementById('end-badge');
+  const playAgainBtn = document.getElementById('play-again');
+  const restartBtn = document.getElementById('restart');
+
+  // Fibonacci numbers up to a comfortable upper bound.
+  const FIBS = [];
+  (function buildFibs() {
+    let a = 1, b = 1;
+    FIBS.push(a);
+    // dedupe the second 1 — players see "1" once and it's still a fib
+    while (b <= 1000000) {
+      FIBS.push(b);
+      const c = a + b; a = b; b = c;
+    }
+  })();
+  const FIB_SET = new Set(FIBS);
+
+  let score = 0;
+  let streak = 0;
+  let bestStreak = 0;
+  let best = loadBest();
+  let bestStreakSaved = loadBestStreak();
+  let running = false;
+  let currentValue = null;
+  let currentIsFib = false;
+  let timerStart = 0;
+  let timerDuration = 0;
+  let rafId = null;
+  let timeoutId = null;
+  let round = 0;
+
+  function loadBest() {
+    try {
+      const v = parseInt(localStorage.getItem(LS_BEST), 10);
+      return isNaN(v) ? 0 : v;
+    } catch { return 0; }
+  }
+  function saveBest() {
+    try { localStorage.setItem(LS_BEST, String(best)); } catch {}
+  }
+  function loadBestStreak() {
+    try {
+      const v = parseInt(localStorage.getItem(LS_BEST_STREAK), 10);
+      return isNaN(v) ? 0 : v;
+    } catch { return 0; }
+  }
+  function saveBestStreak() {
+    try { localStorage.setItem(LS_BEST_STREAK, String(bestStreakSaved)); } catch {}
+  }
+
+  function updateHud() {
+    scoreEl.textContent = score;
+    streakEl.textContent = streak;
+    bestEl.textContent = best;
+  }
+
+  // Difficulty: time per round shrinks; max number grows.
+  function timeForRound(r) {
+    // start at 4.0s, shrink toward ~1.2s
+    const t = 4000 - r * 120;
+    return Math.max(1200, t);
+  }
+
+  function maxIndexForRound(r) {
+    // Allow larger fibs as the game progresses (harder to recognize).
+    // Start with first 8 fibs, expand.
+    return Math.min(FIBS.length - 1, 7 + Math.floor(r / 2));
+  }
+
+  function pickNumber(r) {
+    // Coin flip: produce a fibonacci or a near-fib non-fib.
+    const wantFib = Math.random() < 0.5;
+    const maxIdx = maxIndexForRound(r);
+
+    if (wantFib) {
+      const idx = Math.floor(Math.random() * (maxIdx + 1));
+      return { value: FIBS[idx], isFib: true };
+    }
+
+    // Generate a non-fib that's close in magnitude to fibs in range,
+    // so easy "obviously not fib" cases are rare.
+    for (let attempt = 0; attempt < 50; attempt++) {
+      const idx = Math.floor(Math.random() * (maxIdx + 1));
+      const base = FIBS[idx];
+      // Offset by a small amount, scaled by magnitude
+      const range = Math.max(2, Math.floor(base * 0.25));
+      const delta = (Math.floor(Math.random() * range) + 1) * (Math.random() < 0.5 ? -1 : 1);
+      const candidate = base + delta;
+      if (candidate > 0 && !FIB_SET.has(candidate)) {
+        return { value: candidate, isFib: false };
+      }
+    }
+    // Fallback: just take fib + 1
+    return { value: FIBS[Math.min(maxIdx, 1)] + 1, isFib: false };
+  }
+
+  function nextRound() {
+    round++;
+    const pick = pickNumber(round);
+    currentValue = pick.value;
+    currentIsFib = pick.isFib;
+
+    numberEl.textContent = currentValue.toLocaleString('en-US');
+    numberEl.className = 'number';
+    feedbackEl.textContent = ' ';
+    feedbackEl.className = 'feedback';
+
+    btnYes.disabled = false;
+    btnNo.disabled = false;
+
+    timerDuration = timeForRound(round);
+    timerStart = performance.now();
+
+    // Reset and start timer animation
+    timerBar.classList.remove('warn', 'danger');
+    timerBar.style.transition = 'none';
+    timerBar.style.transform = 'scaleX(1)';
+    // Force reflow before starting transition
+    void timerBar.offsetWidth;
+    timerBar.style.transition = `transform ${timerDuration}ms linear`;
+    timerBar.style.transform = 'scaleX(0)';
+
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(tickTimer);
+
+    if (timeoutId) clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => onAnswer(null), timerDuration);
+  }
+
+  function tickTimer() {
+    if (!running) return;
+    const elapsed = performance.now() - timerStart;
+    const ratio = elapsed / timerDuration;
+    if (ratio > 0.75) {
+      timerBar.classList.add('danger');
+      timerBar.classList.remove('warn');
+    } else if (ratio > 0.5) {
+      timerBar.classList.add('warn');
+    }
+    if (running && ratio < 1) {
+      rafId = requestAnimationFrame(tickTimer);
+    }
+  }
+
+  function onAnswer(answer) {
+    if (!running) return;
+    if (timeoutId) { clearTimeout(timeoutId); timeoutId = null; }
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+
+    btnYes.disabled = true;
+    btnNo.disabled = true;
+
+    // Freeze timer where it is
+    const elapsed = performance.now() - timerStart;
+    const remaining = Math.max(0, 1 - elapsed / timerDuration);
+    timerBar.style.transition = 'none';
+    timerBar.style.transform = `scaleX(${remaining})`;
+
+    if (answer === null) {
+      // Time out
+      flashBad(`Time's up — ${currentValue.toLocaleString('en-US')} is ${currentIsFib ? 'Fibonacci' : 'not Fibonacci'}`);
+      setTimeout(endGame, 900);
+      return;
+    }
+
+    const correct = (answer === true) === currentIsFib;
+    if (correct) {
+      streak++;
+      const bonus = Math.min(10, Math.floor(streak / 3));
+      const gained = 1 + bonus;
+      score += gained;
+      if (streak > bestStreak) bestStreak = streak;
+      flashGood(bonus > 0 ? `+${gained} (streak ×${streak})` : `+${gained}`);
+      updateHud();
+      setTimeout(nextRound, 450);
+    } else {
+      streak = 0;
+      updateHud();
+      flashBad(`${currentValue.toLocaleString('en-US')} is ${currentIsFib ? 'Fibonacci' : 'not Fibonacci'}`);
+      setTimeout(endGame, 1100);
+    }
+  }
+
+  function flashGood(msg) {
+    numberEl.classList.remove('flash-bad');
+    numberEl.classList.add('flash-good');
+    feedbackEl.textContent = msg;
+    feedbackEl.className = 'feedback good';
+  }
+
+  function flashBad(msg) {
+    numberEl.classList.remove('flash-good');
+    numberEl.classList.add('flash-bad');
+    feedbackEl.textContent = msg;
+    feedbackEl.className = 'feedback bad';
+  }
+
+  function startGame() {
+    score = 0;
+    streak = 0;
+    bestStreak = 0;
+    round = 0;
+    running = true;
+    updateHud();
+    startOverlay.classList.remove('show');
+    endOverlay.classList.remove('show');
+    nextRound();
+  }
+
+  function endGame() {
+    running = false;
+    if (timeoutId) { clearTimeout(timeoutId); timeoutId = null; }
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+
+    let isNewBest = false;
+    if (score > best) {
+      best = score;
+      saveBest();
+      isNewBest = true;
+    }
+    if (bestStreak > bestStreakSaved) {
+      bestStreakSaved = bestStreak;
+      saveBestStreak();
+    }
+    updateHud();
+
+    endTitle.textContent = isNewBest ? 'New Best!' : 'Game Over';
+    endScore.textContent = score;
+    endStreak.textContent = bestStreak;
+    endBadge.style.display = isNewBest ? 'inline-block' : 'none';
+    endOverlay.classList.add('show');
+
+    if (score > 0) {
+      setTimeout(() => {
+        window.Leaderboard && Leaderboard.submitScore(score);
+      }, 600);
+    }
+  }
+
+  function restart() {
+    if (timeoutId) { clearTimeout(timeoutId); timeoutId = null; }
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    running = false;
+    score = 0;
+    streak = 0;
+    bestStreak = 0;
+    round = 0;
+    updateHud();
+    numberEl.textContent = '—';
+    numberEl.className = 'number';
+    feedbackEl.textContent = ' ';
+    feedbackEl.className = 'feedback';
+    timerBar.style.transition = 'none';
+    timerBar.style.transform = 'scaleX(1)';
+    timerBar.classList.remove('warn', 'danger');
+    btnYes.disabled = false;
+    btnNo.disabled = false;
+    endOverlay.classList.remove('show');
+    startOverlay.classList.add('show');
+  }
+
+  // Events
+  btnYes.addEventListener('click', () => onAnswer(true));
+  btnNo.addEventListener('click', () => onAnswer(false));
+  startBtn.addEventListener('click', startGame);
+  playAgainBtn.addEventListener('click', startGame);
+  restartBtn.addEventListener('click', restart);
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    if (!running) {
+      if ((e.key === 'Enter' || e.key === ' ') && (startOverlay.classList.contains('show') || endOverlay.classList.contains('show'))) {
+        e.preventDefault();
+        startGame();
+      }
+      return;
+    }
+    if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'y' || e.key === '1') {
+      e.preventDefault();
+      onAnswer(true);
+    } else if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'n' || e.key === '2') {
+      e.preventDefault();
+      onAnswer(false);
+    }
+  });
+
+  // Init
+  updateHud();
+})();
+</script>
+
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

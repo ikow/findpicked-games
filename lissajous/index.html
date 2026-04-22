@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Lissajous — FindPicked Games</title>
+<meta name="description" content="Explore beautiful parametric curves. Adjust frequency, phase, and watch the math unfold. Includes a pattern-matching challenge mode.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23fafafa'/%3E%3Cpath d='M 6 16 Q 10 6 16 16 T 26 16' stroke='%230071e3' stroke-width='2' fill='none'/%3E%3Cpath d='M 6 16 Q 10 26 16 16 T 26 16' stroke='%23af52de' stroke-width='2' fill='none'/%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-canvas: #0a0a0f;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --accent-soft: #e8f1fd;
+  --success: #34c759;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+  --radius: 16px;
+}
+
+html, body {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px 16px 40px;
+  touch-action: manipulation;
+}
+
+.back {
+  align-self: flex-start;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 15px;
+  padding: 10px 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  transition: color 0.2s ease;
+}
+.back:hover { color: var(--text-primary); }
+.back .arrow { font-size: 18px; line-height: 1; }
+
+.wrap {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 4px;
+}
+
+h1 {
+  font-size: clamp(34px, 8vw, 44px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-top: 6px;
+}
+
+.mode-toggle {
+  display: inline-flex;
+  background: #eef0f3;
+  border-radius: 999px;
+  padding: 4px;
+  gap: 2px;
+}
+.mode-toggle button {
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  min-height: 36px;
+  transition: all 0.2s ease;
+}
+.mode-toggle button.active {
+  background: white;
+  color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.status-bar {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  align-items: stretch;
+}
+
+.stat {
+  flex: 1;
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 10px 14px;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+.stat .label {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+.stat .value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+.stat .value.accent { color: var(--accent); }
+.stat .value.success { color: var(--success); }
+
+.canvas-stage {
+  position: relative;
+  width: 100%;
+  background: var(--bg-canvas);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+  aspect-ratio: 1 / 1;
+}
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+#targetCanvas {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 92px;
+  height: 92px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
+}
+.target-label {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  color: rgba(255,255,255,0.75);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  background: rgba(0,0,0,0.3);
+  padding: 6px 10px;
+  border-radius: 8px;
+  backdrop-filter: blur(8px);
+}
+
+.controls {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 18px 18px 8px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.slider-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.slider-header .v {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  background: transparent;
+  height: 44px;
+  cursor: pointer;
+}
+input[type=range]::-webkit-slider-runnable-track {
+  height: 6px;
+  background: #eef0f3;
+  border-radius: 3px;
+}
+input[type=range]::-moz-range-track {
+  height: 6px;
+  background: #eef0f3;
+  border-radius: 3px;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  background: white;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  margin-top: -11px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  cursor: grab;
+}
+input[type=range]::-moz-range-thumb {
+  width: 26px;
+  height: 26px;
+  background: white;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  cursor: grab;
+}
+input[type=range]:active::-webkit-slider-thumb { cursor: grabbing; }
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.btn {
+  flex: 1;
+  min-width: 120px;
+  min-height: 48px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn.primary {
+  background: var(--accent);
+  color: white;
+}
+.btn.primary:hover { background: var(--accent-hover); }
+.btn.primary:active { transform: scale(0.98); }
+.btn.secondary {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+.btn.secondary:hover { background: #f5f5f7; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.howto {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  box-shadow: var(--shadow);
+}
+.howto h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  letter-spacing: -0.01em;
+}
+.howto p, .howto li {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+.howto ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+.howto li::before {
+  content: "•";
+  color: var(--accent);
+  font-weight: 700;
+  display: inline-block;
+  width: 18px;
+}
+.howto .eq {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: #f5f5f7;
+  border-radius: 10px;
+  font-family: 'SF Mono', Menlo, monospace;
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.8;
+}
+
+.gameover {
+  position: fixed; inset: 0;
+  background: rgba(10,10,15,0.6);
+  backdrop-filter: blur(8px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9000;
+  padding: 20px;
+}
+.gameover.show { display: flex; }
+.gameover-card {
+  background: white;
+  border-radius: 20px;
+  padding: 28px 24px;
+  max-width: 340px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+.gameover-card h3 {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.gameover-card .big-score {
+  font-size: 56px;
+  font-weight: 700;
+  color: var(--accent);
+  margin: 14px 0 4px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+.gameover-card .sub {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 18px;
+}
+.gameover-card .btn { width: 100%; margin-top: 8px; }
+
+.feedback {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-tertiary);
+  min-height: 18px;
+}
+.feedback.good { color: var(--success); }
+.feedback.bad { color: var(--accent); }
+
+@media (max-width: 420px) {
+  .status-bar .stat { padding: 8px 10px; }
+  .stat .value { font-size: 19px; }
+  #targetCanvas { width: 72px; height: 72px; top: 10px; right: 10px; }
+  .target-label { top: 10px; left: 10px; font-size: 10px; padding: 4px 8px; }
+  .btn { min-width: 100px; }
+}
+</style>
+</head>
+<body>
+<a class="back" href="../"><span class="arrow">←</span> All Games</a>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Lissajous</h1>
+      <div class="subtitle">Parametric curves, cycling color.</div>
+    </div>
+    <div class="mode-toggle" role="tablist">
+      <button type="button" id="btnSandbox" class="active">Sandbox</button>
+      <button type="button" id="btnChallenge">Challenge</button>
+    </div>
+  </header>
+
+  <div class="status-bar" id="statusBar" style="display:none">
+    <div class="stat">
+      <div class="label">Round</div>
+      <div class="value" id="roundLabel">1 / 5</div>
+    </div>
+    <div class="stat">
+      <div class="label">Score</div>
+      <div class="value accent" id="scoreLabel">0</div>
+    </div>
+    <div class="stat">
+      <div class="label">Best</div>
+      <div class="value success" id="bestLabel">—</div>
+    </div>
+  </div>
+
+  <div class="canvas-stage">
+    <canvas id="mainCanvas"></canvas>
+    <div class="target-label" id="targetLabel" style="display:none">Target</div>
+    <canvas id="targetCanvas" style="display:none"></canvas>
+  </div>
+
+  <div class="feedback" id="feedback">Drag the sliders — see the math breathe.</div>
+
+  <div class="controls">
+    <div class="slider-row">
+      <div class="slider-header"><span>Frequency A</span><span class="v" id="aVal">3</span></div>
+      <input type="range" id="aSlider" min="1" max="10" step="1" value="3">
+    </div>
+    <div class="slider-row">
+      <div class="slider-header"><span>Frequency B</span><span class="v" id="bVal">2</span></div>
+      <input type="range" id="bSlider" min="1" max="10" step="1" value="2">
+    </div>
+    <div class="slider-row">
+      <div class="slider-header"><span>Phase δ</span><span class="v" id="pVal">0.00π</span></div>
+      <input type="range" id="pSlider" min="0" max="100" step="1" value="0">
+    </div>
+    <div class="actions">
+      <button class="btn secondary" id="randomBtn">Randomize</button>
+      <button class="btn primary" id="primaryBtn">Start Challenge</button>
+    </div>
+  </div>
+
+  <section class="howto">
+    <h2>How to Play</h2>
+    <p>Lissajous curves are traced by a point whose horizontal and vertical positions each oscillate at different frequencies — the shape depends on their ratio and the phase between them.</p>
+    <ul>
+      <li><strong>Sandbox:</strong> Move the sliders freely and watch the curve bloom. Trails fade, colors cycle through the hue wheel.</li>
+      <li><strong>Challenge:</strong> Five rounds. A target curve appears in the corner — match it with the sliders. The closer you get, the more points you earn.</li>
+      <li><strong>Scoring:</strong> Up to 100 points per round (500 total). Perfect match = full points; every step of deviation costs a few.</li>
+    </ul>
+    <div class="eq">
+      x(t) = sin(<b>A</b>·t + <b>δ</b>)<br>
+      y(t) = sin(<b>B</b>·t)
+    </div>
+  </section>
+</div>
+
+<div class="gameover" id="gameover">
+  <div class="gameover-card">
+    <h3 id="goTitle">Challenge Complete</h3>
+    <div class="big-score" id="goScore">0</div>
+    <div class="sub" id="goSub">out of 500</div>
+    <button class="btn primary" id="playAgainBtn">Play Again</button>
+    <button class="btn secondary" id="backToSandboxBtn">Back to Sandbox</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const mainCanvas = document.getElementById('mainCanvas');
+  const targetCanvas = document.getElementById('targetCanvas');
+  const targetLabel = document.getElementById('targetLabel');
+  const mctx = mainCanvas.getContext('2d');
+  const tctx = targetCanvas.getContext('2d');
+
+  const aSlider = document.getElementById('aSlider');
+  const bSlider = document.getElementById('bSlider');
+  const pSlider = document.getElementById('pSlider');
+  const aVal = document.getElementById('aVal');
+  const bVal = document.getElementById('bVal');
+  const pVal = document.getElementById('pVal');
+
+  const btnSandbox = document.getElementById('btnSandbox');
+  const btnChallenge = document.getElementById('btnChallenge');
+  const primaryBtn = document.getElementById('primaryBtn');
+  const randomBtn = document.getElementById('randomBtn');
+  const statusBar = document.getElementById('statusBar');
+  const roundLabel = document.getElementById('roundLabel');
+  const scoreLabel = document.getElementById('scoreLabel');
+  const bestLabel = document.getElementById('bestLabel');
+  const feedback = document.getElementById('feedback');
+
+  const gameover = document.getElementById('gameover');
+  const goScore = document.getElementById('goScore');
+  const goSub = document.getElementById('goSub');
+  const goTitle = document.getElementById('goTitle');
+  const playAgainBtn = document.getElementById('playAgainBtn');
+  const backToSandboxBtn = document.getElementById('backToSandboxBtn');
+
+  const BEST_KEY = 'lissajous-best';
+  const TOTAL_ROUNDS = 5;
+
+  let mode = 'sandbox';
+  let round = 0;
+  let totalScore = 0;
+  let target = null;
+  let locked = false;
+
+  // Resize canvas for DPR
+  function fitCanvas(canvas, ctx) {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    canvas.width = Math.round(rect.width * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { w: rect.width, h: rect.height };
+  }
+
+  let mainSize = { w: 0, h: 0 };
+  let targetSize = { w: 0, h: 0 };
+
+  function resize() {
+    mainSize = fitCanvas(mainCanvas, mctx);
+    if (targetCanvas.style.display !== 'none') {
+      targetSize = fitCanvas(targetCanvas, tctx);
+      drawTargetCurve();
+    }
+  }
+  window.addEventListener('resize', resize);
+
+  // Current curve params
+  function currentParams() {
+    return {
+      a: parseInt(aSlider.value, 10),
+      b: parseInt(bSlider.value, 10),
+      delta: (parseInt(pSlider.value, 10) / 100) * Math.PI * 2
+    };
+  }
+
+  function updateReadouts() {
+    aVal.textContent = aSlider.value;
+    bVal.textContent = bSlider.value;
+    const frac = parseInt(pSlider.value, 10) / 50; // 0..2 (in units of π)
+    pVal.textContent = frac.toFixed(2) + 'π';
+    if (mode === 'challenge' && target && !locked) {
+      const d = distanceToTarget();
+      if (d < 0.05) feedback.textContent = '◉ Very close — nail it and submit.';
+      else if (d < 0.2) feedback.textContent = '• Warmer.';
+      else feedback.textContent = 'Match the target in the corner.';
+      feedback.className = 'feedback ' + (d < 0.05 ? 'good' : '');
+    }
+  }
+
+  function distanceToTarget() {
+    if (!target) return 1;
+    const p = currentParams();
+    // Frequency distance — integers 1..10; normalize
+    const fa = Math.abs(p.a - target.a) / 9;
+    const fb = Math.abs(p.b - target.b) / 9;
+    // Phase distance — circular on [0, 2π)
+    const dp = Math.abs(((p.delta - target.delta + Math.PI) % (Math.PI * 2)) - Math.PI) / Math.PI;
+    // Weighted: frequencies dominate shape
+    return fa * 0.4 + fb * 0.4 + dp * 0.2;
+  }
+
+  function scoreFromDistance(d) {
+    // d=0 => 100, d>=0.3 => 0 roughly, smooth
+    const s = Math.max(0, 100 * (1 - d * 3.2));
+    return Math.round(s);
+  }
+
+  // Draw curve: animated with trail
+  let t0 = performance.now();
+  const TRAIL_SAMPLES = 480;
+  const CURVE_SAMPLES = 720;
+
+  function draw(now) {
+    const dt = (now - t0) / 1000;
+    const { a, b, delta } = currentParams();
+    const { w, h } = mainSize;
+    if (w === 0) { requestAnimationFrame(draw); return; }
+
+    // Fade previous frame for trail effect
+    mctx.fillStyle = 'rgba(10,10,15,0.14)';
+    mctx.fillRect(0, 0, w, h);
+
+    const cx = w / 2, cy = h / 2;
+    const r = Math.min(w, h) * 0.42;
+
+    // Hue cycles with time
+    const baseHue = (dt * 28) % 360;
+
+    // Draw the full static curve softly with cycling hue
+    mctx.lineWidth = 1.4;
+    for (let i = 0; i < CURVE_SAMPLES; i++) {
+      const u = (i / CURVE_SAMPLES) * Math.PI * 2;
+      const x = cx + r * Math.sin(a * u + delta);
+      const y = cy + r * Math.sin(b * u);
+      const u2 = ((i + 1) / CURVE_SAMPLES) * Math.PI * 2;
+      const x2 = cx + r * Math.sin(a * u2 + delta);
+      const y2 = cy + r * Math.sin(b * u2);
+      const hue = (baseHue + (i / CURVE_SAMPLES) * 360) % 360;
+      mctx.strokeStyle = `hsla(${hue}, 80%, 60%, 0.35)`;
+      mctx.beginPath();
+      mctx.moveTo(x, y);
+      mctx.lineTo(x2, y2);
+      mctx.stroke();
+    }
+
+    // Animated leading point + bright trail
+    const speed = 0.9;
+    const phaseT = dt * speed;
+    mctx.lineWidth = 2.4;
+    for (let i = 0; i < TRAIL_SAMPLES; i++) {
+      const u = phaseT + (i / CURVE_SAMPLES) * Math.PI * 2 * 1.5;
+      const u2 = u + (1 / CURVE_SAMPLES) * Math.PI * 2 * 1.5;
+      const x = cx + r * Math.sin(a * u + delta);
+      const y = cy + r * Math.sin(b * u);
+      const x2 = cx + r * Math.sin(a * u2 + delta);
+      const y2 = cy + r * Math.sin(b * u2);
+      const alpha = i / TRAIL_SAMPLES;
+      const hue = (baseHue + i * 0.4) % 360;
+      mctx.strokeStyle = `hsla(${hue}, 95%, 65%, ${alpha})`;
+      mctx.beginPath();
+      mctx.moveTo(x, y);
+      mctx.lineTo(x2, y2);
+      mctx.stroke();
+    }
+
+    // Leading bright dot
+    const uLead = phaseT + (TRAIL_SAMPLES / CURVE_SAMPLES) * Math.PI * 2 * 1.5;
+    const lx = cx + r * Math.sin(a * uLead + delta);
+    const ly = cy + r * Math.sin(b * uLead);
+    const grd = mctx.createRadialGradient(lx, ly, 0, lx, ly, 14);
+    grd.addColorStop(0, `hsla(${(baseHue + TRAIL_SAMPLES * 0.4) % 360}, 100%, 85%, 0.95)`);
+    grd.addColorStop(1, 'rgba(255,255,255,0)');
+    mctx.fillStyle = grd;
+    mctx.beginPath();
+    mctx.arc(lx, ly, 14, 0, Math.PI * 2);
+    mctx.fill();
+
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+
+  // Static target thumbnail
+  function drawTargetCurve() {
+    if (!target) return;
+    const { w, h } = targetSize;
+    if (!w) return;
+    tctx.clearRect(0, 0, w, h);
+    const cx = w / 2, cy = h / 2;
+    const r = Math.min(w, h) * 0.4;
+    tctx.strokeStyle = 'rgba(255,255,255,0.92)';
+    tctx.lineWidth = 1.6;
+    tctx.beginPath();
+    for (let i = 0; i <= 600; i++) {
+      const u = (i / 600) * Math.PI * 2;
+      const x = cx + r * Math.sin(target.a * u + target.delta);
+      const y = cy + r * Math.sin(target.b * u);
+      if (i === 0) tctx.moveTo(x, y); else tctx.lineTo(x, y);
+    }
+    tctx.stroke();
+  }
+
+  // Sliders
+  [aSlider, bSlider, pSlider].forEach(s => s.addEventListener('input', updateReadouts));
+
+  randomBtn.addEventListener('click', () => {
+    if (locked) return;
+    aSlider.value = 1 + Math.floor(Math.random() * 10);
+    bSlider.value = 1 + Math.floor(Math.random() * 10);
+    pSlider.value = Math.floor(Math.random() * 101);
+    updateReadouts();
+  });
+
+  // Mode switching
+  function setMode(m) {
+    mode = m;
+    if (m === 'sandbox') {
+      btnSandbox.classList.add('active');
+      btnChallenge.classList.remove('active');
+      statusBar.style.display = 'none';
+      targetCanvas.style.display = 'none';
+      targetLabel.style.display = 'none';
+      primaryBtn.textContent = 'Start Challenge';
+      feedback.textContent = 'Drag the sliders — see the math breathe.';
+      feedback.className = 'feedback';
+      locked = false;
+      target = null;
+    } else {
+      btnChallenge.classList.add('active');
+      btnSandbox.classList.remove('active');
+      statusBar.style.display = 'flex';
+      const best = getBest();
+      bestLabel.textContent = best == null ? '—' : best;
+      primaryBtn.textContent = 'Begin';
+      feedback.textContent = 'Press Begin to start five rounds.';
+      feedback.className = 'feedback';
+    }
+  }
+
+  btnSandbox.addEventListener('click', () => setMode('sandbox'));
+  btnChallenge.addEventListener('click', () => setMode('challenge'));
+
+  // Challenge flow
+  function newTarget() {
+    let a, b, delta;
+    do {
+      a = 1 + Math.floor(Math.random() * 8); // 1..8 to keep recognizable
+      b = 1 + Math.floor(Math.random() * 8);
+    } while (a === b && Math.random() < 0.7); // bias away from 1:1
+    // Phase snapped to eighths — matches slider granularity reasonably
+    const steps = Math.floor(Math.random() * 8);
+    delta = (steps / 8) * Math.PI * 2;
+    return { a, b, delta };
+  }
+
+  function startChallenge() {
+    round = 0;
+    totalScore = 0;
+    scoreLabel.textContent = '0';
+    nextRound();
+  }
+
+  function nextRound() {
+    round += 1;
+    roundLabel.textContent = `${round} / ${TOTAL_ROUNDS}`;
+    target = newTarget();
+    targetCanvas.style.display = 'block';
+    targetLabel.style.display = 'block';
+    resize(); // fits target + draws
+    locked = false;
+    // Reset sliders to a neutral starting place
+    aSlider.value = 3;
+    bSlider.value = 3;
+    pSlider.value = 0;
+    updateReadouts();
+    primaryBtn.textContent = 'Submit Match';
+    feedback.textContent = 'Match the target in the corner.';
+    feedback.className = 'feedback';
+  }
+
+  function submitRound() {
+    if (!target) return;
+    const d = distanceToTarget();
+    const pts = scoreFromDistance(d);
+    totalScore += pts;
+    scoreLabel.textContent = totalScore;
+    locked = true;
+    feedback.textContent = pts >= 90 ? `Nailed it — +${pts}` : pts >= 60 ? `Close — +${pts}` : `+${pts}`;
+    feedback.className = 'feedback ' + (pts >= 60 ? 'good' : 'bad');
+
+    setTimeout(() => {
+      if (round >= TOTAL_ROUNDS) finish();
+      else nextRound();
+    }, 900);
+  }
+
+  function finish() {
+    targetCanvas.style.display = 'none';
+    targetLabel.style.display = 'none';
+    locked = true;
+
+    const best = getBest();
+    const isNewBest = best == null || totalScore > best;
+    if (isNewBest) setBest(totalScore);
+
+    goTitle.textContent = isNewBest ? 'New Personal Best!' : 'Challenge Complete';
+    goScore.textContent = totalScore;
+    goSub.textContent = `out of ${TOTAL_ROUNDS * 100}`;
+    gameover.classList.add('show');
+
+    if (window.Leaderboard && Leaderboard.submitScore) {
+      // Delay slightly so the gameover card reads first
+      setTimeout(() => {
+        try { Leaderboard.submitScore(totalScore); } catch {}
+      }, 600);
+    }
+  }
+
+  function getBest() {
+    try {
+      const v = localStorage.getItem(BEST_KEY);
+      return v == null ? null : parseInt(v, 10);
+    } catch { return null; }
+  }
+  function setBest(v) {
+    try { localStorage.setItem(BEST_KEY, String(v)); } catch {}
+    bestLabel.textContent = v;
+  }
+
+  primaryBtn.addEventListener('click', () => {
+    if (mode === 'sandbox') {
+      setMode('challenge');
+      startChallenge();
+      return;
+    }
+    if (primaryBtn.textContent === 'Begin') {
+      startChallenge();
+    } else if (!locked) {
+      submitRound();
+    }
+  });
+
+  playAgainBtn.addEventListener('click', () => {
+    gameover.classList.remove('show');
+    setMode('challenge');
+    startChallenge();
+  });
+  backToSandboxBtn.addEventListener('click', () => {
+    gameover.classList.remove('show');
+    setMode('sandbox');
+  });
+
+  // Init
+  setMode('sandbox');
+  updateReadouts();
+  // Initial bestLabel in case user starts challenge
+  const initialBest = getBest();
+  bestLabel.textContent = initialBest == null ? '—' : initialBest;
+
+  // Defer resize to next frame so layout is final
+  requestAnimationFrame(resize);
+})();
+</script>
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

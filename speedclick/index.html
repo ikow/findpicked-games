@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Speed Click — FindPicked Games</title>
+<meta name="description" content="Play Speed Click free — click as fast as you can in 10 seconds. Track your CPS and beat your best.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Cpath d='M16 8 L16 16 L22 19' stroke='white' stroke-width='2.4' stroke-linecap='round' fill='none'/%3E%3Ccircle cx='16' cy='16' r='8' stroke='white' stroke-width='2' fill='none'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #fafafa;
+    --bg-card: #ffffff;
+    --text: #1d1d1f;
+    --text-2: #6e6e73;
+    --text-3: #86868b;
+    --accent: #0071e3;
+    --accent-hover: #0077ed;
+    --accent-soft: rgba(0, 113, 227, 0.08);
+    --border: rgba(0, 0, 0, 0.08);
+    --shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 36px rgba(0, 0, 0, 0.14);
+    --warn: #d04040;
+    --radius: 20px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+    -webkit-user-select: none;
+    overscroll-behavior: none;
+  }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 56px 20px 40px;
+    touch-action: manipulation;
+  }
+
+  .back-link {
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    color: var(--text-2);
+    text-decoration: none;
+    font-size: 15px;
+    z-index: 9999;
+    padding: 10px 12px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .back-link:hover { color: var(--text); }
+
+  .title {
+    font-size: clamp(30px, 7vw, 40px);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    margin: 0 0 4px;
+    text-align: center;
+  }
+
+  .subtitle {
+    font-size: 15px;
+    color: var(--text-2);
+    margin: 0 0 22px;
+    text-align: center;
+  }
+
+  .hud {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    width: 100%;
+    max-width: 460px;
+    justify-content: center;
+  }
+
+  .hud-card {
+    flex: 1;
+    background: var(--bg-card);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 10px 8px;
+    text-align: center;
+    min-width: 0;
+  }
+
+  .hud-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 2px;
+  }
+
+  .hud-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+  .hud-value.warn { color: var(--warn); }
+
+  .arena {
+    position: relative;
+    width: 100%;
+    max-width: 460px;
+    aspect-ratio: 1 / 1;
+    margin-bottom: 18px;
+  }
+
+  .target {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    font-family: inherit;
+    color: var(--text);
+    overflow: hidden;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: transform 0.06s ease, box-shadow 0.2s ease, background 0.2s ease;
+    min-height: 44px;
+  }
+  .target:hover { box-shadow: var(--shadow-lg); }
+  .target:active { transform: scale(0.995); }
+  .target:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }
+
+  .target.idle .target-big {
+    font-size: clamp(40px, 11vw, 64px);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--text);
+  }
+  .target.idle .target-hint {
+    font-size: 15px;
+    color: var(--text-2);
+  }
+
+  .target.playing {
+    background: var(--accent-soft);
+  }
+  .target.playing .target-big {
+    font-size: clamp(80px, 22vw, 140px);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    transition: transform 0.08s ease;
+  }
+  .target.playing .target-hint {
+    font-size: 14px;
+    color: var(--text-2);
+    font-weight: 500;
+  }
+  .target.playing.bump .target-big {
+    transform: scale(1.04);
+  }
+
+  .ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(0, 113, 227, 0.28);
+    pointer-events: none;
+    transform: translate(-50%, -50%) scale(0);
+    animation: ripple 0.5s ease-out forwards;
+    width: 60px;
+    height: 60px;
+    z-index: 1;
+  }
+  @keyframes ripple {
+    0%   { transform: translate(-50%, -50%) scale(0.2); opacity: 0.7; }
+    100% { transform: translate(-50%, -50%) scale(3.2); opacity: 0; }
+  }
+
+  .target-big, .target-hint { position: relative; z-index: 2; }
+
+  .progress {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 4px;
+    background: rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    border-bottom-left-radius: var(--radius);
+    border-bottom-right-radius: var(--radius);
+  }
+  .progress-bar {
+    height: 100%;
+    width: 100%;
+    background: var(--accent);
+    transform-origin: left center;
+    transform: scaleX(0);
+    transition: transform 0.12s linear;
+  }
+
+  .controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .btn {
+    border: none;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 500;
+    min-height: 44px;
+    padding: 0 22px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, transform 0.08s, border-color 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-primary:hover { background: var(--accent-hover); }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid rgba(0, 113, 227, 0.4);
+  }
+  .btn-secondary:hover { background: var(--accent-soft); }
+
+  .rules-toggle {
+    background: none;
+    border: none;
+    color: var(--text-2);
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 10px 12px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .rules-toggle:hover { color: var(--text); }
+  .rules-toggle .arrow { transition: transform 0.2s; }
+  .rules-toggle.open .arrow { transform: rotate(180deg); }
+
+  .rules {
+    max-width: 460px;
+    width: 100%;
+    text-align: left;
+    font-size: 14px;
+    color: var(--text-2);
+    line-height: 1.6;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    padding: 0 20px;
+    transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+  }
+  .rules.open {
+    max-height: 480px;
+    padding: 16px 20px;
+    opacity: 1;
+  }
+  .rules p { margin: 0 0 8px; }
+  .rules p:last-child { margin: 0; }
+  .rules strong { color: var(--text); }
+
+  .game-over {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 22, 0.45);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+    padding: 20px;
+  }
+  .game-over.show { opacity: 1; pointer-events: auto; }
+
+  .game-over-card {
+    background: #fff;
+    border-radius: 22px;
+    padding: 32px 28px 28px;
+    box-shadow: var(--shadow-lg);
+    text-align: center;
+    width: 100%;
+    max-width: 340px;
+    transform: translateY(10px) scale(0.96);
+    transition: transform 0.25s ease;
+  }
+  .game-over.show .game-over-card { transform: translateY(0) scale(1); }
+
+  .game-over h2 {
+    margin: 0 0 6px;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .game-over .final-score {
+    font-size: 64px;
+    font-weight: 800;
+    color: var(--accent);
+    margin: 10px 0 0;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+  }
+  .game-over .final-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-3);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 6px;
+  }
+  .game-over .stats {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin: 20px 0 22px;
+    padding: 14px 8px;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .game-over .stat-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 2px;
+  }
+  .game-over .stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+  .game-over .stat-value.new-best { color: var(--accent); }
+  .badge-new {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 999px;
+    margin-bottom: 4px;
+  }
+
+  @media (max-width: 480px) {
+    body { padding: 50px 14px 32px; }
+    .hud-value { font-size: 19px; }
+    .game-over .final-score { font-size: 54px; }
+  }
+</style>
+</head>
+<body>
+
+<a href="../" class="back-link" aria-label="Back to games">← Back</a>
+
+<h1 class="title">Speed Click</h1>
+<p class="subtitle">How many clicks can you land in 10 seconds?</p>
+
+<div class="hud" role="group" aria-label="Game stats">
+  <div class="hud-card">
+    <div class="hud-label">Clicks</div>
+    <div class="hud-value" id="scoreEl">0</div>
+  </div>
+  <div class="hud-card">
+    <div class="hud-label">Time</div>
+    <div class="hud-value" id="timeEl">10.0</div>
+  </div>
+  <div class="hud-card">
+    <div class="hud-label">CPS</div>
+    <div class="hud-value" id="cpsEl">0.0</div>
+  </div>
+  <div class="hud-card">
+    <div class="hud-label">Best</div>
+    <div class="hud-value" id="bestEl">0</div>
+  </div>
+</div>
+
+<div class="arena">
+  <button class="target idle" id="target" aria-label="Click area — click to start, then click as fast as possible">
+    <div class="target-big" id="targetBig">Tap to Start</div>
+    <div class="target-hint" id="targetHint">10 seconds of clicking</div>
+    <div class="progress" aria-hidden="true"><div class="progress-bar" id="progressBar"></div></div>
+  </button>
+</div>
+
+<div class="controls">
+  <button class="btn btn-secondary" id="resetBtn">Reset Best</button>
+</div>
+
+<button class="rules-toggle" id="rulesToggle" aria-expanded="false" aria-controls="rules">
+  How to Play <span class="arrow">▾</span>
+</button>
+<div class="rules" id="rules">
+  <p><strong>Goal:</strong> click the big button as many times as possible in 10 seconds.</p>
+  <p><strong>Start:</strong> your first click starts the timer. The counter and progress bar show how much time is left.</p>
+  <p><strong>CPS</strong> is clicks per second — your total clicks divided by 10. A casual human hits 5–7. Above 10 is quick. Above 12 is very quick.</p>
+  <p>Works with mouse, trackpad, or touch — one tap counts as one click. Holding the button down doesn't help; only distinct presses score.</p>
+  <p>Your best score is saved on this device.</p>
+</div>
+
+<div class="game-over" id="gameOver" role="dialog" aria-modal="true" aria-labelledby="goTitle">
+  <div class="game-over-card">
+    <div id="goBadge" class="badge-new" style="display:none">New Best</div>
+    <h2 id="goTitle">Time's up</h2>
+    <div class="final-score" id="finalScore">0</div>
+    <div class="final-label">Clicks</div>
+    <div class="stats">
+      <div>
+        <div class="stat-label">CPS</div>
+        <div class="stat-value" id="finalCps">0.0</div>
+      </div>
+      <div>
+        <div class="stat-label">Best</div>
+        <div class="stat-value" id="finalBest">0</div>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="playAgainBtn">Play Again</button>
+  </div>
+</div>
+
+<script>
+(function() {
+  const ROUND_MS = 10000;
+  const BEST_KEY = 'speedclick-best-v1';
+
+  const targetEl = document.getElementById('target');
+  const targetBig = document.getElementById('targetBig');
+  const targetHint = document.getElementById('targetHint');
+  const progressBar = document.getElementById('progressBar');
+  const scoreEl = document.getElementById('scoreEl');
+  const timeEl = document.getElementById('timeEl');
+  const cpsEl = document.getElementById('cpsEl');
+  const bestEl = document.getElementById('bestEl');
+  const resetBtn = document.getElementById('resetBtn');
+  const rulesToggle = document.getElementById('rulesToggle');
+  const rulesEl = document.getElementById('rules');
+  const gameOverEl = document.getElementById('gameOver');
+  const finalScoreEl = document.getElementById('finalScore');
+  const finalCpsEl = document.getElementById('finalCps');
+  const finalBestEl = document.getElementById('finalBest');
+  const goTitleEl = document.getElementById('goTitle');
+  const goBadgeEl = document.getElementById('goBadge');
+  const playAgainBtn = document.getElementById('playAgainBtn');
+
+  let state = 'idle'; // idle | playing | ended
+  let score = 0;
+  let best = 0;
+  let startedAt = 0;
+  let rafId = null;
+  let bumpTimer = null;
+
+  function loadBest() {
+    try {
+      const v = parseInt(localStorage.getItem(BEST_KEY) || '0', 10);
+      best = isFinite(v) && v > 0 ? v : 0;
+    } catch { best = 0; }
+    bestEl.textContent = best;
+  }
+  function saveBest() {
+    try { localStorage.setItem(BEST_KEY, String(best)); } catch {}
+  }
+
+  function setIdle() {
+    state = 'idle';
+    score = 0;
+    scoreEl.textContent = '0';
+    timeEl.textContent = '10.0';
+    timeEl.classList.remove('warn');
+    cpsEl.textContent = '0.0';
+    progressBar.style.transform = 'scaleX(0)';
+    targetEl.classList.remove('playing', 'bump');
+    targetEl.classList.add('idle');
+    targetBig.textContent = 'Tap to Start';
+    targetHint.textContent = '10 seconds of clicking';
+  }
+
+  function startRound(fromPointer) {
+    if (rafId) cancelAnimationFrame(rafId);
+    gameOverEl.classList.remove('show');
+    score = 0;
+    scoreEl.textContent = '0';
+    cpsEl.textContent = '0.0';
+    state = 'playing';
+    targetEl.classList.remove('idle');
+    targetEl.classList.add('playing');
+    targetBig.textContent = '0';
+    targetHint.textContent = 'Keep clicking!';
+    progressBar.style.transform = 'scaleX(1)';
+    startedAt = performance.now();
+    rafId = requestAnimationFrame(tick);
+    // If started via a tap, count it as the first click
+    if (fromPointer) registerClick();
+  }
+
+  function endRound() {
+    if (state !== 'playing') return;
+    state = 'ended';
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+
+    timeEl.textContent = '0.0';
+    timeEl.classList.remove('warn');
+    const cps = score / (ROUND_MS / 1000);
+    cpsEl.textContent = cps.toFixed(1);
+    progressBar.style.transform = 'scaleX(0)';
+
+    const isNewBest = score > best;
+    if (isNewBest) {
+      best = score;
+      bestEl.textContent = best;
+      saveBest();
+    }
+
+    finalScoreEl.textContent = score;
+    finalCpsEl.textContent = cps.toFixed(1);
+    finalBestEl.textContent = best;
+    goTitleEl.textContent = isNewBest && score > 0 ? 'New personal best!' : "Time's up";
+    goBadgeEl.style.display = isNewBest && score > 0 ? 'inline-block' : 'none';
+    gameOverEl.classList.add('show');
+
+    targetEl.classList.remove('playing', 'bump');
+    targetEl.classList.add('idle');
+    targetBig.textContent = score;
+    targetHint.textContent = 'Tap below to play again';
+
+    if (score > 0 && window.Leaderboard && typeof Leaderboard.submitScore === 'function') {
+      setTimeout(() => Leaderboard.submitScore(score), 400);
+    }
+  }
+
+  function tick(now) {
+    if (state !== 'playing') return;
+    const elapsed = now - startedAt;
+    const remaining = Math.max(0, ROUND_MS - elapsed);
+    const secs = remaining / 1000;
+    timeEl.textContent = secs.toFixed(1);
+    timeEl.classList.toggle('warn', secs <= 3);
+    progressBar.style.transform = 'scaleX(' + (remaining / ROUND_MS) + ')';
+
+    if (remaining <= 0) {
+      endRound();
+      return;
+    }
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function registerClick() {
+    score++;
+    targetBig.textContent = score;
+    targetEl.classList.add('bump');
+    if (bumpTimer) clearTimeout(bumpTimer);
+    bumpTimer = setTimeout(() => targetEl.classList.remove('bump'), 80);
+    scoreEl.textContent = score;
+    const elapsed = Math.max(1, performance.now() - startedAt);
+    const liveCps = score / (elapsed / 1000);
+    cpsEl.textContent = liveCps.toFixed(1);
+  }
+
+  function spawnRipple(x, y) {
+    const rect = targetEl.getBoundingClientRect();
+    const r = document.createElement('span');
+    r.className = 'ripple';
+    r.style.left = (x - rect.left) + 'px';
+    r.style.top = (y - rect.top) + 'px';
+    targetEl.appendChild(r);
+    setTimeout(() => r.remove(), 520);
+  }
+
+  // Use pointerdown for lowest-latency response on mouse and touch.
+  // One pointerdown = one click. Touch-action: manipulation prevents double-tap zoom.
+  targetEl.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    const x = e.clientX, y = e.clientY;
+    if (state === 'idle' || state === 'ended') {
+      startRound(true);
+      spawnRipple(x, y);
+      return;
+    }
+    if (state === 'playing') {
+      registerClick();
+      spawnRipple(x, y);
+    }
+  });
+
+  // Prevent keyboard from accidentally triggering (space/enter on focused button)
+  // but allow space/enter to start the first round for accessibility.
+  targetEl.addEventListener('keydown', (e) => {
+    if (e.key !== ' ' && e.key !== 'Enter') return;
+    e.preventDefault();
+    if (state === 'idle' || state === 'ended') {
+      startRound(false);
+      registerClick();
+    } else if (state === 'playing') {
+      registerClick();
+    }
+  });
+
+  targetEl.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  playAgainBtn.addEventListener('click', () => {
+    gameOverEl.classList.remove('show');
+    startRound(false);
+  });
+
+  resetBtn.addEventListener('click', () => {
+    best = 0;
+    saveBest();
+    bestEl.textContent = '0';
+  });
+
+  rulesToggle.addEventListener('click', () => {
+    const open = rulesToggle.classList.toggle('open');
+    rulesEl.classList.toggle('open', open);
+    rulesToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+
+  // If the tab goes hidden mid-round, end it so the timer stays fair.
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && state === 'playing') endRound();
+  });
+
+  loadBest();
+  setIdle();
+})();
+</script>
+
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

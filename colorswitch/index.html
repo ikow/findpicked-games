@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Color Switch — FindPicked Games</title>
+<meta name="description" content="Play Color Switch free — jump the ball through rotating color obstacles, matching segments to pass. No downloads.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23fafafa'/%3E%3Cpath d='M16 4 A12 12 0 0 1 28 16' stroke='%23ff3b30' stroke-width='4' fill='none'/%3E%3Cpath d='M28 16 A12 12 0 0 1 16 28' stroke='%23ffcc00' stroke-width='4' fill='none'/%3E%3Cpath d='M16 28 A12 12 0 0 1 4 16' stroke='%2334c759' stroke-width='4' fill='none'/%3E%3Cpath d='M4 16 A12 12 0 0 1 16 4' stroke='%230071e3' stroke-width='4' fill='none'/%3E%3C/svg%3E">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #fafafa;
+    --bg-card: #ffffff;
+    --text-primary: #1d1d1f;
+    --text-secondary: #6e6e73;
+    --text-tertiary: #86868b;
+    --accent: #0071e3;
+    --accent-hover: #0077ed;
+    --border: rgba(0,0,0,0.08);
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+    --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+
+    --c-red: #ff3b30;
+    --c-blue: #0071e3;
+    --c-green: #34c759;
+    --c-yellow: #ffcc00;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px 16px 32px;
+  }
+
+  .back {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 22px;
+    border-radius: 50%;
+    transition: background 0.2s ease, color 0.2s ease;
+    z-index: 10;
+  }
+  .back:hover { background: rgba(0,0,0,0.04); color: var(--text-primary); }
+
+  header {
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+    margin: 56px 0 16px;
+    user-select: none;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+
+  .subtitle {
+    margin-top: 6px;
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  .rules-toggle {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--accent);
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-family: inherit;
+    padding: 6px 8px;
+    min-height: 30px;
+  }
+  .rules-toggle:hover { text-decoration: underline; }
+
+  .rules-panel {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    text-align: left;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+  .rules-panel.open { max-height: 420px; }
+  .rules-panel ul { margin: 8px 0 0 18px; }
+  .rules-panel li { margin-bottom: 4px; }
+
+  .scorebar {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    gap: 12px;
+    margin: 14px 0 12px;
+  }
+  .stat {
+    flex: 1;
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 12px 14px;
+    box-shadow: var(--shadow);
+    text-align: center;
+  }
+  .stat .label {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 500;
+  }
+  .stat .value {
+    margin-top: 4px;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stage {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    aspect-ratio: 3 / 5;
+    background: var(--bg-card);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    touch-action: manipulation;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(250, 250, 250, 0.82);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    text-align: center;
+    transition: opacity 0.25s ease;
+  }
+  .overlay.hidden { opacity: 0; pointer-events: none; }
+
+  .overlay h2 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+  .overlay p {
+    margin-top: 8px;
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    max-width: 280px;
+  }
+
+  .overlay .result {
+    margin: 22px 0 4px;
+    display: flex;
+    gap: 28px;
+  }
+  .overlay .result .stat {
+    flex: initial;
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+  }
+  .overlay .result .label { color: var(--text-tertiary); }
+  .overlay .result .value { font-size: 32px; }
+
+  .btn {
+    appearance: none;
+    border: none;
+    background: var(--accent);
+    color: #ffffff;
+    min-height: 44px;
+    padding: 0 26px;
+    border-radius: 22px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    margin-top: 22px;
+    transition: background 0.2s ease, transform 0.15s ease;
+  }
+  .btn:hover { background: var(--accent-hover); }
+  .btn:active { transform: scale(0.97); }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  .hint {
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--text-tertiary);
+  }
+
+  footer {
+    margin-top: 22px;
+    font-size: 13px;
+    color: var(--text-tertiary);
+    text-align: center;
+  }
+
+  @media (max-width: 480px) {
+    header { margin-top: 52px; }
+    h1 { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<a class="back" href="../" aria-label="Back to games">←</a>
+
+<header>
+  <h1>Color Switch</h1>
+  <p class="subtitle">Tap to jump. Match the segment color to pass.</p>
+  <button class="rules-toggle" onclick="this.nextElementSibling.classList.toggle('open')" type="button">How to Play ▾</button>
+  <div class="rules-panel">
+    <ul>
+      <li>Tap the screen, click, or press Space to jump</li>
+      <li>The ball can only pass through a segment that matches its current color</li>
+      <li>Touching a different color ends the run</li>
+      <li>Grab the small star between obstacles to switch your color</li>
+      <li>Each obstacle you clear scores one point</li>
+    </ul>
+  </div>
+</header>
+
+<div class="scorebar">
+  <div class="stat"><div class="label">Score</div><div class="value" id="score">0</div></div>
+  <div class="stat"><div class="label">Best</div><div class="value" id="best">0</div></div>
+</div>
+
+<div class="stage" id="stage" role="button" aria-label="Game area. Tap to jump.">
+  <canvas id="game"></canvas>
+  <div class="overlay" id="overlay">
+    <h2 id="overlayTitle">Ready?</h2>
+    <p id="overlayText">Tap, click, or press Space to jump. Match your color to the segment to pass.</p>
+    <div class="result" id="overlayResult" style="display:none;">
+      <div class="stat"><div class="label">Score</div><div class="value" id="finalScore">0</div></div>
+      <div class="stat"><div class="label">Best</div><div class="value" id="finalBest">0</div></div>
+    </div>
+    <button class="btn" id="startBtn" type="button">Start</button>
+    <div class="hint" id="hint">Space or ↑ to jump</div>
+  </div>
+</div>
+
+<footer>game.findpicked.com</footer>
+
+<script>
+(() => {
+  const stage = document.getElementById('stage');
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('score');
+  const bestEl = document.getElementById('best');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlayTitle');
+  const overlayText = document.getElementById('overlayText');
+  const overlayResult = document.getElementById('overlayResult');
+  const finalScore = document.getElementById('finalScore');
+  const finalBest = document.getElementById('finalBest');
+  const startBtn = document.getElementById('startBtn');
+  const hint = document.getElementById('hint');
+
+  const STORE_KEY = 'colorswitch.best';
+  let best = parseInt(localStorage.getItem(STORE_KEY) || '0', 10) || 0;
+  bestEl.textContent = best;
+
+  // Virtual world size.
+  const W = 300;
+  const H = 500;
+
+  // Palette (Apple-ish).
+  const COLORS = {
+    red:    '#ff3b30',
+    blue:   '#0071e3',
+    green:  '#34c759',
+    yellow: '#ffcc00',
+  };
+  const COLOR_KEYS = ['red', 'blue', 'green', 'yellow'];
+
+  // Physics.
+  const GRAVITY = 900;
+  const JUMP_V = -430;
+  const BALL_R = 10;
+  const BALL_X = W / 2;
+
+  // Obstacles.
+  const RING_OUTER = 62;
+  const RING_INNER = 50;
+  const OBSTACLE_SPACING = 260;   // vertical gap between obstacles
+  const SWAPPER_R = 9;
+
+  let dpr = 1;
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const rect = stage.getBoundingClientRect();
+    canvas.width = Math.round(rect.width * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    const sx = canvas.width / W;
+    const sy = canvas.height / H;
+    ctx.setTransform(sx, 0, 0, sy, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // World coords: y grows downward. Ball starts at y = 0. Obstacles placed
+  // at negative y (above). Camera tracks upward only.
+  const state = {
+    mode: 'ready',        // ready | playing | dead
+    ball: { y: 0, v: 0, color: 'blue' },
+    obstacles: [],        // {type, y, angle, spin, radius, arcs:[4 keys]}
+    swappers: [],         // {y, used}
+    score: 0,
+    t: 0,
+    camY: 0,              // top of visible world window (screen y=0 maps to world y=camY)
+    particles: [],
+    flashT: 0,
+    deadTimer: null,
+  };
+
+  function randomColor(exclude) {
+    let list = COLOR_KEYS;
+    if (exclude) list = list.filter(c => c !== exclude);
+    return list[Math.floor(Math.random() * list.length)];
+  }
+
+  function shuffleArcs() {
+    // Return a 4-color arrangement for ring segments; ensure all 4 present.
+    const arr = COLOR_KEYS.slice();
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function makeObstacle(y, index) {
+    // Alternate types, ramp difficulty with index.
+    const types = ['ring', 'cross', 'ring', 'line'];
+    const type = types[index % types.length];
+    const baseSpin = 0.9 + Math.min(1.4, index * 0.05);
+    const spin = (index % 2 === 0 ? 1 : -1) * baseSpin * (0.8 + Math.random() * 0.4);
+    return {
+      type,
+      y,
+      cx: W / 2,
+      angle: Math.random() * Math.PI * 2,
+      spin,
+      arcs: shuffleArcs(),
+      passed: false,
+    };
+  }
+
+  function seedWorld() {
+    state.obstacles = [];
+    state.swappers = [];
+    // First obstacle well above the ball.
+    for (let i = 0; i < 5; i++) {
+      const y = -220 - i * OBSTACLE_SPACING;
+      state.obstacles.push(makeObstacle(y, i));
+      // Swapper roughly midway between obstacles.
+      state.swappers.push({ y: y - OBSTACLE_SPACING / 2, cx: W / 2, used: false });
+    }
+  }
+
+  function reset() {
+    state.ball.y = 0;
+    state.ball.v = 0;
+    state.ball.color = 'blue';
+    state.score = 0;
+    state.t = 0;
+    state.camY = -H * 0.35; // show some headroom
+    state.particles = [];
+    state.flashT = 0;
+    scoreEl.textContent = '0';
+    seedWorld();
+  }
+
+  function showReady() {
+    overlayTitle.textContent = 'Ready?';
+    overlayText.textContent = 'Tap, click, or press Space to jump. Match your color to the segment to pass.';
+    overlayResult.style.display = 'none';
+    startBtn.textContent = 'Start';
+    hint.textContent = 'Space or ↑ to jump';
+    overlay.classList.remove('hidden');
+  }
+
+  function showDead() {
+    overlayTitle.textContent = 'Game Over';
+    overlayText.textContent = state.score === 0
+      ? 'Time it to the color. Try again.'
+      : 'Nice run. One more go?';
+    overlayResult.style.display = 'flex';
+    finalScore.textContent = state.score;
+    finalBest.textContent = best;
+    startBtn.textContent = 'Play Again';
+    hint.textContent = 'Space to restart';
+    overlay.classList.remove('hidden');
+  }
+
+  function start() {
+    if (state.deadTimer) { clearTimeout(state.deadTimer); state.deadTimer = null; }
+    reset();
+    state.mode = 'playing';
+    overlay.classList.add('hidden');
+    startBtn.blur();
+    state.ball.v = JUMP_V * 0.85;
+  }
+
+  function jump() {
+    if (state.mode === 'playing') {
+      state.ball.v = JUMP_V;
+    } else if (state.mode === 'ready' || state.mode === 'dead') {
+      start();
+    }
+  }
+
+  function die() {
+    if (state.mode !== 'playing') return;
+    state.mode = 'dead';
+    state.flashT = 0.22;
+    spawnParticles(BALL_X, state.ball.y, COLORS[state.ball.color], 18);
+    if (state.score > best) {
+      best = state.score;
+      localStorage.setItem(STORE_KEY, String(best));
+      bestEl.textContent = best;
+    }
+    setTimeout(() => window.Leaderboard && Leaderboard.submitScore(state.score), 800);
+    state.deadTimer = setTimeout(showDead, 420);
+  }
+
+  // Input
+  function onKey(e) {
+    if (e.code !== 'Space' && e.code !== 'ArrowUp' && e.key !== ' ') return;
+    e.preventDefault();
+    jump();
+  }
+  stage.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('button')) return;
+    e.preventDefault();
+    jump();
+  });
+  window.addEventListener('keydown', onKey);
+  startBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+  startBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    start();
+  });
+
+  function spawnParticles(x, y, color, n) {
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const s = 50 + Math.random() * 180;
+      state.particles.push({
+        x, y,
+        vx: Math.cos(a) * s,
+        vy: Math.sin(a) * s - 40,
+        life: 0.5 + Math.random() * 0.4,
+        age: 0,
+        color,
+        r: 2 + Math.random() * 2.5,
+      });
+    }
+  }
+
+  // ---------- Update ----------
+  function update(dt) {
+    state.t += dt;
+
+    // Rings always spin, even on ready screen.
+    for (const o of state.obstacles) {
+      o.angle += o.spin * dt;
+    }
+
+    // Idle bob on ready.
+    if (state.mode === 'ready') {
+      const bob = Math.sin(state.t * 2.2) * 3;
+      state.ball.y = bob;
+      state.camY = -H * 0.35;
+      return;
+    }
+
+    if (state.mode !== 'playing') {
+      // Keep particles alive after death.
+      updateParticles(dt);
+      return;
+    }
+
+    // Ball physics.
+    state.ball.v += GRAVITY * dt;
+    state.ball.y += state.ball.v * dt;
+
+    // Camera follows upward only. Keep ball at ~65% down the view.
+    const targetCamY = state.ball.y - H * 0.62;
+    if (targetCamY < state.camY) state.camY = targetCamY;
+
+    // Fell off the bottom of screen → die.
+    if (state.ball.y - state.camY > H + BALL_R * 2) {
+      die();
+      return;
+    }
+
+    // Obstacle collision + scoring.
+    for (const o of state.obstacles) {
+      if (o.passed) continue;
+      // Scoring: ball has moved above the obstacle center.
+      if (state.ball.y + BALL_R < o.y - RING_OUTER) {
+        o.passed = true;
+        state.score++;
+        scoreEl.textContent = state.score;
+        spawnParticles(o.cx, o.y, COLORS[state.ball.color], 8);
+      }
+    }
+
+    // Collision check per obstacle (only ones near ball).
+    for (const o of state.obstacles) {
+      if (Math.abs(state.ball.y - o.y) > 90) continue;
+      if (checkObstacleHit(o)) { die(); return; }
+    }
+
+    // Swappers.
+    for (const s of state.swappers) {
+      if (s.used) continue;
+      const dx = BALL_X - s.cx;
+      const dy = state.ball.y - s.y;
+      if (dx * dx + dy * dy < (BALL_R + SWAPPER_R) * (BALL_R + SWAPPER_R)) {
+        s.used = true;
+        state.ball.color = randomColor(state.ball.color);
+        spawnParticles(s.cx, s.y, COLORS[state.ball.color], 10);
+      }
+    }
+
+    // Recycle: once an obstacle is far below the ball's progress, shift upward.
+    // (Infinite track — reuse oldest when it scrolls past the bottom of view.)
+    for (let i = 0; i < state.obstacles.length; i++) {
+      const o = state.obstacles[i];
+      if (o.y - state.camY > H + 120) {
+        // Move to above the topmost obstacle.
+        let topY = Infinity;
+        for (const x of state.obstacles) if (x.y < topY) topY = x.y;
+        const newY = topY - OBSTACLE_SPACING;
+        const idx = Math.round(-newY / OBSTACLE_SPACING);
+        const fresh = makeObstacle(newY, idx);
+        state.obstacles[i] = fresh;
+        // Also add a swapper midway between new and the previous top.
+        state.swappers.push({ y: newY + OBSTACLE_SPACING / 2, cx: W / 2, used: false });
+      }
+    }
+    // Clean out old swappers.
+    state.swappers = state.swappers.filter(s => s.y - state.camY < H + 60);
+
+    updateParticles(dt);
+  }
+
+  function updateParticles(dt) {
+    for (const p of state.particles) {
+      p.age += dt;
+      p.vy += 600 * dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+    }
+    state.particles = state.particles.filter(p => p.age < p.life);
+  }
+
+  // ---------- Collision ----------
+
+  // Check if the ball intersects any non-matching part of the obstacle.
+  function checkObstacleHit(o) {
+    const bx = BALL_X, by = state.ball.y, br = BALL_R;
+    if (o.type === 'ring') {
+      return ringHit(o, bx, by, br);
+    } else if (o.type === 'cross') {
+      return crossHit(o, bx, by, br);
+    } else if (o.type === 'line') {
+      return lineHit(o, bx, by, br);
+    }
+    return false;
+  }
+
+  // Ring: 4 arcs of 90° each between inner and outer radii.
+  function ringHit(o, bx, by, br) {
+    const dx = bx - o.cx, dy = by - o.y;
+    const d = Math.sqrt(dx * dx + dy * dy);
+    // Quick reject.
+    if (d < RING_INNER - br || d > RING_OUTER + br) return false;
+
+    // Ball overlaps the ring annulus. Determine what color segment
+    // the overlap lies on. Consider angles spanned by the ball from the
+    // center: an angular half-width ~ asin(br / d).
+    let half;
+    if (d <= br) {
+      // Ball center passes through ring center: cover all angles.
+      half = Math.PI;
+    } else {
+      half = Math.asin(Math.min(1, br / d));
+    }
+    const ballAngle = Math.atan2(dy, dx);
+
+    // Segment boundaries in world space: arc i covers angles
+    //   [i*PI/2 + o.angle, (i+1)*PI/2 + o.angle]
+    // We need: for every angle in [ballAngle - half, ballAngle + half]
+    // that also lies within the annulus (i.e., part of the ring that
+    // is actually touching the ball), the covering arc's color equals
+    // the ball's color; if any differs → hit.
+
+    // Sample a few angles across the span — this is more than precise
+    // enough for our segment sizes (90°).
+    const samples = 7;
+    const ballC = state.ball.color;
+    for (let i = 0; i < samples; i++) {
+      const a = ballAngle - half + (2 * half) * (i / (samples - 1));
+      // Only count samples where the ring actually reaches the ball.
+      // For a given sample angle `a`, the nearest point on the ring
+      // mid-line is at distance RING_MID, angle a from center. The ball
+      // circle overlaps the ring at this angle iff its distance from
+      // that point < br + ring half-thickness.
+      const midR = (RING_INNER + RING_OUTER) / 2;
+      const ringThickHalf = (RING_OUTER - RING_INNER) / 2;
+      const rx = o.cx + Math.cos(a) * midR;
+      const ry = o.y + Math.sin(a) * midR;
+      const ddx = bx - rx, ddy = by - ry;
+      if (ddx * ddx + ddy * ddy > (br + ringThickHalf) * (br + ringThickHalf)) continue;
+
+      const rel = ((a - o.angle) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+      const seg = Math.floor(rel / (Math.PI / 2)) % 4;
+      if (o.arcs[seg] !== ballC) return true;
+    }
+    return false;
+  }
+
+  // Cross: 4 colored bars forming a plus, rotating.
+  // Each bar is a rectangle of length = CROSS_LEN, width = CROSS_W,
+  // centered at o, rotated by o.angle + i*PI/2.
+  const CROSS_LEN = 110;
+  const CROSS_W = 14;
+  function crossHit(o, bx, by, br) {
+    for (let i = 0; i < 4; i++) {
+      const a = o.angle + i * Math.PI / 2;
+      // Transform ball into bar-local coords.
+      const cos = Math.cos(-a), sin = Math.sin(-a);
+      const lx = (bx - o.cx) * cos - (by - o.y) * sin;
+      const ly = (bx - o.cx) * sin + (by - o.y) * cos;
+      // Bar extends along +x from 0 to CROSS_LEN/2, half-width CROSS_W/2.
+      // (We model the full bar along both + and - but each bar we consider
+      // here is just the +x half — the opposite arm is the bar of i+2.)
+      const halfLen = CROSS_LEN / 2;
+      const halfW = CROSS_W / 2;
+      // Nearest point on bar to ball.
+      const nx = Math.max(0, Math.min(halfLen, lx));
+      const ny = Math.max(-halfW, Math.min(halfW, ly));
+      const ddx = lx - nx, ddy = ly - ny;
+      if (ddx * ddx + ddy * ddy < br * br) {
+        if (o.arcs[i] !== state.ball.color) return true;
+      }
+    }
+    return false;
+  }
+
+  // Line: single rotating bar through the center.
+  const LINE_LEN = 150;
+  const LINE_W = 12;
+  function lineHit(o, bx, by, br) {
+    const a = o.angle;
+    const cos = Math.cos(-a), sin = Math.sin(-a);
+    const lx = (bx - o.cx) * cos - (by - o.y) * sin;
+    const ly = (bx - o.cx) * sin + (by - o.y) * cos;
+    const halfLen = LINE_LEN / 2;
+    const halfW = LINE_W / 2;
+    const nx = Math.max(-halfLen, Math.min(halfLen, lx));
+    const ny = Math.max(-halfW, Math.min(halfW, ly));
+    const ddx = lx - nx, ddy = ly - ny;
+    if (ddx * ddx + ddy * ddy < br * br) {
+      // The bar's two halves can be two different colors (arcs[0] for +x, arcs[2] for -x).
+      const colorKey = lx >= 0 ? o.arcs[0] : o.arcs[2];
+      if (colorKey !== state.ball.color) return true;
+    }
+    return false;
+  }
+
+  // ---------- Draw ----------
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Faint grid for depth — very subtle.
+    drawGrid();
+
+    // Draw swappers first (behind).
+    for (const s of state.swappers) {
+      if (s.used) continue;
+      drawSwapper(s);
+    }
+
+    // Obstacles.
+    for (const o of state.obstacles) {
+      drawObstacle(o);
+    }
+
+    // Ball.
+    drawBall();
+
+    // Particles.
+    for (const p of state.particles) drawParticle(p);
+
+    // Score badge (top center) while playing.
+    if (state.mode === 'playing') {
+      ctx.save();
+      ctx.font = '700 42px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillStyle = 'rgba(29,29,31,0.10)';
+      ctx.fillText(String(state.score), W / 2, 22);
+      ctx.restore();
+    }
+
+    // Death flash.
+    if (state.flashT > 0) {
+      ctx.save();
+      ctx.fillStyle = `rgba(255,255,255,${Math.min(0.55, state.flashT * 2.6)})`;
+      ctx.fillRect(0, 0, W, H);
+      ctx.restore();
+    }
+  }
+
+  function drawGrid() {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(0,0,0,0.04)';
+    ctx.lineWidth = 1;
+    const step = 40;
+    const offset = ((-state.camY) % step + step) % step;
+    for (let y = -offset; y < H; y += step) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(W, y);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function worldToScreenY(y) { return y - state.camY; }
+
+  function drawObstacle(o) {
+    const sy = worldToScreenY(o.y);
+    if (sy < -140 || sy > H + 140) return;
+    if (o.type === 'ring') drawRing(o, sy);
+    else if (o.type === 'cross') drawCross(o, sy);
+    else if (o.type === 'line') drawLine(o, sy);
+  }
+
+  function drawRing(o, sy) {
+    const cx = o.cx;
+    ctx.save();
+    ctx.translate(cx, sy);
+    ctx.rotate(o.angle);
+    const midR = (RING_INNER + RING_OUTER) / 2;
+    const thickness = RING_OUTER - RING_INNER;
+    ctx.lineWidth = thickness;
+    ctx.lineCap = 'butt';
+    for (let i = 0; i < 4; i++) {
+      const a1 = i * Math.PI / 2;
+      const a2 = a1 + Math.PI / 2;
+      ctx.strokeStyle = COLORS[o.arcs[i]];
+      ctx.beginPath();
+      ctx.arc(0, 0, midR, a1, a2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawCross(o, sy) {
+    ctx.save();
+    ctx.translate(o.cx, sy);
+    ctx.rotate(o.angle);
+    for (let i = 0; i < 4; i++) {
+      ctx.save();
+      ctx.rotate(i * Math.PI / 2);
+      ctx.fillStyle = COLORS[o.arcs[i]];
+      const halfLen = CROSS_LEN / 2;
+      const halfW = CROSS_W / 2;
+      roundRect(0, -halfW, halfLen, CROSS_W, halfW);
+      ctx.fill();
+      ctx.restore();
+    }
+    // Center cap for cleanliness.
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.beginPath();
+    ctx.arc(0, 0, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawLine(o, sy) {
+    ctx.save();
+    ctx.translate(o.cx, sy);
+    ctx.rotate(o.angle);
+    const halfLen = LINE_LEN / 2;
+    const halfW = LINE_W / 2;
+    // +x half
+    ctx.fillStyle = COLORS[o.arcs[0]];
+    roundRect(0, -halfW, halfLen, LINE_W, halfW);
+    ctx.fill();
+    // -x half
+    ctx.fillStyle = COLORS[o.arcs[2]];
+    roundRect(-halfLen, -halfW, halfLen, LINE_W, halfW);
+    ctx.fill();
+    // Center divider dot.
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.beginPath();
+    ctx.arc(0, 0, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawSwapper(s) {
+    const sy = worldToScreenY(s.y);
+    if (sy < -30 || sy > H + 30) return;
+    const pulse = 0.85 + Math.sin(state.t * 4 + s.cx) * 0.15;
+    ctx.save();
+    ctx.translate(s.cx, sy);
+    // Four quadrant dots spinning.
+    ctx.rotate(state.t * 1.4);
+    for (let i = 0; i < 4; i++) {
+      const a = i * Math.PI / 2;
+      ctx.fillStyle = COLORS[COLOR_KEYS[i]];
+      ctx.beginPath();
+      ctx.arc(Math.cos(a) * 5 * pulse, Math.sin(a) * 5 * pulse, 2.6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // Halo.
+    ctx.strokeStyle = 'rgba(29,29,31,0.10)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(0, 0, SWAPPER_R, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawBall() {
+    const sy = worldToScreenY(state.ball.y);
+    const color = COLORS[state.ball.color];
+    ctx.save();
+    ctx.translate(BALL_X, sy);
+    // Soft shadow.
+    ctx.fillStyle = 'rgba(0,0,0,0.10)';
+    ctx.beginPath();
+    ctx.ellipse(0, BALL_R + 3, BALL_R * 0.9, 2.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Ball body with radial gradient.
+    const g = ctx.createRadialGradient(-3, -3, 2, 0, 0, BALL_R + 2);
+    g.addColorStop(0, '#ffffff');
+    g.addColorStop(0.25, color);
+    g.addColorStop(1, color);
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(0, 0, BALL_R, 0, Math.PI * 2);
+    ctx.fill();
+    // Subtle outline.
+    ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+    // Highlight.
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.beginPath();
+    ctx.arc(-3, -3, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawParticle(p) {
+    const sy = worldToScreenY(p.y);
+    const alpha = Math.max(0, 1 - p.age / p.life);
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, sy, p.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function roundRect(x, y, w, h, r) {
+    r = Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  // Main loop.
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.033, (now - last) / 1000);
+    last = now;
+    if (state.flashT > 0) state.flashT = Math.max(0, state.flashT - dt);
+    update(dt);
+    draw();
+    requestAnimationFrame(frame);
+  }
+
+  reset();
+  showReady();
+  requestAnimationFrame(frame);
+
+  const ro = new ResizeObserver(resize);
+  ro.observe(stage);
+})();
+</script>
+
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

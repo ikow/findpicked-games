@@ -621,22 +621,13 @@
 
     const deck = shuffle(buildDeck(activeSuitsFor(suits)));
     columns = Array.from({ length: 10 }, () => []);
-    // Deal 54 cards: 4 cards to first 4 columns (5 total including top), 5 to last 6? Actually:
-    // Spider deals 54 to tableau: columns 0-3 get 6 cards, 4-9 get 5 cards. Top card face-up.
-    for (let i = 0; i < 54; i++) {
-      const col = i % 10;
-      // Fill columns with 6/5 distribution
-    }
-    // Reset columns
-    columns = Array.from({ length: 10 }, () => []);
-    let dealt = 0;
+    // Spider deals 54 to tableau: columns 0-3 get 6 cards each, columns 4-9 get 5 each.
     for (let row = 0; row < 6; row++) {
       for (let col = 0; col < 10; col++) {
-        if (row === 5 && col >= 4) break; // cols 4..9 only 5 cards
+        if (row === 5 && col >= 4) break;
         const card = deck.pop();
         card.faceUp = false;
         columns[col].push(card);
-        dealt++;
       }
     }
     // Flip top card of each column
@@ -668,7 +659,7 @@
     return SUIT_COLORS[card.suit];
   }
 
-  function makeCardEl(card, colIdx, posInCol, isFlipped) {
+  function makeCardEl(card, colIdx, posInCol, cardH) {
     const el = document.createElement('div');
     el.className = 'card ' + cardColor(card);
     el.dataset.col = colIdx;
@@ -684,35 +675,18 @@
         <div class="card-br"><span class="rank">${card.rank}</span><span class="suit">${sym}</span></div>
       `;
     }
-    // Position within column: stack offset depends on whether prior cards face-down or up
     let top = 0;
     for (let i = 0; i < posInCol; i++) {
       const prev = columns[colIdx][i];
-      top += prev.faceUp ? stackOffsetFull() : stackOffsetFlipped();
+      top += (prev.faceUp ? 0.22 : 0.08) * cardH;
     }
     el.style.top = `${top}px`;
     el.style.zIndex = 10 + posInCol;
     return el;
   }
 
-  function stackOffsetFull() {
-    const root = getComputedStyle(document.documentElement);
-    const h = parseFloat(root.getPropertyValue('--card-h'));
-    // fallback: compute from pile
-    const pile = tableauEl.querySelector('.pile');
-    const cardH = pile ? pile.getBoundingClientRect().height : 80;
-    // Actually use CSS: 0.22 * card height
-    return cardH * 0.22;
-  }
-  function stackOffsetFlipped() {
-    const pile = tableauEl.querySelector('.pile');
-    const cardH = pile ? pile.getBoundingClientRect().height : 80;
-    return cardH * 0.08;
-  }
-
   function render() {
     tableauEl.innerHTML = '';
-    // Create piles first
     const piles = [];
     for (let c = 0; c < 10; c++) {
       const pile = document.createElement('div');
@@ -721,31 +695,18 @@
       tableauEl.appendChild(pile);
       piles.push(pile);
     }
-    // Adjust pile min-height based on column length
-    for (let c = 0; c < 10; c++) {
-      const cards = columns[c];
-      let totalOffset = 0;
-      for (let i = 0; i < cards.length - 1; i++) {
-        totalOffset += cards[i].faceUp ? 0.22 : 0.08;
-      }
-      // will compute via relative CSS—but we need pixel. Use vh from pile:
-      const cardH = piles[c].getBoundingClientRect().height; // may be 0 first render
-    }
-    // Place cards
+    // Measure actual card height once (piles currently have min-height = --card-h)
+    const cardH = piles[0].getBoundingClientRect().height || getCardHPixel();
     for (let c = 0; c < 10; c++) {
       const pile = piles[c];
       const cards = columns[c];
-      // Compute pile height after first card renders
       for (let i = 0; i < cards.length; i++) {
-        const el = makeCardEl(cards[i], c, i);
-        // Draggable if faceUp and part of valid descending same-suit sequence from here
+        const el = makeCardEl(cards[i], c, i, cardH);
         if (cards[i].faceUp && isValidSeqFrom(c, i)) {
           el.classList.add('draggable');
         }
         pile.appendChild(el);
       }
-      // Adjust pile height
-      const cardH = pile.getBoundingClientRect().height || getCardHPixel();
       let totalH = cardH;
       for (let i = 0; i < cards.length - 1; i++) {
         totalH += (cards[i].faceUp ? 0.22 : 0.08) * cardH;

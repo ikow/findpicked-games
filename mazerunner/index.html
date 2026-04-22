@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Maze Runner — FindPicked Games</title>
+<meta name="description" content="Navigate procedurally generated mazes. Arrow keys or swipe. Multiple sizes, optional fog of war.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Cpath d='M6 6h4v12h4V6h4v8h4V6h4v20h-4v-8h-4v8h-4v-8h-4v8H6z' fill='white'/%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-board: #ffffff;
+  --wall: #1d1d1f;
+  --path: #fafafa;
+  --trail: rgba(0, 113, 227, 0.12);
+  --solution: rgba(0, 113, 227, 0.45);
+  --player: #0071e3;
+  --goal: #30d158;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+  --radius: 16px;
+}
+
+html, body {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px 20px 40px;
+  touch-action: manipulation;
+}
+
+.back {
+  align-self: flex-start;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 400;
+  padding: 8px 4px;
+  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.back:hover { color: var(--text-primary); }
+.back .arrow { font-size: 18px; line-height: 1; }
+
+.wrap {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+h1 {
+  font-size: clamp(36px, 9vw, 52px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.stats {
+  display: flex;
+  gap: 8px;
+}
+
+.stat-box {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 10px 14px;
+  min-width: 78px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  margin-bottom: 2px;
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.subhead p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+}
+
+.size-group {
+  display: inline-flex;
+  background: var(--bg-card);
+  border-radius: 22px;
+  padding: 4px;
+  box-shadow: var(--shadow);
+}
+
+.size-group button {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  height: 36px;
+  min-width: 56px;
+  padding: 0 14px;
+  border-radius: 18px;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.size-group button.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 22px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn.secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
+}
+.btn.secondary:hover { background: rgba(0, 113, 227, 0.06); }
+.btn.secondary.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.board-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: var(--bg-board);
+  border-radius: var(--radius);
+  padding: 12px;
+  box-shadow: var(--shadow);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#maze {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 8px;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 24px;
+  text-align: center;
+}
+.overlay.show { opacity: 1; pointer-events: auto; }
+
+.overlay h2 {
+  font-size: clamp(28px, 7vw, 40px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.overlay .summary {
+  font-size: 15px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.overlay .summary strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.overlay .row {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+footer {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  text-align: center;
+  margin-top: 4px;
+  line-height: 1.6;
+}
+
+kbd {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+}
+
+.rules-toggle {
+  display: inline-block;
+  font-size: 13px;
+  color: #0071e3;
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+  padding: 0;
+}
+.rules-toggle:hover { text-decoration: underline; }
+.rules-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  font-size: 13px;
+  color: #6e6e73;
+  line-height: 1.6;
+  text-align: left;
+  max-width: 520px;
+  margin: 8px auto 0;
+}
+.rules-panel.open { max-height: 600px; }
+.rules-panel ul { margin: 8px 0 0 16px; }
+.rules-panel li { margin-bottom: 4px; }
+
+@media (max-width: 420px) {
+  body { padding: 16px 14px 32px; }
+  .wrap { gap: 16px; }
+  .stat-box { min-width: 68px; padding: 8px 10px; }
+  .stat-value { font-size: 18px; }
+  .board-wrap { padding: 10px; }
+  .size-group button { min-width: 48px; font-size: 13px; padding: 0 10px; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="back" href="../" aria-label="Back to games">
+    <span class="arrow">←</span>
+    <span>Games</span>
+  </a>
+
+  <header>
+    <h1>Maze Runner</h1>
+    <div class="stats">
+      <div class="stat-box">
+        <div class="stat-label">Time</div>
+        <div class="stat-value" id="time">0:00</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Best</div>
+        <div class="stat-value" id="best">—</div>
+      </div>
+    </div>
+  </header>
+
+  <div style="text-align:center">
+    <button class="rules-toggle" onclick="this.nextElementSibling.classList.toggle('open')">How to Play ▾</button>
+    <div class="rules-panel">
+      <ul>
+        <li>Use arrow keys or WASD to move. On touch screens, swipe in the direction you want to go.</li>
+        <li>Navigate from the blue circle (start) to the green square (goal).</li>
+        <li>Pick a maze size — Small, Medium, or Large. Larger mazes award higher scores.</li>
+        <li>Tap <strong>Fog</strong> to hide the far walls for an extra challenge. Tap <strong>Solution</strong> to reveal the path.</li>
+        <li>Finish faster and with fewer moves for a higher score. Your best time is saved per size.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="size-group" role="radiogroup" aria-label="Maze size">
+      <button data-size="small" class="active">Small</button>
+      <button data-size="medium">Medium</button>
+      <button data-size="large">Large</button>
+    </div>
+  </div>
+
+  <div class="board-wrap">
+    <canvas id="maze" aria-label="Maze"></canvas>
+    <div class="overlay" id="overlay">
+      <h2 id="overlay-title">Solved!</h2>
+      <div class="summary" id="overlay-summary"></div>
+      <div class="row">
+        <button class="btn" id="overlay-new">Play Again</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn" id="new-btn">New Maze</button>
+    <button class="btn secondary" id="solution-btn">Solution</button>
+    <button class="btn secondary" id="fog-btn">Fog</button>
+  </div>
+
+  <footer>
+    <kbd>←</kbd> <kbd>↑</kbd> <kbd>↓</kbd> <kbd>→</kbd> to move · swipe on touch
+  </footer>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('maze');
+  const ctx = canvas.getContext('2d');
+  const boardWrap = document.querySelector('.board-wrap');
+  const timeEl = document.getElementById('time');
+  const bestEl = document.getElementById('best');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlay-title');
+  const overlaySummary = document.getElementById('overlay-summary');
+  const overlayNew = document.getElementById('overlay-new');
+  const newBtn = document.getElementById('new-btn');
+  const solutionBtn = document.getElementById('solution-btn');
+  const fogBtn = document.getElementById('fog-btn');
+  const sizeButtons = document.querySelectorAll('.size-group button');
+
+  const SIZES = {
+    small:  { cells: 11, label: 'Small',  mult: 1 },
+    medium: { cells: 17, label: 'Medium', mult: 2 },
+    large:  { cells: 25, label: 'Large',  mult: 3 },
+  };
+  const STORE_BEST = 'findpicked:mazerunner:best';
+  const STORE_SIZE = 'findpicked:mazerunner:size';
+  const STORE_FOG  = 'findpicked:mazerunner:fog';
+  const FOG_RADIUS = 3.2;
+
+  let sizeKey = localStorage.getItem(STORE_SIZE) || 'small';
+  if (!SIZES[sizeKey]) sizeKey = 'small';
+  let fogOn = localStorage.getItem(STORE_FOG) === '1';
+
+  let N;               // grid dimension (odd)
+  let cells;           // N x N: 1 = wall, 0 = path
+  let player;          // {r, c}
+  let start;           // {r, c}
+  let goal;            // {r, c}
+  let visited;         // Set "r,c" of cells the player has stepped on
+  let moves;
+  let startTime;
+  let elapsed;
+  let timerId;
+  let finished;
+  let solutionPath;    // array of {r,c} or null
+  let solutionShown;
+  let solutionUsed;    // locked at first reveal
+
+  // --- Maze generation (recursive backtracker on a grid of cells)
+  // The maze grid has dimensions N x N (odd). Cells at even (r,c) are rooms,
+  // cells at odd positions are walls that may be carved.
+  function generate(dim) {
+    N = dim % 2 === 1 ? dim : dim + 1;
+    cells = Array.from({ length: N }, () => new Array(N).fill(1));
+
+    // Carve from (1,1)
+    const stack = [[1, 1]];
+    cells[1][1] = 0;
+    const dirs = [[-2, 0], [2, 0], [0, -2], [0, 2]];
+
+    while (stack.length) {
+      const [r, c] = stack[stack.length - 1];
+      const options = [];
+      for (const [dr, dc] of dirs) {
+        const nr = r + dr, nc = c + dc;
+        if (nr > 0 && nr < N - 1 && nc > 0 && nc < N - 1 && cells[nr][nc] === 1) {
+          options.push([dr, dc, nr, nc]);
+        }
+      }
+      if (!options.length) { stack.pop(); continue; }
+      const [dr, dc, nr, nc] = options[Math.floor(Math.random() * options.length)];
+      cells[r + dr / 2][c + dc / 2] = 0;
+      cells[nr][nc] = 0;
+      stack.push([nr, nc]);
+    }
+
+    start = { r: 1, c: 1 };
+    goal  = { r: N - 2, c: N - 2 };
+    cells[goal.r][goal.c] = 0;
+  }
+
+  // BFS solver from player to goal
+  function solve(from) {
+    const key = (r, c) => r * N + c;
+    const queue = [[from.r, from.c]];
+    const prev = new Map();
+    prev.set(key(from.r, from.c), null);
+    while (queue.length) {
+      const [r, c] = queue.shift();
+      if (r === goal.r && c === goal.c) break;
+      for (const [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]]) {
+        const nr = r + dr, nc = c + dc;
+        if (nr < 0 || nr >= N || nc < 0 || nc >= N) continue;
+        if (cells[nr][nc] !== 0) continue;
+        const k = key(nr, nc);
+        if (prev.has(k)) continue;
+        prev.set(k, [r, c]);
+        queue.push([nr, nc]);
+      }
+    }
+    const path = [];
+    let cur = [goal.r, goal.c];
+    if (!prev.has(key(cur[0], cur[1]))) return [];
+    while (cur) {
+      path.push({ r: cur[0], c: cur[1] });
+      cur = prev.get(key(cur[0], cur[1]));
+    }
+    path.reverse();
+    return path;
+  }
+
+  // --- Rendering
+  function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const size = Math.floor(Math.min(rect.width, rect.height));
+    canvas.width = size * dpr;
+    canvas.height = size * dpr;
+    canvas.style.width = size + 'px';
+    canvas.style.height = size + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function draw() {
+    const rect = canvas.getBoundingClientRect();
+    const W = rect.width, H = rect.height;
+    const cell = Math.min(W, H) / N;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Background (paths)
+    ctx.fillStyle = '#fafafa';
+    ctx.fillRect(0, 0, W, H);
+
+    // Fog mask: compute visibility mask relative to player
+    const pr = player.r, pc = player.c;
+
+    // Draw walls
+    ctx.fillStyle = '#1d1d1f';
+    for (let r = 0; r < N; r++) {
+      for (let c = 0; c < N; c++) {
+        if (cells[r][c] === 1) {
+          const vis = !fogOn || visibleAt(r, c, pr, pc);
+          if (vis) {
+            ctx.fillRect(c * cell, r * cell, cell + 0.5, cell + 0.5);
+          }
+        }
+      }
+    }
+
+    // Trail of visited cells (excluding player position)
+    ctx.fillStyle = 'rgba(0, 113, 227, 0.10)';
+    for (const k of visited) {
+      const [r, c] = k.split(',').map(Number);
+      if (r === player.r && c === player.c) continue;
+      if (fogOn && !visibleAt(r, c, pr, pc)) continue;
+      ctx.fillRect(c * cell + 1, r * cell + 1, cell - 2, cell - 2);
+    }
+
+    // Solution overlay
+    if (solutionShown && solutionPath) {
+      ctx.fillStyle = 'rgba(0, 113, 227, 0.35)';
+      for (const p of solutionPath) {
+        if (fogOn && !visibleAt(p.r, p.c, pr, pc)) continue;
+        ctx.fillRect(p.c * cell + cell * 0.25, p.r * cell + cell * 0.25, cell * 0.5, cell * 0.5);
+      }
+    }
+
+    // Goal
+    if (!fogOn || visibleAt(goal.r, goal.c, pr, pc)) {
+      const gx = goal.c * cell, gy = goal.r * cell;
+      ctx.fillStyle = '#30d158';
+      roundRect(ctx, gx + cell * 0.15, gy + cell * 0.15, cell * 0.7, cell * 0.7, Math.min(6, cell * 0.2));
+      ctx.fill();
+    }
+
+    // Fog overlay (darken out-of-sight areas)
+    if (fogOn) {
+      const cx = pc * cell + cell / 2;
+      const cy = pr * cell + cell / 2;
+      const rad = FOG_RADIUS * cell;
+      const grd = ctx.createRadialGradient(cx, cy, rad * 0.55, cx, cy, rad);
+      grd.addColorStop(0, 'rgba(250,250,250,0)');
+      grd.addColorStop(1, 'rgba(250,250,250,1)');
+      ctx.fillStyle = grd;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    // Player
+    const px = player.c * cell + cell / 2;
+    const py = player.r * cell + cell / 2;
+    ctx.fillStyle = '#0071e3';
+    ctx.beginPath();
+    ctx.arc(px, py, cell * 0.32, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.beginPath();
+    ctx.arc(px - cell * 0.08, py - cell * 0.08, cell * 0.08, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function visibleAt(r, c, pr, pc) {
+    const dr = r - pr, dc = c - pc;
+    return dr * dr + dc * dc <= FOG_RADIUS * FOG_RADIUS;
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  // --- Game flow
+  function newGame() {
+    const dim = SIZES[sizeKey].cells;
+    generate(dim);
+    player = { r: start.r, c: start.c };
+    visited = new Set([`${player.r},${player.c}`]);
+    moves = 0;
+    elapsed = 0;
+    startTime = null;
+    finished = false;
+    solutionPath = null;
+    solutionShown = false;
+    solutionUsed = false;
+    solutionBtn.classList.remove('active');
+    solutionBtn.textContent = 'Solution';
+    hideOverlay();
+    updateTime();
+    updateBest();
+    resizeCanvas();
+    draw();
+  }
+
+  function startTimer() {
+    if (timerId || finished) return;
+    startTime = Date.now() - elapsed;
+    timerId = setInterval(() => {
+      elapsed = Date.now() - startTime;
+      updateTime();
+    }, 200);
+  }
+  function stopTimer() {
+    if (timerId) { clearInterval(timerId); timerId = null; }
+  }
+  function updateTime() {
+    const s = Math.floor(elapsed / 1000);
+    const m = Math.floor(s / 60);
+    timeEl.textContent = `${m}:${String(s % 60).padStart(2, '0')}`;
+  }
+
+  function tryMove(dr, dc) {
+    if (finished) return;
+    const nr = player.r + dr, nc = player.c + dc;
+    if (nr < 0 || nr >= N || nc < 0 || nc >= N) return;
+    if (cells[nr][nc] !== 0) return;
+    player.r = nr; player.c = nc;
+    visited.add(`${nr},${nc}`);
+    moves++;
+    startTimer();
+    draw();
+    if (player.r === goal.r && player.c === goal.c) finish();
+  }
+
+  function finish() {
+    finished = true;
+    stopTimer();
+    elapsed = Date.now() - startTime;
+    updateTime();
+
+    const seconds = elapsed / 1000;
+    const conf = SIZES[sizeKey];
+    // Score: reward size, penalize time and excess moves. Solution hint cuts score in half.
+    const optimalMoves = solve(start).length - 1;
+    const moveEfficiency = Math.max(0.5, optimalMoves / Math.max(moves, optimalMoves));
+    const base = conf.mult * 1000;
+    const timeScore = Math.max(0, base - seconds * 8 * conf.mult);
+    let score = Math.round(timeScore * moveEfficiency);
+    if (solutionUsed) score = Math.floor(score / 2);
+
+    // Save best time per size
+    const bestStore = loadBestStore();
+    const prev = bestStore[sizeKey];
+    const record = { time: elapsed, moves, score, date: Date.now() };
+    let isRecord = false;
+    if (!prev || elapsed < prev.time) {
+      bestStore[sizeKey] = record;
+      saveBestStore(bestStore);
+      isRecord = true;
+    }
+    updateBest();
+
+    const timeStr = formatDuration(elapsed);
+    overlayTitle.textContent = isRecord ? 'New Best!' : 'Solved!';
+    overlaySummary.innerHTML =
+      `<div>${conf.label} maze · <strong>${timeStr}</strong> · ${moves} moves</div>` +
+      `<div style="margin-top:6px">Score: <strong>${score}</strong>${solutionUsed ? ' <span style="color:#86868b">(solution used)</span>' : ''}</div>`;
+    showOverlay();
+
+    setTimeout(() => {
+      if (window.Leaderboard && Leaderboard.submitScore) Leaderboard.submitScore(score);
+    }, 500);
+  }
+
+  function showOverlay() { overlay.classList.add('show'); }
+  function hideOverlay() { overlay.classList.remove('show'); }
+
+  function formatDuration(ms) {
+    const s = Math.floor(ms / 1000);
+    const m = Math.floor(s / 60);
+    return `${m}:${String(s % 60).padStart(2, '0')}`;
+  }
+
+  function loadBestStore() {
+    try { return JSON.parse(localStorage.getItem(STORE_BEST)) || {}; } catch { return {}; }
+  }
+  function saveBestStore(obj) {
+    try { localStorage.setItem(STORE_BEST, JSON.stringify(obj)); } catch {}
+  }
+  function updateBest() {
+    const store = loadBestStore();
+    const rec = store[sizeKey];
+    bestEl.textContent = rec ? formatDuration(rec.time) : '—';
+  }
+
+  function toggleSolution() {
+    if (finished) return;
+    if (!solutionShown) {
+      solutionPath = solve(player);
+      solutionShown = true;
+      solutionUsed = true;
+      solutionBtn.classList.add('active');
+      solutionBtn.textContent = 'Hide';
+    } else {
+      solutionShown = false;
+      solutionBtn.classList.remove('active');
+      solutionBtn.textContent = 'Solution';
+    }
+    draw();
+  }
+
+  function toggleFog() {
+    fogOn = !fogOn;
+    localStorage.setItem(STORE_FOG, fogOn ? '1' : '0');
+    fogBtn.classList.toggle('active', fogOn);
+    draw();
+  }
+
+  // --- Input
+  const KEY_MAP = {
+    ArrowLeft: [0, -1], ArrowRight: [0, 1], ArrowUp: [-1, 0], ArrowDown: [1, 0],
+    a: [0, -1], d: [0, 1], w: [-1, 0], s: [1, 0],
+    A: [0, -1], D: [0, 1], W: [-1, 0], S: [1, 0],
+    h: [0, -1], l: [0, 1], k: [-1, 0], j: [1, 0],
+  };
+  window.addEventListener('keydown', (e) => {
+    const m = KEY_MAP[e.key];
+    if (m) {
+      e.preventDefault();
+      if (finished) return;
+      tryMove(m[0], m[1]);
+    }
+  });
+
+  // Touch / swipe
+  let touchStart = null;
+  boardWrap.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) return;
+    const t = e.touches[0];
+    touchStart = { x: t.clientX, y: t.clientY };
+  }, { passive: true });
+  boardWrap.addEventListener('touchmove', (e) => {
+    if (touchStart) e.preventDefault();
+  }, { passive: false });
+  boardWrap.addEventListener('touchend', (e) => {
+    if (!touchStart) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchStart.x;
+    const dy = t.clientY - touchStart.y;
+    const absX = Math.abs(dx), absY = Math.abs(dy);
+    const THRESH = 18;
+    touchStart = null;
+    if (Math.max(absX, absY) < THRESH) return;
+    if (absX > absY) tryMove(0, dx > 0 ? 1 : -1);
+    else             tryMove(dy > 0 ? 1 : -1, 0);
+  });
+
+  // Buttons
+  newBtn.addEventListener('click', () => newGame());
+  overlayNew.addEventListener('click', () => newGame());
+  solutionBtn.addEventListener('click', toggleSolution);
+  fogBtn.addEventListener('click', toggleFog);
+
+  sizeButtons.forEach((b) => {
+    b.addEventListener('click', () => {
+      sizeKey = b.dataset.size;
+      localStorage.setItem(STORE_SIZE, sizeKey);
+      sizeButtons.forEach((x) => x.classList.toggle('active', x === b));
+      newGame();
+    });
+    if (b.dataset.size === sizeKey) b.classList.add('active');
+    else b.classList.remove('active');
+  });
+  fogBtn.classList.toggle('active', fogOn);
+
+  // Resize handling
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => { resizeCanvas(); draw(); }, 80);
+  });
+
+  // Go
+  newGame();
+  requestAnimationFrame(() => { resizeCanvas(); draw(); });
+})();
+</script>
+
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

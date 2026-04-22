@@ -365,7 +365,7 @@ footer {
 
   <div class="board-wrap">
     <div class="board" id="board" role="grid" aria-label="Tic Tac Toe board"></div>
-    <svg class="win-line" id="win-line" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+    <svg class="win-line" id="win-line" aria-hidden="true">
       <line id="win-line-el" x1="0" y1="0" x2="0" y2="0"></line>
     </svg>
     <div class="overlay" id="overlay" role="dialog" aria-live="polite">
@@ -711,30 +711,43 @@ footer {
     setTimeout(() => showOverlay(title, text), 650);
   }
 
-  // SVG line uses a 0-100 viewBox that matches the board grid (3 cells)
-  // Centers: col → 16.67, 50, 83.33 ; row → same
+  // Compute winning line in actual pixels based on cell rects, so alignment
+  // is exact across board sizes, paddings, and gaps.
   function drawWinLine(line, winner) {
     if (!line) return;
-    const centers = [
-      [16.67, 16.67], [50, 16.67], [83.33, 16.67],
-      [16.67, 50],    [50, 50],    [83.33, 50],
-      [16.67, 83.33], [50, 83.33], [83.33, 83.33]
-    ];
-    const a = centers[line[0]];
-    const c = centers[line[2]];
-    // Extend a bit past endpoints for a nicer look
-    const dx = c[0] - a[0], dy = c[1] - a[1];
+    const wrapRect = winLineSvg.parentElement.getBoundingClientRect();
+    const a = centerOfCell(line[0], wrapRect);
+    const c = centerOfCell(line[2], wrapRect);
+    const dx = c.x - a.x, dy = c.y - a.y;
     const len = Math.sqrt(dx*dx + dy*dy) || 1;
-    const ext = 6;
+    const ext = Math.min(wrapRect.width, wrapRect.height) * 0.04;
     const ux = dx / len, uy = dy / len;
-    winLineEl.setAttribute('x1', (a[0] - ux * ext).toFixed(2));
-    winLineEl.setAttribute('y1', (a[1] - uy * ext).toFixed(2));
-    winLineEl.setAttribute('x2', (c[0] + ux * ext).toFixed(2));
-    winLineEl.setAttribute('y2', (c[1] + uy * ext).toFixed(2));
+    const x1 = a.x - ux * ext;
+    const y1 = a.y - uy * ext;
+    const x2 = c.x + ux * ext;
+    const y2 = c.y + uy * ext;
+    const fullLen = Math.sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
+    winLineEl.setAttribute('x1', x1.toFixed(2));
+    winLineEl.setAttribute('y1', y1.toFixed(2));
+    winLineEl.setAttribute('x2', x2.toFixed(2));
+    winLineEl.setAttribute('y2', y2.toFixed(2));
+    winLineEl.style.strokeDasharray = fullLen;
+    winLineEl.style.strokeDashoffset = fullLen;
     winLineSvg.className = 'win-line';
     winLineSvg.classList.add(winner === 'X' ? 'x-wins' : 'o-wins');
-    // trigger transition
-    requestAnimationFrame(() => winLineSvg.classList.add('draw'));
+    // Force a layout pass so the initial offset applies, then transition to 0
+    winLineEl.getBoundingClientRect();
+    requestAnimationFrame(() => {
+      winLineEl.style.strokeDashoffset = 0;
+    });
+  }
+
+  function centerOfCell(idx, wrapRect) {
+    const r = boardEl.children[idx].getBoundingClientRect();
+    return {
+      x: r.left - wrapRect.left + r.width / 2,
+      y: r.top - wrapRect.top + r.height / 2
+    };
   }
 
   function clearWinLine() {
@@ -743,6 +756,8 @@ footer {
     winLineEl.setAttribute('y1', 0);
     winLineEl.setAttribute('x2', 0);
     winLineEl.setAttribute('y2', 0);
+    winLineEl.style.strokeDasharray = '';
+    winLineEl.style.strokeDashoffset = '';
   }
 
   function showOverlay(title, text) {

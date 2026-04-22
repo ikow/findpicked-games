@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Gravity Simulator · FindPicked Games</title>
+<meta name="description" content="Gravity Simulator — click and drag to place masses. Watch bodies orbit, collide, and merge.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ctext x='16' y='22' font-size='18' fill='white' text-anchor='middle' font-family='system-ui'%3EG%3C/text%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-hover: #f5f5f7;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+
+  --space: #07070d;
+  --space-line: #ffffff;
+  --space-dim: rgba(255,255,255,0.55);
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: manipulation;
+}
+
+.app {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 12px 16px 20px;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+  flex-shrink: 0;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.back {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: background 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.back:hover, .back:active { background: var(--bg-hover); }
+
+.title {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease, color 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.icon-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.icon-btn svg { width: 18px; height: 18px; }
+
+.scores {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  flex-shrink: 0;
+}
+
+.score-card {
+  background: var(--bg-card);
+  box-shadow: var(--shadow);
+  border-radius: 14px;
+  padding: 10px 14px;
+  flex: 1;
+  text-align: center;
+  min-width: 0;
+}
+
+.score-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+}
+
+.score-value {
+  font-size: 22px;
+  font-weight: 700;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  min-height: 24px;
+}
+
+.board-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 16px;
+  position: relative;
+}
+
+.board {
+  background: var(--space);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 28px;
+  text-align: center;
+  background: rgba(7,7,13,0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #fff;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.overlay.visible { opacity: 1; pointer-events: auto; }
+
+.overlay h2 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.overlay p {
+  color: rgba(255,255,255,0.75);
+  font-size: 15px;
+  line-height: 1.5;
+  max-width: 360px;
+}
+
+.btn {
+  height: 44px;
+  padding: 0 24px;
+  border-radius: 22px;
+  border: none;
+  background: var(--accent);
+  color: white;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease, transform 0.1s ease;
+  -webkit-tap-highlight-color: transparent;
+  margin-top: 8px;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn:active { transform: scale(0.97); }
+
+.controls {
+  margin-top: 14px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.control-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.pill {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 22px;
+  border: none;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: var(--shadow);
+  transition: background 0.2s ease, transform 0.1s ease;
+  -webkit-tap-highlight-color: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.pill:hover { background: var(--bg-hover); }
+.pill:active { transform: scale(0.97); }
+.pill.primary { background: var(--accent); color: white; }
+.pill.primary:hover { background: var(--accent-hover); }
+
+.speed-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-card);
+  box-shadow: var(--shadow);
+  border-radius: 22px;
+  padding: 6px 16px;
+  min-height: 44px;
+}
+.speed-row label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.speed-row input[type=range] {
+  flex: 1;
+  accent-color: var(--accent);
+  min-width: 100px;
+}
+.speed-row .speed-val {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  min-width: 36px;
+  text-align: right;
+}
+
+.hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.rules-toggle {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--accent);
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+  padding: 4px 8px;
+}
+.rules-toggle:hover { text-decoration: underline; }
+.rules-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  font-size: 13px;
+  color: rgba(255,255,255,0.78);
+  line-height: 1.6;
+  text-align: left;
+  max-width: 460px;
+  margin: 4px auto 0;
+}
+.rules-panel.open { max-height: 640px; }
+.rules-panel ul { margin: 8px 0 0 16px; }
+.rules-panel li { margin-bottom: 4px; }
+.rules-panel strong { color: #fff; }
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="nav">
+    <div class="nav-left">
+      <a class="back" href="../" aria-label="Back to games">←</a>
+      <div class="title">Gravity Simulator</div>
+    </div>
+    <button class="icon-btn" id="pause-btn" aria-label="Pause">
+      <svg viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="5" width="3.5" height="14" rx="1"/><rect x="13.5" y="5" width="3.5" height="14" rx="1"/></svg>
+    </button>
+  </nav>
+
+  <div class="scores">
+    <div class="score-card">
+      <div class="score-label">Time</div>
+      <div class="score-value" id="score">0s</div>
+    </div>
+    <div class="score-card">
+      <div class="score-label">Bodies</div>
+      <div class="score-value" id="bodies">0</div>
+    </div>
+    <div class="score-card">
+      <div class="score-label">Best</div>
+      <div class="score-value" id="best">0</div>
+    </div>
+  </div>
+
+  <div class="board-wrap">
+    <div class="board" id="board">
+      <canvas id="canvas"></canvas>
+      <div class="overlay visible" id="overlay">
+        <h2 id="overlay-title">Gravity Simulator</h2>
+        <p id="overlay-text">Click and drag in the canvas to launch a mass. Build a stable system — longer you keep bodies orbiting, higher you score.</p>
+        <button class="btn" id="action-btn">Start</button>
+        <button class="rules-toggle" id="rules-toggle" aria-expanded="false">How to Play</button>
+        <div class="rules-panel" id="rules-panel">
+          <ul>
+            <li><strong>Place a body</strong> — click on the canvas to drop a mass at that point.</li>
+            <li><strong>Set velocity</strong> — click and drag, then release. The arrow shows initial direction and speed.</li>
+            <li><strong>Presets</strong> — Binary Star and Solar System spawn a pre-built configuration.</li>
+            <li><strong>Physics</strong> — every body attracts every other via Newtonian gravity. Close encounters slingshot; collisions merge.</li>
+            <li><strong>Collision</strong> — bodies that touch merge. Mass and momentum are conserved; radius grows.</li>
+            <li><strong>Escape</strong> — a body drifting far off-screen is lost to deep space.</li>
+            <li><strong>Scoring</strong> — 1 point per simulated second while 2+ bodies remain interacting.</li>
+            <li><strong>Game over</strong> — fewer than 2 bodies left.</li>
+            <li><strong>Speed</strong> — slow time to 0.25× or fast-forward to 4× with the slider.</li>
+            <li><strong>Trails</strong> — recent positions fade out behind each body so you can read orbits.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="control-row">
+      <button class="pill" id="preset-binary">Binary Star</button>
+      <button class="pill" id="preset-solar">Solar System</button>
+      <button class="pill" id="reset-btn">Reset</button>
+    </div>
+    <div class="speed-row">
+      <label for="speed">Speed</label>
+      <input type="range" id="speed" min="0.25" max="4" step="0.25" value="1">
+      <div class="speed-val" id="speed-val">1.00×</div>
+    </div>
+  </div>
+
+  <p class="hint">Click + drag to launch · presets for instant systems · space toggles pause</p>
+</div>
+
+<script>
+(function () {
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const board = document.getElementById('board');
+  const scoreEl = document.getElementById('score');
+  const bodiesEl = document.getElementById('bodies');
+  const bestEl = document.getElementById('best');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlay-title');
+  const overlayText = document.getElementById('overlay-text');
+  const actionBtn = document.getElementById('action-btn');
+  const pauseBtn = document.getElementById('pause-btn');
+  const rulesToggle = document.getElementById('rules-toggle');
+  const rulesPanel = document.getElementById('rules-panel');
+  const speedInput = document.getElementById('speed');
+  const speedVal = document.getElementById('speed-val');
+  const presetBinaryBtn = document.getElementById('preset-binary');
+  const presetSolarBtn = document.getElementById('preset-solar');
+  const resetBtn = document.getElementById('reset-btn');
+
+  const G = 2400;              // gravitational constant (tuned for pixel space)
+  const MIN_R = 6;             // smallest body radius
+  const POINT_MASS_RADIUS = 10;// radius for user-placed bodies
+  const POINT_MASS = 80;       // mass of a user-placed body
+  const SOFT = 4;              // softening to avoid infinite forces
+  const DRAG_TO_VEL = 1.8;     // multiplier: drag pixels → velocity px/s
+  const MAX_LAUNCH_SPEED = 600;
+  const TRAIL_LEN = 80;        // samples kept per body
+  const TRAIL_DROP = 3;        // add trail sample every N frames
+  const OFF_SCREEN_MARGIN = 600; // px beyond viewport before ejection
+  const EJECT_TIME = 3.0;      // seconds off-screen before removed
+  const STAR_COUNT = 60;
+
+  let viewW = 0, viewH = 0;
+  let dpr = 1;
+  let state = 'idle'; // idle | running | paused | over
+  let bodies = [];
+  let stars = [];
+  let simTime = 0;
+  let scoredTime = 0;
+  let best = 0;
+  let newBest = false;
+  let lastTime = 0;
+  let speedMul = 1;
+  let trailTick = 0;
+  let submittedScore = -1;
+
+  // Drag-to-launch state
+  let dragging = false;
+  let dragStart = null;   // { x, y } in canvas coords
+  let dragCurrent = null;
+
+  best = parseInt(localStorage.getItem('gravitysim.best') || '0', 10);
+  bestEl.textContent = best;
+
+  function rand(a, b) { return a + Math.random() * (b - a); }
+
+  function resize() {
+    const rect = board.getBoundingClientRect();
+    viewW = Math.max(240, Math.floor(rect.width));
+    viewH = Math.max(240, Math.floor(rect.height));
+    dpr = window.devicePixelRatio || 1;
+    canvas.width = viewW * dpr;
+    canvas.height = viewH * dpr;
+    canvas.style.width = viewW + 'px';
+    canvas.style.height = viewH + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    generateStars();
+  }
+
+  function generateStars() {
+    stars = [];
+    for (let i = 0; i < STAR_COUNT; i++) {
+      stars.push({
+        x: Math.random() * viewW,
+        y: Math.random() * viewH,
+        a: rand(0.15, 0.5),
+        r: rand(0.4, 1.2)
+      });
+    }
+  }
+
+  function massToRadius(m) {
+    // r ∝ m^(1/3); tuned so POINT_MASS → ~POINT_MASS_RADIUS
+    return Math.max(MIN_R, Math.cbrt(m) * (POINT_MASS_RADIUS / Math.cbrt(POINT_MASS)));
+  }
+
+  function hueForMass(m) {
+    // Small bodies: cool blue. Large bodies: warm yellow.
+    const t = Math.min(1, Math.log10(m + 1) / 3.2);
+    return 220 - t * 180; // 220 (blue) → 40 (warm)
+  }
+
+  function addBody(x, y, vx, vy, mass) {
+    const m = mass != null ? mass : POINT_MASS;
+    bodies.push({
+      x, y, vx, vy,
+      mass: m,
+      radius: massToRadius(m),
+      hue: hueForMass(m),
+      trail: [],
+      offTime: 0
+    });
+  }
+
+  function clearBodies() {
+    bodies = [];
+    simTime = 0;
+    scoredTime = 0;
+    submittedScore = -1;
+    newBest = false;
+    updateHUD();
+  }
+
+  // ---- Presets ----
+
+  function presetBinaryStar() {
+    clearBodies();
+    const cx = viewW / 2, cy = viewH / 2;
+    const M = 900;
+    const sep = Math.min(viewW, viewH) * 0.18;
+    // Two-body circular orbit: v = sqrt(G * M_other / r_total) / 2 reasoning...
+    // For equal masses, each orbits center of mass at radius sep/2 with
+    // v = sqrt(G * m_other / (2 * r)) — simplified: v = sqrt(G * M / (2*sep))
+    const v = Math.sqrt(G * M / (2 * sep));
+    addBody(cx - sep / 2, cy, 0, -v, M);
+    addBody(cx + sep / 2, cy, 0,  v, M);
+    // Small companion planet
+    const pr = sep * 1.6;
+    const pv = Math.sqrt(G * (2 * M) / pr);
+    addBody(cx, cy - pr, pv, 0, 30);
+  }
+
+  function presetSolarSystem() {
+    clearBodies();
+    const cx = viewW / 2, cy = viewH / 2;
+    const starMass = 4000;
+    addBody(cx, cy, 0, 0, starMass);
+    const base = Math.min(viewW, viewH) * 0.08;
+    const planets = [
+      { r: base * 1.0, m: 8 },
+      { r: base * 1.7, m: 20 },
+      { r: base * 2.5, m: 14 },
+      { r: base * 3.4, m: 42 }
+    ];
+    planets.forEach((p, i) => {
+      const angle = (i / planets.length) * Math.PI * 2 + rand(-0.3, 0.3);
+      const x = cx + Math.cos(angle) * p.r;
+      const y = cy + Math.sin(angle) * p.r;
+      const v = Math.sqrt(G * starMass / p.r);
+      // velocity perpendicular to radius, CCW
+      const vx = -Math.sin(angle) * v;
+      const vy =  Math.cos(angle) * v;
+      addBody(x, y, vx, vy, p.m);
+    });
+  }
+
+  // ---- Physics ----
+
+  function step(dt) {
+    const n = bodies.length;
+    // Compute accelerations
+    const ax = new Float64Array(n);
+    const ay = new Float64Array(n);
+    for (let i = 0; i < n; i++) {
+      for (let j = i + 1; j < n; j++) {
+        const a = bodies[i], b = bodies[j];
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const d2 = dx * dx + dy * dy + SOFT * SOFT;
+        const d = Math.sqrt(d2);
+        const f = G / (d2 * d);
+        ax[i] += f * b.mass * dx;
+        ay[i] += f * b.mass * dy;
+        ax[j] -= f * a.mass * dx;
+        ay[j] -= f * a.mass * dy;
+      }
+    }
+
+    // Integrate (semi-implicit Euler)
+    for (let i = 0; i < n; i++) {
+      const b = bodies[i];
+      b.vx += ax[i] * dt;
+      b.vy += ay[i] * dt;
+      b.x  += b.vx * dt;
+      b.y  += b.vy * dt;
+    }
+
+    // Collisions — merge conserving momentum
+    for (let i = 0; i < bodies.length; i++) {
+      for (let j = i + 1; j < bodies.length; j++) {
+        const a = bodies[i], b = bodies[j];
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const rSum = a.radius + b.radius;
+        if (dx * dx + dy * dy <= rSum * rSum) {
+          const mTotal = a.mass + b.mass;
+          const nx = (a.mass * a.x + b.mass * b.x) / mTotal;
+          const ny = (a.mass * a.y + b.mass * b.y) / mTotal;
+          const nvx = (a.mass * a.vx + b.mass * b.vx) / mTotal;
+          const nvy = (a.mass * a.vy + b.mass * b.vy) / mTotal;
+          const merged = {
+            x: nx, y: ny,
+            vx: nvx, vy: nvy,
+            mass: mTotal,
+            radius: massToRadius(mTotal),
+            hue: hueForMass(mTotal),
+            trail: a.mass >= b.mass ? a.trail : b.trail,
+            offTime: 0
+          };
+          // Replace the two with the merged body
+          bodies.splice(j, 1);
+          bodies.splice(i, 1);
+          bodies.push(merged);
+          i = -1; // restart scan
+          break;
+        }
+      }
+    }
+
+    // Track off-screen ejection
+    const mx = OFF_SCREEN_MARGIN;
+    for (let i = bodies.length - 1; i >= 0; i--) {
+      const b = bodies[i];
+      const off = b.x < -mx || b.x > viewW + mx || b.y < -mx || b.y > viewH + mx;
+      if (off) b.offTime += dt; else b.offTime = 0;
+      if (b.offTime > EJECT_TIME) bodies.splice(i, 1);
+    }
+
+    // Trails — sample every few frames for performance
+    trailTick++;
+    if (trailTick >= TRAIL_DROP) {
+      trailTick = 0;
+      for (const b of bodies) {
+        b.trail.push(b.x, b.y);
+        if (b.trail.length > TRAIL_LEN * 2) b.trail.splice(0, b.trail.length - TRAIL_LEN * 2);
+      }
+    }
+  }
+
+  // ---- Draw ----
+
+  function draw() {
+    // Clear with slight fade for a faint persistent glow on trails
+    ctx.fillStyle = '#07070d';
+    ctx.fillRect(0, 0, viewW, viewH);
+
+    // Stars
+    for (const s of stars) {
+      ctx.fillStyle = 'rgba(255,255,255,' + s.a + ')';
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Trails
+    for (const b of bodies) {
+      const t = b.trail;
+      if (t.length < 4) continue;
+      ctx.lineWidth = Math.max(1, b.radius * 0.25);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      const pts = t.length / 2;
+      // Draw as fading polyline — approximate with stroke using gradient opacity
+      for (let i = 2; i < t.length; i += 2) {
+        const k = (i / 2) / pts; // 0 → 1 along the trail
+        ctx.strokeStyle = 'hsla(' + b.hue + ',80%,65%,' + (k * 0.55).toFixed(3) + ')';
+        ctx.beginPath();
+        ctx.moveTo(t[i - 2], t[i - 1]);
+        ctx.lineTo(t[i], t[i + 1]);
+        ctx.stroke();
+      }
+    }
+
+    // Bodies
+    for (const b of bodies) {
+      const glow = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.radius * 3);
+      glow.addColorStop(0, 'hsla(' + b.hue + ',85%,70%,0.55)');
+      glow.addColorStop(1, 'hsla(' + b.hue + ',85%,70%,0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.radius * 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = 'hsl(' + b.hue + ',90%,72%)';
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+      ctx.fill();
+      // Core highlight
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.beginPath();
+      ctx.arc(b.x - b.radius * 0.28, b.y - b.radius * 0.28, b.radius * 0.35, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Drag preview
+    if (dragging && dragStart && dragCurrent) {
+      const dx = dragCurrent.x - dragStart.x;
+      const dy = dragCurrent.y - dragStart.y;
+      // Show mass preview
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.beginPath();
+      ctx.arc(dragStart.x, dragStart.y, POINT_MASS_RADIUS, 0, Math.PI * 2);
+      ctx.fill();
+      // Arrow showing launch velocity
+      ctx.strokeStyle = 'rgba(0,113,227,0.95)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath();
+      ctx.moveTo(dragStart.x, dragStart.y);
+      ctx.lineTo(dragStart.x + dx, dragStart.y + dy);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      // Arrow head
+      const len = Math.hypot(dx, dy);
+      if (len > 4) {
+        const ux = dx / len, uy = dy / len;
+        const tipX = dragStart.x + dx, tipY = dragStart.y + dy;
+        ctx.fillStyle = 'rgba(0,113,227,0.95)';
+        ctx.beginPath();
+        ctx.moveTo(tipX, tipY);
+        ctx.lineTo(tipX - ux * 10 - uy * 5, tipY - uy * 10 + ux * 5);
+        ctx.lineTo(tipX - ux * 10 + uy * 5, tipY - uy * 10 - ux * 5);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+  }
+
+  // ---- HUD ----
+
+  function updateHUD() {
+    scoreEl.textContent = Math.floor(scoredTime) + 's';
+    bodiesEl.textContent = bodies.length;
+    bestEl.textContent = best;
+  }
+
+  // ---- Game state ----
+
+  function startGame() {
+    clearBodies();
+    state = 'running';
+    lastTime = performance.now();
+    overlay.classList.remove('visible');
+    closeRules();
+  }
+
+  function gameOver() {
+    if (state === 'over') return;
+    state = 'over';
+    const finalScore = Math.floor(scoredTime);
+    if (finalScore > best) {
+      best = finalScore;
+      newBest = true;
+      try { localStorage.setItem('gravitysim.best', String(best)); } catch {}
+    }
+    updateHUD();
+    if (finalScore > 0 && finalScore !== submittedScore) {
+      submittedScore = finalScore;
+      setTimeout(function () {
+        if (window.Leaderboard) window.Leaderboard && Leaderboard.submitScore(finalScore);
+      }, 400);
+    }
+    overlayTitle.textContent = finalScore > 0 ? 'System collapsed' : 'Gravity Simulator';
+    overlayText.textContent = finalScore > 0
+      ? 'You held ' + finalScore + ' seconds' + (newBest ? ' — a new best.' : '.') + ' Try again with a different configuration.'
+      : 'Click and drag to launch a mass, or start with a preset.';
+    actionBtn.textContent = 'Play again';
+    overlay.classList.add('visible');
+  }
+
+  function pauseGame() {
+    if (state !== 'running') return;
+    state = 'paused';
+    overlayTitle.textContent = 'Paused';
+    overlayText.textContent = 'Press space or tap resume to continue.';
+    actionBtn.textContent = 'Resume';
+    overlay.classList.add('visible');
+  }
+
+  function resumeGame() {
+    if (state !== 'paused') return;
+    state = 'running';
+    overlay.classList.remove('visible');
+    lastTime = performance.now();
+  }
+
+  function actionClick() {
+    if (state === 'idle' || state === 'over') startGame();
+    else if (state === 'paused') resumeGame();
+  }
+
+  // ---- Rules panel ----
+
+  function openRules() {
+    rulesPanel.classList.add('open');
+    rulesToggle.setAttribute('aria-expanded', 'true');
+  }
+  function closeRules() {
+    rulesPanel.classList.remove('open');
+    rulesToggle.setAttribute('aria-expanded', 'false');
+  }
+  rulesToggle.addEventListener('click', function () {
+    if (rulesPanel.classList.contains('open')) closeRules(); else openRules();
+  });
+
+  // ---- Input: click+drag to launch ----
+
+  function canvasCoords(e) {
+    const rect = canvas.getBoundingClientRect();
+    const t = e.touches ? e.touches[0] : e;
+    return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+  }
+
+  function onDown(e) {
+    if (state !== 'running') return;
+    e.preventDefault();
+    dragging = true;
+    dragStart = canvasCoords(e);
+    dragCurrent = { x: dragStart.x, y: dragStart.y };
+  }
+  function onMove(e) {
+    if (!dragging) return;
+    e.preventDefault();
+    dragCurrent = canvasCoords(e);
+  }
+  function onUp(e) {
+    if (!dragging) return;
+    e.preventDefault();
+    const end = dragCurrent || dragStart;
+    let vx = (end.x - dragStart.x) * DRAG_TO_VEL;
+    let vy = (end.y - dragStart.y) * DRAG_TO_VEL;
+    const sp = Math.hypot(vx, vy);
+    if (sp > MAX_LAUNCH_SPEED) {
+      vx = vx / sp * MAX_LAUNCH_SPEED;
+      vy = vy / sp * MAX_LAUNCH_SPEED;
+    }
+    addBody(dragStart.x, dragStart.y, vx, vy, POINT_MASS);
+    dragging = false;
+    dragStart = null;
+    dragCurrent = null;
+    updateHUD();
+  }
+
+  canvas.addEventListener('mousedown', onDown);
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onUp);
+  canvas.addEventListener('touchstart', onDown, { passive: false });
+  canvas.addEventListener('touchmove', onMove, { passive: false });
+  canvas.addEventListener('touchend', onUp, { passive: false });
+  canvas.addEventListener('touchcancel', function () {
+    dragging = false; dragStart = null; dragCurrent = null;
+  });
+
+  // ---- Buttons ----
+
+  actionBtn.addEventListener('click', actionClick);
+  pauseBtn.addEventListener('click', function () {
+    if (state === 'running') pauseGame();
+    else if (state === 'paused') resumeGame();
+  });
+  resetBtn.addEventListener('click', function () {
+    clearBodies();
+    if (state === 'over') {
+      state = 'idle';
+      overlayTitle.textContent = 'Gravity Simulator';
+      overlayText.textContent = 'Click and drag in the canvas to launch a mass. Build a stable system — longer you keep bodies orbiting, higher you score.';
+      actionBtn.textContent = 'Start';
+      overlay.classList.add('visible');
+    }
+  });
+  presetBinaryBtn.addEventListener('click', function () {
+    if (state !== 'running') startGame();
+    presetBinaryStar();
+    updateHUD();
+  });
+  presetSolarBtn.addEventListener('click', function () {
+    if (state !== 'running') startGame();
+    presetSolarSystem();
+    updateHUD();
+  });
+  speedInput.addEventListener('input', function () {
+    speedMul = parseFloat(speedInput.value) || 1;
+    speedVal.textContent = speedMul.toFixed(2) + '×';
+  });
+
+  // ---- Keyboard ----
+
+  window.addEventListener('keydown', function (e) {
+    if (e.key === ' ' || e.code === 'Space') {
+      e.preventDefault();
+      if (state === 'running') pauseGame();
+      else if (state === 'paused') resumeGame();
+      else if (state === 'idle' || state === 'over') startGame();
+    } else if (e.key === 'r' || e.key === 'R') {
+      clearBodies();
+    } else if (e.key === '1') {
+      if (state !== 'running') startGame();
+      presetBinaryStar(); updateHUD();
+    } else if (e.key === '2') {
+      if (state !== 'running') startGame();
+      presetSolarSystem(); updateHUD();
+    }
+  });
+
+  window.addEventListener('blur', function () {
+    if (state === 'running') pauseGame();
+  });
+
+  window.addEventListener('resize', resize);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', resize);
+  }
+
+  // ---- Main loop ----
+
+  function loop(ts) {
+    const dt = Math.min(0.05, (ts - lastTime) / 1000 || 0);
+    lastTime = ts;
+
+    if (state === 'running') {
+      const simDt = dt * speedMul;
+      // Clamp sub-steps so high-speed doesn't blow up integrator
+      const sub = Math.ceil(simDt / 0.02);
+      const ddt = simDt / Math.max(1, sub);
+      for (let i = 0; i < sub; i++) step(ddt);
+
+      simTime += simDt;
+      if (bodies.length >= 2) scoredTime += simDt;
+      updateHUD();
+
+      // Game over when fewer than 2 bodies remain AND player has placed at least one
+      if (bodies.length < 2 && scoredTime > 0.5) {
+        gameOver();
+      }
+    }
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  resize();
+  updateHUD();
+  draw();
+  requestAnimationFrame(loop);
+})();
+</script>
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

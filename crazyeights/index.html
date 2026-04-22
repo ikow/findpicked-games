@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Crazy Eights — FindPicked Games</title>
+<meta name="description" content="Play Crazy Eights free — match suit or rank, play an 8 as a wild card. No downloads, no sign-ups.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ctext x='16' y='23' font-family='-apple-system,sans-serif' font-size='20' font-weight='700' text-anchor='middle' fill='white'%3E8%3C/text%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-felt: #f3efe8;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --red: #d72d2d;
+  --green: #00875a;
+  --gold: #d4a637;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-card: 0 4px 14px rgba(0,0,0,0.10);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.14);
+  --radius: 16px;
+}
+
+html, body { height: 100%; overscroll-behavior: none; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px 16px 40px;
+  touch-action: manipulation;
+}
+
+.back {
+  align-self: flex-start;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 400;
+  padding: 8px 4px;
+  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+}
+.back:hover { color: var(--text-primary); }
+.back .arrow { font-size: 18px; line-height: 1; }
+
+.wrap {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+header h1 {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-bottom: 4px;
+}
+
+header p {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.stats {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.stat-cell {
+  text-align: center;
+  border-right: 1px solid var(--border);
+  padding: 2px 4px;
+}
+.stat-cell:last-child { border-right: none; }
+
+.stat-cell .label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+.stat-cell .val {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.table {
+  background: var(--bg-felt);
+  border-radius: 20px;
+  padding: 16px 12px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 420px;
+}
+
+.opp-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 6px;
+}
+
+.opp-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.opp-label.thinking::after {
+  content: ' · thinking…';
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+.opp-hand {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  min-height: 56px;
+  padding: 4px 0;
+  justify-content: flex-end;
+  flex: 1;
+  margin-left: 12px;
+  overflow: hidden;
+}
+
+.back-card {
+  width: 36px;
+  height: 54px;
+  background: linear-gradient(135deg, #0071e3 0%, #0056b3 100%);
+  border-radius: 6px;
+  border: 1px solid rgba(0,0,0,0.15);
+  box-shadow: var(--shadow-card);
+  margin-left: -22px;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+.back-card:first-child { margin-left: 0; }
+.back-card::after {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border-radius: 4px;
+  border: 1px dashed rgba(255,255,255,0.3);
+}
+
+.center-area {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  padding: 14px 0;
+  min-height: 130px;
+  position: relative;
+}
+
+.pile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.pile .pile-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 500;
+}
+.pile .pile-count {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.draw-pile {
+  position: relative;
+}
+.draw-pile .back-card {
+  margin-left: 0;
+  width: 60px;
+  height: 88px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.draw-pile.active .back-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-hover);
+}
+.draw-pile:not(.active) .back-card {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.draw-pile .stack-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+.draw-pile .stack-layer:nth-child(1) { transform: translate(-3px, -3px); opacity: 0.5; }
+.draw-pile .stack-layer:nth-child(2) { transform: translate(-1px, -1px); opacity: 0.7; }
+
+.discard-pile .discard-card {
+  width: 60px;
+  height: 88px;
+  font-size: 22px;
+}
+.discard-pile .discard-card .rank { font-size: 22px; }
+.discard-pile .discard-card .suit { font-size: 22px; }
+
+.suit-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: white;
+  font-size: 14px;
+  min-width: 30px;
+  height: 30px;
+  border-radius: 100px;
+  padding: 0 8px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 113, 227, 0.4);
+  position: absolute;
+  top: 0;
+  right: calc(50% - 82px);
+}
+.suit-badge.red { background: var(--red); box-shadow: 0 2px 8px rgba(215, 45, 45, 0.4); }
+
+.status {
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-secondary);
+  min-height: 22px;
+  padding: 4px;
+  font-weight: 500;
+}
+.status strong { color: var(--text-primary); }
+.status.win strong { color: var(--green); }
+.status.lose strong { color: var(--red); }
+
+.hand-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hand-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  padding: 0 6px;
+}
+
+.hand {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  min-height: 94px;
+  padding: 10px 8px 0;
+  flex-wrap: wrap;
+  gap: 0;
+}
+
+.hand .card {
+  position: relative;
+  margin-left: -18px;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.hand .card:first-child { margin-left: 0; }
+
+.card {
+  width: 50px;
+  height: 74px;
+  background: var(--bg-card);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  user-select: none;
+  -webkit-user-select: none;
+  min-width: 50px;
+}
+
+.card .rank {
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.card .suit {
+  font-size: 20px;
+  line-height: 1;
+  margin-top: 2px;
+}
+.card.red { color: var(--red); }
+.card.black { color: var(--text-primary); }
+.card.wild {
+  background: linear-gradient(135deg, #fff 0%, #f5f5f7 100%);
+  border-color: var(--accent);
+}
+
+.hand .card:not(.disabled):hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-hover);
+}
+.hand .card.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.hand .card.playable {
+  box-shadow: 0 4px 14px rgba(0, 113, 227, 0.25), 0 0 0 1.5px rgba(0, 113, 227, 0.4);
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 12px 24px;
+  border-radius: 100px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 44px;
+  min-width: 100px;
+  letter-spacing: -0.01em;
+}
+.btn.primary {
+  background: var(--accent);
+  color: white;
+}
+.btn.primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 113, 227, 0.3);
+}
+.btn.secondary {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  box-shadow: var(--shadow);
+}
+.btn.secondary:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-hover);
+}
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.how {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 4px 18px;
+  box-shadow: var(--shadow);
+}
+.how summary {
+  padding: 14px 0;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 15px;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+}
+.how summary::-webkit-details-marker { display: none; }
+.how summary::after {
+  content: '+';
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  transition: transform 0.2s ease;
+}
+.how[open] summary::after { transform: rotate(45deg); }
+.how ul {
+  list-style: none;
+  padding: 0 0 16px;
+}
+.how li {
+  font-size: 14px;
+  color: var(--text-secondary);
+  padding: 6px 0 6px 20px;
+  position: relative;
+  line-height: 1.5;
+}
+.how li::before {
+  content: '—';
+  position: absolute;
+  left: 0;
+  color: var(--text-tertiary);
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.modal-backdrop[hidden] { display: none; }
+
+.modal {
+  background: var(--bg-card);
+  border-radius: 20px;
+  padding: 28px 24px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+.modal h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  letter-spacing: -0.02em;
+}
+.modal p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 18px;
+}
+
+.suit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.suit-btn {
+  font-family: inherit;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 28px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.suit-btn:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 113, 227, 0.15);
+}
+.suit-btn .suit-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.suit-btn.red { color: var(--red); }
+.suit-btn.black { color: var(--text-primary); }
+
+.final-scores {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+.final-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--bg);
+  border-radius: 10px;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.final-row.winner {
+  background: rgba(0, 135, 90, 0.08);
+  color: var(--green);
+  font-weight: 600;
+}
+
+@media (max-width: 420px) {
+  .card { width: 44px; height: 65px; min-width: 44px; }
+  .card .rank, .card .suit { font-size: 17px; }
+  .hand .card { margin-left: -20px; }
+  .discard-pile .discard-card, .draw-pile .back-card { width: 54px; height: 80px; }
+  .discard-pile .discard-card .rank, .discard-pile .discard-card .suit { font-size: 20px; }
+  .back-card { width: 32px; height: 48px; margin-left: -20px; }
+  header h1 { font-size: 26px; }
+  .stat-cell .val { font-size: 18px; }
+  .suit-badge { right: calc(50% - 76px); }
+}
+
+@media (max-width: 340px) {
+  .card { width: 40px; height: 60px; min-width: 40px; }
+  .card .rank, .card .suit { font-size: 15px; }
+  .hand .card { margin-left: -22px; }
+  .back-card { width: 28px; height: 42px; }
+}
+</style>
+</head>
+<body>
+<a href="../" class="back"><span class="arrow">←</span> Back to games</a>
+
+<div class="wrap">
+  <header>
+    <h1>Crazy Eights</h1>
+    <p>Match suit or rank. Play an 8 to change the suit. Empty your hand to win.</p>
+  </header>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="table">
+    <div class="opp-row">
+      <span class="opp-label" id="oppLabel">Opponent</span>
+      <div class="opp-hand" id="oppHand"></div>
+    </div>
+
+    <div class="center-area">
+      <div class="pile draw-pile" id="drawPile">
+        <div class="back-card stack-layer"></div>
+        <div class="back-card stack-layer"></div>
+        <div class="back-card" id="drawCard"></div>
+        <span class="pile-label">Draw</span>
+        <span class="pile-count" id="drawCount">—</span>
+      </div>
+      <div class="pile discard-pile">
+        <div class="card discard-card" id="discardCard"></div>
+        <span class="pile-label">Discard</span>
+        <span class="pile-count" id="suitLabel">—</span>
+      </div>
+      <div class="suit-badge" id="suitBadge" hidden></div>
+    </div>
+
+    <div class="status" id="status">Tap a playable card to start</div>
+
+    <div class="hand-wrap">
+      <span class="hand-label" id="handLabel">Your hand</span>
+      <div class="hand" id="hand"></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn secondary" id="newGameBtn">New game</button>
+    </div>
+  </div>
+
+  <details class="how">
+    <summary>How to Play</summary>
+    <ul>
+      <li>Each player is dealt 7 cards. One card is flipped to start the discard pile.</li>
+      <li>On your turn, play a card that matches either the suit or the rank of the top discard.</li>
+      <li>8s are wild — you can play an 8 on any card, then choose the next suit.</li>
+      <li>If you can't play, tap the draw pile to take a card. If it's playable, you may play it right away.</li>
+      <li>If the draw pile is empty, the discard pile (except the top card) is shuffled back in.</li>
+      <li>First player to empty their hand wins the round.</li>
+      <li>The winner scores the point value of cards left in the opponent's hand.</li>
+      <li>Card values: 8 = 50 points, J/Q/K = 10, A = 1, all others = face value.</li>
+      <li>Play to 100 points across rounds — first to reach it wins the match.</li>
+    </ul>
+  </details>
+</div>
+
+<div class="modal-backdrop" id="suitModal" hidden>
+  <div class="modal">
+    <h2>Pick a suit</h2>
+    <p>Your 8 is wild — choose the new suit.</p>
+    <div class="suit-grid">
+      <button class="suit-btn black" data-suit="♣"><span>♣</span><span class="suit-name">Clubs</span></button>
+      <button class="suit-btn red" data-suit="♦"><span>♦</span><span class="suit-name">Diamonds</span></button>
+      <button class="suit-btn black" data-suit="♠"><span>♠</span><span class="suit-name">Spades</span></button>
+      <button class="suit-btn red" data-suit="♥"><span>♥</span><span class="suit-name">Hearts</span></button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="roundModal" hidden>
+  <div class="modal">
+    <h2 id="roundTitle">Round Over</h2>
+    <p id="roundSub"></p>
+    <div class="final-scores" id="roundScores"></div>
+    <div class="actions">
+      <button class="btn primary" id="nextRoundBtn">Next round</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="gameOverModal" hidden>
+  <div class="modal">
+    <h2 id="gameOverTitle">Game Over</h2>
+    <p id="gameOverSub"></p>
+    <div class="final-scores" id="finalScores"></div>
+    <div class="actions">
+      <button class="btn primary" id="playAgainBtn">Play again</button>
+    </div>
+  </div>
+</div>
+
+<script src="../shared-leaderboard.js"></script>
+<script>
+(function() {
+'use strict';
+
+const SUITS = ['♣', '♦', '♠', '♥'];
+const SUIT_NAMES = { '♣': 'Clubs', '♦': 'Diamonds', '♠': 'Spades', '♥': 'Hearts' };
+const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+const PLAYERS = ['You', 'Opponent'];
+const STORAGE_KEY = 'crazyeights_v1';
+const TARGET_SCORE = 100;
+const START_HAND = 7;
+
+const state = {
+  deck: [],
+  discard: [],
+  hands: [[], []],
+  currentPlayer: 0,
+  activeSuit: null,
+  phase: 'idle',
+  scores: [0, 0],
+  roundNum: 1,
+  best: null,
+  gamesWon: 0,
+  gamesPlayed: 0,
+  locked: false,
+  justDrew: false,
+  drewCount: 0,
+  pendingEight: null
+};
+
+function isRed(suit) { return suit === '♥' || suit === '♦'; }
+function cardId(c) { return c.suit + c.rank; }
+function cardValue(c) {
+  if (c.rank === '8') return 50;
+  if (c.rank === 'J' || c.rank === 'Q' || c.rank === 'K') return 10;
+  if (c.rank === 'A') return 1;
+  return parseInt(c.rank, 10);
+}
+function handValue(hand) {
+  return hand.reduce((n, c) => n + cardValue(c), 0);
+}
+
+function loadStats() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const d = JSON.parse(raw);
+    state.best = (typeof d.best === 'number') ? d.best : null;
+    state.gamesWon = d.gamesWon || 0;
+    state.gamesPlayed = d.gamesPlayed || 0;
+  } catch(e) {}
+}
+
+function saveStats() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      best: state.best,
+      gamesWon: state.gamesWon,
+      gamesPlayed: state.gamesPlayed
+    }));
+  } catch(e) {}
+}
+
+function makeDeck() {
+  const d = [];
+  for (const s of SUITS) for (const r of RANKS) d.push({ suit: s, rank: r });
+  return d;
+}
+
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function reshuffleIfNeeded() {
+  if (state.deck.length > 0) return true;
+  if (state.discard.length <= 1) return false;
+  const top = state.discard.pop();
+  state.deck = shuffle(state.discard);
+  state.discard = [top];
+  return state.deck.length > 0;
+}
+
+function drawOne(player) {
+  if (!reshuffleIfNeeded()) return null;
+  const c = state.deck.pop();
+  state.hands[player].push(c);
+  return c;
+}
+
+function topDiscard() {
+  return state.discard[state.discard.length - 1];
+}
+
+function canPlay(card) {
+  if (card.rank === '8') return true;
+  const top = topDiscard();
+  if (state.activeSuit) return card.suit === state.activeSuit;
+  return card.suit === top.suit || card.rank === top.rank;
+}
+
+function hasPlayable(player) {
+  return state.hands[player].some(canPlay);
+}
+
+function sortHand(hand) {
+  const order = ['♣','♦','♠','♥'];
+  return hand.slice().sort((a, b) => {
+    const sa = order.indexOf(a.suit), sb = order.indexOf(b.suit);
+    if (sa !== sb) return sa - sb;
+    return RANKS.indexOf(a.rank) - RANKS.indexOf(b.rank);
+  });
+}
+
+function newRound() {
+  state.deck = shuffle(makeDeck());
+  state.hands = [[], []];
+  for (let i = 0; i < START_HAND; i++) {
+    for (let p = 0; p < 2; p++) state.hands[p].push(state.deck.pop());
+  }
+  state.hands[0] = sortHand(state.hands[0]);
+  // Flip first discard — if it's an 8, put it back and redraw (simpler: just allow it, first player chooses suit)
+  let first = state.deck.pop();
+  // Avoid starting with 8 for cleaner UX
+  let tries = 0;
+  while (first.rank === '8' && tries < 20) {
+    state.deck.unshift(first);
+    shuffle(state.deck);
+    first = state.deck.pop();
+    tries++;
+  }
+  state.discard = [first];
+  state.activeSuit = null;
+  state.currentPlayer = 0;
+  state.phase = 'play';
+  state.locked = false;
+  state.justDrew = false;
+  state.drewCount = 0;
+  state.pendingEight = null;
+  document.getElementById('suitModal').hidden = true;
+  document.getElementById('roundModal').hidden = true;
+  document.getElementById('gameOverModal').hidden = true;
+  render();
+}
+
+function newGame() {
+  state.scores = [0, 0];
+  state.roundNum = 1;
+  newRound();
+}
+
+// ───── Player turn ─────
+
+function onHandClick(idx) {
+  if (state.locked) return;
+  if (state.phase !== 'play') return;
+  if (state.currentPlayer !== 0) return;
+  const card = state.hands[0][idx];
+  if (!canPlay(card)) return;
+  if (card.rank === '8') {
+    state.pendingEight = idx;
+    document.getElementById('suitModal').hidden = false;
+    return;
+  }
+  playCard(0, idx, null);
+}
+
+function onSuitPick(suit) {
+  if (state.pendingEight === null) return;
+  const idx = state.pendingEight;
+  state.pendingEight = null;
+  document.getElementById('suitModal').hidden = true;
+  playCard(0, idx, suit);
+}
+
+function playCard(player, idx, declaredSuit) {
+  const card = state.hands[player].splice(idx, 1)[0];
+  state.discard.push(card);
+  if (card.rank === '8') {
+    state.activeSuit = declaredSuit;
+  } else {
+    state.activeSuit = null;
+  }
+  state.justDrew = false;
+  state.drewCount = 0;
+  render();
+
+  if (state.hands[player].length === 0) {
+    state.locked = true;
+    setTimeout(() => endRound(player), 700);
+    return;
+  }
+
+  state.currentPlayer = 1 - player;
+  if (state.currentPlayer === 1) {
+    state.locked = true;
+    setTimeout(aiTurn, 750);
+  }
+}
+
+function onDrawClick() {
+  if (state.locked) return;
+  if (state.phase !== 'play') return;
+  if (state.currentPlayer !== 0) return;
+  const DRAW_LIMIT = 3;
+  if (state.drewCount >= DRAW_LIMIT) {
+    // Force pass after drawing limit
+    passTurn(0);
+    return;
+  }
+  const c = drawOne(0);
+  if (!c) {
+    // No cards available — pass
+    passTurn(0);
+    return;
+  }
+  state.hands[0] = sortHand(state.hands[0]);
+  state.justDrew = true;
+  state.drewCount++;
+  render();
+  // If after drawing they still cannot play, and no more deck → pass
+  if (!hasPlayable(0) && state.deck.length === 0 && state.discard.length <= 1) {
+    setTimeout(() => passTurn(0), 350);
+  }
+}
+
+function passTurn(player) {
+  state.justDrew = false;
+  state.drewCount = 0;
+  state.currentPlayer = 1 - player;
+  render();
+  if (state.currentPlayer === 1 && state.phase === 'play') {
+    state.locked = true;
+    setTimeout(aiTurn, 700);
+  }
+}
+
+// ───── AI turn ─────
+
+function aiTurn() {
+  if (state.phase !== 'play') return;
+  if (state.currentPlayer !== 1) return;
+
+  const opp = document.getElementById('oppLabel');
+  opp.classList.add('thinking');
+
+  // Try to play non-8 first, then 8 as fallback
+  const hand = state.hands[1];
+  const playableIdx = [];
+  hand.forEach((c, i) => { if (canPlay(c)) playableIdx.push(i); });
+  const playableNon8 = playableIdx.filter(i => hand[i].rank !== '8');
+
+  if (playableNon8.length > 0) {
+    // Pick highest-value non-8 that is playable (dump big cards)
+    playableNon8.sort((a, b) => cardValue(hand[b]) - cardValue(hand[a]));
+    const idx = playableNon8[0];
+    opp.classList.remove('thinking');
+    state.locked = false;
+    playCard(1, idx, null);
+    return;
+  }
+
+  if (playableIdx.length > 0) {
+    // Only 8s playable — play highest and pick best suit
+    const idx = playableIdx[0];
+    const suit = aiPickSuit();
+    opp.classList.remove('thinking');
+    state.locked = false;
+    playCard(1, idx, suit);
+    return;
+  }
+
+  // Must draw
+  const DRAW_LIMIT = 3;
+  if (state.drewCount >= DRAW_LIMIT) {
+    opp.classList.remove('thinking');
+    state.locked = false;
+    passTurn(1);
+    return;
+  }
+  const c = drawOne(1);
+  if (!c) {
+    opp.classList.remove('thinking');
+    state.locked = false;
+    passTurn(1);
+    return;
+  }
+  state.drewCount++;
+  render();
+  setTimeout(aiTurn, 600);
+}
+
+function aiPickSuit() {
+  const counts = { '♣': 0, '♦': 0, '♠': 0, '♥': 0 };
+  for (const c of state.hands[1]) {
+    if (c.rank !== '8') counts[c.suit]++;
+  }
+  let best = '♠', max = -1;
+  for (const s of SUITS) {
+    if (counts[s] > max) { max = counts[s]; best = s; }
+  }
+  return best;
+}
+
+// ───── End round / game ─────
+
+function endRound(winner) {
+  state.phase = 'roundEnd';
+  const loser = 1 - winner;
+  const delta = handValue(state.hands[loser]);
+  state.scores[winner] += delta;
+  render();
+
+  // Check overall game
+  const gameWinner = state.scores[0] >= TARGET_SCORE ? 0 :
+                     state.scores[1] >= TARGET_SCORE ? 1 : -1;
+
+  if (gameWinner !== -1) {
+    setTimeout(() => endGame(gameWinner), 600);
+  } else {
+    showRoundModal(winner, delta);
+  }
+}
+
+function showRoundModal(winner, delta) {
+  const modal = document.getElementById('roundModal');
+  document.getElementById('roundTitle').textContent =
+    winner === 0 ? 'You won the round!' : 'Opponent won the round';
+  document.getElementById('roundSub').textContent =
+    `+${delta} points from ${PLAYERS[1 - winner].toLowerCase()}'s hand.`;
+  const scoresEl = document.getElementById('roundScores');
+  scoresEl.innerHTML = PLAYERS.map((name, i) => {
+    const isWin = i === winner;
+    return `<div class="final-row ${isWin ? 'winner' : ''}"><span>${name}</span><span>${state.scores[i]} pts</span></div>`;
+  }).join('');
+  modal.hidden = false;
+}
+
+function endGame(winner) {
+  state.phase = 'gameOver';
+  state.gamesPlayed++;
+  const playerWon = winner === 0;
+  if (playerWon) {
+    state.gamesWon++;
+    if (state.best === null || state.scores[0] > state.best) {
+      state.best = state.scores[0];
+    }
+    if (window.Leaderboard && Leaderboard.submitScore) {
+      try { Leaderboard.submitScore(state.scores[0]); } catch(e) {}
+    }
+  }
+  saveStats();
+
+  const modal = document.getElementById('gameOverModal');
+  document.getElementById('gameOverTitle').textContent =
+    playerWon ? 'You win the match!' : 'Opponent wins';
+  document.getElementById('gameOverSub').textContent =
+    playerWon
+      ? `Finished with ${state.scores[0]} points${state.best === state.scores[0] && state.gamesWon > 0 ? ' · new best!' : ''}`
+      : `Opponent reached ${state.scores[1]} points first.`;
+  const finalEl = document.getElementById('finalScores');
+  const order = PLAYERS.map((n, i) => ({ n, i, s: state.scores[i] }))
+    .sort((a, b) => b.s - a.s);
+  finalEl.innerHTML = order.map((p, idx) => {
+    return `<div class="final-row ${idx === 0 ? 'winner' : ''}"><span>${p.n}</span><span>${p.s} pts</span></div>`;
+  }).join('');
+  document.getElementById('roundModal').hidden = true;
+  modal.hidden = false;
+  render();
+}
+
+function nextRound() {
+  state.roundNum++;
+  newRound();
+}
+
+// ───── Rendering ─────
+
+function render() {
+  renderStats();
+  renderOppHand();
+  renderCenter();
+  renderHand();
+  renderStatus();
+  renderDrawPile();
+}
+
+function renderStats() {
+  const el = document.getElementById('stats');
+  el.innerHTML = `
+    <div class="stat-cell"><div class="label">You</div><div class="val">${state.scores[0]}</div></div>
+    <div class="stat-cell"><div class="label">Opp</div><div class="val">${state.scores[1]}</div></div>
+    <div class="stat-cell"><div class="label">Round</div><div class="val">${state.roundNum}</div></div>
+    <div class="stat-cell"><div class="label">Best</div><div class="val">${state.best !== null ? state.best : '—'}</div></div>
+  `;
+}
+
+function renderOppHand() {
+  const el = document.getElementById('oppHand');
+  const count = state.hands[1].length;
+  el.innerHTML = '';
+  const maxShown = 10;
+  const shown = Math.min(count, maxShown);
+  for (let i = 0; i < shown; i++) {
+    const d = document.createElement('div');
+    d.className = 'back-card';
+    el.appendChild(d);
+  }
+  const label = document.getElementById('oppLabel');
+  if (state.phase === 'play' && state.currentPlayer === 1) {
+    label.classList.add('thinking');
+  } else {
+    label.classList.remove('thinking');
+  }
+  label.childNodes[0].nodeValue = `Opponent · ${count} card${count === 1 ? '' : 's'}`;
+}
+
+function renderCenter() {
+  const top = topDiscard();
+  if (!top) return;
+  const disc = document.getElementById('discardCard');
+  disc.className = `card discard-card ${isRed(top.suit) ? 'red' : 'black'}${top.rank === '8' ? ' wild' : ''}`;
+  disc.innerHTML = `<span class="rank">${top.rank}</span><span class="suit">${top.suit}</span>`;
+
+  const badge = document.getElementById('suitBadge');
+  if (state.activeSuit) {
+    badge.hidden = false;
+    badge.textContent = state.activeSuit;
+    badge.className = 'suit-badge' + (isRed(state.activeSuit) ? ' red' : '');
+  } else {
+    badge.hidden = true;
+  }
+
+  const suitLabel = document.getElementById('suitLabel');
+  const effective = state.activeSuit || top.suit;
+  suitLabel.textContent = `Suit: ${SUIT_NAMES[effective]}`;
+}
+
+function renderDrawPile() {
+  const pile = document.getElementById('drawPile');
+  const canDraw = state.phase === 'play' && state.currentPlayer === 0 && !state.locked;
+  if (canDraw) pile.classList.add('active');
+  else pile.classList.remove('active');
+  const countEl = document.getElementById('drawCount');
+  const total = state.deck.length + Math.max(0, state.discard.length - 1);
+  countEl.textContent = `${state.deck.length} card${state.deck.length === 1 ? '' : 's'}`;
+}
+
+function renderHand() {
+  const el = document.getElementById('hand');
+  const hand = state.hands[0];
+  const isMyTurn = state.phase === 'play' && state.currentPlayer === 0 && !state.locked;
+  el.innerHTML = hand.map((card, i) => {
+    const red = isRed(card.suit);
+    const playable = isMyTurn && canPlay(card);
+    let cls = `card ${red ? 'red' : 'black'}`;
+    if (card.rank === '8') cls += ' wild';
+    if (!playable) cls += ' disabled';
+    else cls += ' playable';
+    return `<div class="${cls}" data-idx="${i}"><span class="rank">${card.rank}</span><span class="suit">${card.suit}</span></div>`;
+  }).join('');
+  el.querySelectorAll('.card').forEach(node => {
+    node.addEventListener('click', () => onHandClick(parseInt(node.dataset.idx, 10)));
+  });
+  document.getElementById('handLabel').textContent = `Your hand · ${hand.length} card${hand.length === 1 ? '' : 's'}`;
+}
+
+function renderStatus() {
+  const s = document.getElementById('status');
+  s.classList.remove('win', 'lose');
+  if (state.phase === 'play') {
+    if (state.currentPlayer === 0) {
+      const playable = hasPlayable(0);
+      if (playable) {
+        s.innerHTML = state.justDrew
+          ? `<strong>Your turn</strong> · play or draw again`
+          : `<strong>Your turn</strong> · play a card or draw`;
+      } else {
+        s.innerHTML = `No match — <strong>tap the draw pile</strong>`;
+      }
+    } else {
+      s.innerHTML = `Opponent's turn…`;
+    }
+  } else if (state.phase === 'roundEnd') {
+    s.innerHTML = `Round ${state.roundNum} complete`;
+  } else if (state.phase === 'gameOver') {
+    const win = state.scores[0] > state.scores[1];
+    s.classList.add(win ? 'win' : 'lose');
+    s.innerHTML = win ? `<strong>You win the match!</strong>` : `<strong>Opponent wins</strong>`;
+  }
+}
+
+// ───── Wiring ─────
+
+document.getElementById('drawCard').addEventListener('click', onDrawClick);
+document.getElementById('drawPile').addEventListener('click', (e) => {
+  if (e.target.id !== 'drawCard') onDrawClick();
+});
+document.querySelectorAll('.suit-btn').forEach(btn => {
+  btn.addEventListener('click', () => onSuitPick(btn.dataset.suit));
+});
+document.getElementById('nextRoundBtn').addEventListener('click', nextRound);
+document.getElementById('playAgainBtn').addEventListener('click', newGame);
+document.getElementById('newGameBtn').addEventListener('click', () => {
+  if (state.phase === 'gameOver' || confirm('Start a new match? Current scores will be lost.')) {
+    newGame();
+  }
+});
+
+loadStats();
+newGame();
+
+})();
+</script>
+</body>
+</html>

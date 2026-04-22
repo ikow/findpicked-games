@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Aim Trainer — FindPicked Games</title>
+<meta name="description" content="Aim Trainer — click targets fast in 30-second rounds. Track accuracy and reaction time.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='white' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='3' fill='white'/%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-arena: #f5f5f7;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --hit: #34c759;
+  --miss: #ff3b30;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.06);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+  --radius: 16px;
+}
+
+html, body {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px 20px 40px;
+  touch-action: manipulation;
+}
+
+.back {
+  align-self: flex-start;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 400;
+  padding: 8px 4px;
+  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.back:hover { color: var(--text-primary); }
+.back .arrow { font-size: 18px; line-height: 1; }
+
+.wrap {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+h1 {
+  font-size: clamp(36px, 9vw, 52px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.scores {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.score-box {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 10px 14px;
+  min-width: 78px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.score-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  margin-bottom: 2px;
+}
+
+.score-value {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  transition: transform 0.2s ease;
+}
+.score-value.bump { transform: scale(1.1); }
+
+.subhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.subhead p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.btn {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  height: 44px;
+  padding: 0 22px;
+  border-radius: 22px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn:active { transform: scale(0.97); }
+
+.btn.secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
+}
+.btn.secondary:hover { background: rgba(0, 113, 227, 0.06); }
+
+.arena {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: var(--bg-arena);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.target {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #ff5d52, #d70015);
+  box-shadow: 0 4px 14px rgba(215, 0, 21, 0.35), inset 0 -2px 6px rgba(0,0,0,0.18);
+  transform: translate(-50%, -50%) scale(0);
+  animation: target-in 0.12s ease-out forwards;
+  cursor: crosshair;
+  -webkit-tap-highlight-color: transparent;
+}
+.target::after {
+  content: '';
+  position: absolute;
+  inset: 22%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #fff, #f5f5f7);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+.target.hit {
+  animation: target-hit 0.25s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes target-in {
+  to { transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes target-hit {
+  0%   { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
+}
+
+.miss-marker {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255, 59, 48, 0.18);
+  border: 1.5px solid var(--miss);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  animation: miss-fade 0.6s ease-out forwards;
+}
+@keyframes miss-fade {
+  0%   { opacity: 1; transform: translate(-50%, -50%) scale(0.6); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.4); }
+}
+
+.timer-bar {
+  position: absolute;
+  top: 0; left: 0;
+  height: 4px;
+  width: 100%;
+  background: var(--accent);
+  transform-origin: left;
+  transition: transform 0.1s linear;
+  z-index: 5;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.92);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px;
+  text-align: center;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.overlay.show { opacity: 1; pointer-events: auto; }
+
+.overlay h2 {
+  font-size: clamp(28px, 6vw, 38px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.overlay p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  max-width: 320px;
+  line-height: 1.5;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(110px, 1fr));
+  gap: 8px;
+  width: 100%;
+  max-width: 320px;
+  margin: 4px 0;
+}
+
+.summary .stat {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 10px 12px;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+.summary .stat .v {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.summary .stat .l {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+
+.row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+footer {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  text-align: center;
+  margin-top: 4px;
+  line-height: 1.6;
+}
+
+.rules-toggle {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--accent);
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+  padding: 0;
+}
+.rules-toggle:hover { text-decoration: underline; }
+.rules-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  text-align: left;
+  max-width: 480px;
+  margin: 6px auto 0;
+}
+.rules-panel.open { max-height: 500px; }
+.rules-panel ul { margin: 8px 0 0 18px; }
+.rules-panel li { margin-bottom: 4px; }
+
+@media (max-width: 480px) {
+  body { padding: 16px 14px 32px; }
+  .wrap { gap: 14px; }
+  .score-box { min-width: 68px; padding: 8px 10px; }
+  .score-value { font-size: 18px; }
+  .arena { aspect-ratio: 3 / 4; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="back" href="../" aria-label="Back to games">
+    <span class="arrow">←</span>
+    <span>Games</span>
+  </a>
+
+  <header>
+    <h1>Aim Trainer</h1>
+    <div class="scores">
+      <div class="score-box">
+        <div class="score-label">Time</div>
+        <div class="score-value" id="time">30</div>
+      </div>
+      <div class="score-box">
+        <div class="score-label">Hits</div>
+        <div class="score-value" id="hits">0</div>
+      </div>
+      <div class="score-box">
+        <div class="score-label">Score</div>
+        <div class="score-value" id="score">0</div>
+      </div>
+      <div class="score-box">
+        <div class="score-label">Best</div>
+        <div class="score-value" id="best">0</div>
+      </div>
+    </div>
+  </header>
+
+  <div style="text-align:center">
+    <button class="rules-toggle" id="rules-toggle">How to Play ▾</button>
+    <div class="rules-panel" id="rules-panel">
+      <ul>
+        <li>Click or tap targets as fast as you can — you have 30 seconds per round.</li>
+        <li>Targets vary in size: smaller targets are worth more points.</li>
+        <li>Missing the target (clicking empty space) counts as a miss.</li>
+        <li>Score = hit value × speed bonus. Stay accurate to keep your average reaction time low.</li>
+        <li>Press <strong>Space</strong> or click <strong>Start</strong> to begin.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="subhead">
+    <p>Click the red targets. Stay fast. Stay accurate.</p>
+    <button class="btn" id="start">Start</button>
+  </div>
+
+  <div class="arena" id="arena">
+    <div class="timer-bar" id="timer-bar"></div>
+    <div class="overlay show" id="overlay">
+      <h2 id="overlay-title">Ready?</h2>
+      <p id="overlay-text">Click targets quickly and accurately. 30 seconds, go for the high score.</p>
+      <div class="summary" id="summary" style="display:none;">
+        <div class="stat"><div class="v" id="s-score">0</div><div class="l">Score</div></div>
+        <div class="stat"><div class="v" id="s-acc">0%</div><div class="l">Accuracy</div></div>
+        <div class="stat"><div class="v" id="s-hits">0</div><div class="l">Hits</div></div>
+        <div class="stat"><div class="v" id="s-rt">0 ms</div><div class="l">Avg Reaction</div></div>
+      </div>
+      <div class="row">
+        <button class="btn" id="overlay-start">Start</button>
+        <button class="btn secondary" id="overlay-leaderboard" style="display:none;">Leaderboard</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="subhead">
+    <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--text-secondary);">
+      <span>Accuracy: <strong id="accuracy" style="color:var(--text-primary);font-variant-numeric:tabular-nums;">—</strong></span>
+      <span>Misses: <strong id="misses" style="color:var(--text-primary);font-variant-numeric:tabular-nums;">0</strong></span>
+      <span>Avg RT: <strong id="rt" style="color:var(--text-primary);font-variant-numeric:tabular-nums;">— ms</strong></span>
+    </div>
+    <button class="btn secondary" id="reset">Reset</button>
+  </div>
+
+  <footer>
+    Click targets fast · Smaller targets score more · 30-second rounds
+  </footer>
+</div>
+
+<script>
+(() => {
+  const ROUND_MS = 30000;
+  const STORE_BEST = 'findpicked:aimtrainer:best';
+  const SIZES = [
+    { d: 64, points: 50 },
+    { d: 52, points: 75 },
+    { d: 40, points: 110 },
+    { d: 30, points: 160 },
+    { d: 22, points: 230 }
+  ];
+
+  const arena = document.getElementById('arena');
+  const timerBar = document.getElementById('timer-bar');
+  const timeEl = document.getElementById('time');
+  const hitsEl = document.getElementById('hits');
+  const scoreEl = document.getElementById('score');
+  const bestEl = document.getElementById('best');
+  const accuracyEl = document.getElementById('accuracy');
+  const missesEl = document.getElementById('misses');
+  const rtEl = document.getElementById('rt');
+
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlay-title');
+  const overlayText = document.getElementById('overlay-text');
+  const overlayStart = document.getElementById('overlay-start');
+  const overlayLb = document.getElementById('overlay-leaderboard');
+  const summary = document.getElementById('summary');
+  const sScore = document.getElementById('s-score');
+  const sAcc = document.getElementById('s-acc');
+  const sHits = document.getElementById('s-hits');
+  const sRt = document.getElementById('s-rt');
+
+  const startBtn = document.getElementById('start');
+  const resetBtn = document.getElementById('reset');
+
+  const rulesToggle = document.getElementById('rules-toggle');
+  const rulesPanel = document.getElementById('rules-panel');
+  rulesToggle.addEventListener('click', () => rulesPanel.classList.toggle('open'));
+
+  let state = 'idle'; // idle | playing | over
+  let hits = 0, misses = 0, score = 0;
+  let totalRT = 0;
+  let currentTarget = null;
+  let targetSpawnTime = 0;
+  let endTime = 0;
+  let rafId = null;
+  let spawnTimer = null;
+
+  function readBest() {
+    try { return parseInt(localStorage.getItem(STORE_BEST) || '0', 10) || 0; }
+    catch { return 0; }
+  }
+  function writeBest(v) {
+    try { localStorage.setItem(STORE_BEST, String(v)); } catch {}
+  }
+
+  function bump(el) {
+    el.classList.remove('bump');
+    void el.offsetWidth;
+    el.classList.add('bump');
+  }
+
+  function updateStats() {
+    hitsEl.textContent = hits;
+    scoreEl.textContent = score;
+    missesEl.textContent = misses;
+    const total = hits + misses;
+    accuracyEl.textContent = total === 0 ? '—' : Math.round((hits / total) * 100) + '%';
+    rtEl.textContent = hits === 0 ? '— ms' : Math.round(totalRT / hits) + ' ms';
+  }
+
+  function clearArena() {
+    [...arena.querySelectorAll('.target, .miss-marker')].forEach(el => el.remove());
+    currentTarget = null;
+  }
+
+  function spawnTarget() {
+    if (state !== 'playing') return;
+    const rect = arena.getBoundingClientRect();
+    const sz = SIZES[Math.floor(Math.random() * SIZES.length)];
+    const pad = sz.d / 2 + 6;
+    const x = pad + Math.random() * (rect.width  - pad * 2);
+    const y = pad + Math.random() * (rect.height - pad * 2);
+
+    const el = document.createElement('div');
+    el.className = 'target';
+    el.style.width  = sz.d + 'px';
+    el.style.height = sz.d + 'px';
+    el.style.left   = x + 'px';
+    el.style.top    = y + 'px';
+    el.dataset.points = sz.points;
+
+    el.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      hitTarget(el);
+    });
+
+    arena.appendChild(el);
+    currentTarget = el;
+    targetSpawnTime = performance.now();
+  }
+
+  function hitTarget(el) {
+    if (state !== 'playing' || el !== currentTarget) return;
+    const rt = performance.now() - targetSpawnTime;
+    totalRT += rt;
+    hits++;
+    const base = parseInt(el.dataset.points, 10) || 50;
+    // Speed bonus: full bonus < 300ms, none > 1200ms
+    const speedFactor = Math.max(0.4, Math.min(1.5, 1.5 - (rt - 300) / 900));
+    const gained = Math.round(base * speedFactor);
+    score += gained;
+
+    el.classList.add('hit');
+    setTimeout(() => el.remove(), 250);
+    currentTarget = null;
+
+    bump(scoreEl);
+    bump(hitsEl);
+    updateStats();
+    spawnTarget();
+  }
+
+  function missAt(x, y) {
+    if (state !== 'playing') return;
+    misses++;
+    score = Math.max(0, score - 25);
+
+    const m = document.createElement('div');
+    m.className = 'miss-marker';
+    m.style.left = x + 'px';
+    m.style.top  = y + 'px';
+    arena.appendChild(m);
+    setTimeout(() => m.remove(), 600);
+    updateStats();
+  }
+
+  arena.addEventListener('pointerdown', (e) => {
+    if (state !== 'playing') return;
+    if (e.target.classList.contains('target')) return;
+    const rect = arena.getBoundingClientRect();
+    missAt(e.clientX - rect.left, e.clientY - rect.top);
+  });
+
+  function tick() {
+    if (state !== 'playing') return;
+    const remaining = Math.max(0, endTime - performance.now());
+    const sec = Math.ceil(remaining / 1000);
+    timeEl.textContent = sec;
+    timerBar.style.transform = `scaleX(${remaining / ROUND_MS})`;
+    if (remaining <= 0) {
+      endRound();
+      return;
+    }
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function startRound() {
+    state = 'playing';
+    hits = 0; misses = 0; score = 0; totalRT = 0;
+    clearArena();
+    updateStats();
+    timeEl.textContent = Math.round(ROUND_MS / 1000);
+    timerBar.style.transform = 'scaleX(1)';
+
+    overlay.classList.remove('show');
+    summary.style.display = 'none';
+    overlayLb.style.display = 'none';
+
+    endTime = performance.now() + ROUND_MS;
+    spawnTarget();
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function endRound() {
+    state = 'over';
+    cancelAnimationFrame(rafId);
+    clearArena();
+    timerBar.style.transform = 'scaleX(0)';
+    timeEl.textContent = 0;
+
+    const best = readBest();
+    if (score > best) {
+      writeBest(score);
+      bestEl.textContent = score;
+    }
+
+    const total = hits + misses;
+    const acc = total === 0 ? 0 : Math.round((hits / total) * 100);
+    const avgRT = hits === 0 ? 0 : Math.round(totalRT / hits);
+
+    sScore.textContent = score;
+    sAcc.textContent = acc + '%';
+    sHits.textContent = hits;
+    sRt.textContent = avgRT + ' ms';
+    summary.style.display = 'grid';
+
+    overlayTitle.textContent = 'Time!';
+    overlayText.textContent = score > best
+      ? 'New personal best — great aim.'
+      : (score === 0 ? 'No hits this round. Try again?' : 'Nice round. Try again?');
+    overlayStart.textContent = 'Play Again';
+    overlayLb.style.display = '';
+    overlay.classList.add('show');
+
+    if (window.Leaderboard && Leaderboard.submitScore) {
+      try { Leaderboard.submitScore(score); } catch {}
+    }
+  }
+
+  function resetGame() {
+    state = 'idle';
+    cancelAnimationFrame(rafId);
+    clearArena();
+    hits = 0; misses = 0; score = 0; totalRT = 0;
+    timeEl.textContent = Math.round(ROUND_MS / 1000);
+    timerBar.style.transform = 'scaleX(1)';
+    updateStats();
+    summary.style.display = 'none';
+    overlayLb.style.display = 'none';
+    overlayTitle.textContent = 'Ready?';
+    overlayText.textContent = 'Click targets quickly and accurately. 30 seconds, go for the high score.';
+    overlayStart.textContent = 'Start';
+    overlay.classList.add('show');
+  }
+
+  startBtn.addEventListener('click', startRound);
+  overlayStart.addEventListener('click', startRound);
+  resetBtn.addEventListener('click', resetGame);
+  overlayLb.addEventListener('click', () => {
+    if (window.Leaderboard && Leaderboard.show) {
+      try { Leaderboard.show(); } catch {}
+    }
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' && state !== 'playing') {
+      e.preventDefault();
+      startRound();
+    }
+  });
+
+  bestEl.textContent = readBest();
+  updateStats();
+})();
+</script>
+
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

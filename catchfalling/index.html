@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Catch the Falling · FindPicked Games</title>
+<meta name="description" content="Catch the falling fruit in a basket. Dodge bombs, grab power-ups, beat your high score.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ctext x='16' y='22' font-size='16' fill='white' text-anchor='middle' font-family='system-ui'%3EC%3C/text%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-hover: #f5f5f7;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: manipulation;
+}
+
+.app {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 12px 16px 20px;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+  flex-shrink: 0;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.back {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: background 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.back:hover, .back:active { background: var(--bg-hover); }
+
+.title {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease, color 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.icon-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.icon-btn svg { width: 18px; height: 18px; }
+
+.scores {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  flex-shrink: 0;
+}
+
+.score-card {
+  background: var(--bg-card);
+  box-shadow: var(--shadow);
+  border-radius: 14px;
+  padding: 10px 14px;
+  flex: 1;
+  text-align: center;
+  min-width: 0;
+}
+
+.score-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+}
+
+.score-value {
+  font-size: 22px;
+  font-weight: 700;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.score-value.lives {
+  letter-spacing: 0.1em;
+  color: #ff3b30;
+}
+
+.board-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 16px;
+  position: relative;
+}
+
+.board {
+  background: linear-gradient(#f5f8ff, #ffffff);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+  touch-action: none;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 28px;
+  text-align: center;
+  background: rgba(255,255,255,0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  z-index: 2;
+}
+.overlay.visible { opacity: 1; pointer-events: auto; }
+
+.overlay h2 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.overlay p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.5;
+  max-width: 280px;
+}
+
+.btn {
+  height: 44px;
+  padding: 0 24px;
+  border-radius: 22px;
+  border: none;
+  background: var(--accent);
+  color: white;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease, transform 0.1s ease;
+  -webkit-tap-highlight-color: transparent;
+  margin-top: 8px;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn:active { transform: scale(0.97); }
+
+.hint {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.rules-toggle{display:inline-block;margin-top:12px;font-size:13px;color:#0071e3;cursor:pointer;border:none;background:none;font-family:inherit;padding:0}
+.rules-toggle:hover{text-decoration:underline}
+.rules-panel{max-height:0;overflow:hidden;transition:max-height 0.3s ease;font-size:13px;color:#6e6e73;line-height:1.6;text-align:left;max-width:480px;margin:8px auto 0}
+.rules-panel.open{max-height:600px}
+.rules-panel ul{margin:8px 0 0 16px}
+.rules-panel li{margin-bottom:4px}
+.rules-panel .pu{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:middle;margin-right:6px}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="nav">
+    <div class="nav-left">
+      <a class="back" href="../" aria-label="Back to games">←</a>
+      <div class="title">Catch the Falling</div>
+    </div>
+    <button class="icon-btn" id="pause-btn" aria-label="Pause">
+      <svg viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="5" width="3.5" height="14" rx="1"/><rect x="13.5" y="5" width="3.5" height="14" rx="1"/></svg>
+    </button>
+  </nav>
+
+  <div class="scores">
+    <div class="score-card">
+      <div class="score-label">Score</div>
+      <div class="score-value" id="score">0</div>
+    </div>
+    <div class="score-card">
+      <div class="score-label">Level</div>
+      <div class="score-value" id="level">1</div>
+    </div>
+    <div class="score-card">
+      <div class="score-label">Lives</div>
+      <div class="score-value lives" id="lives">●●●</div>
+    </div>
+    <div class="score-card">
+      <div class="score-label">Best</div>
+      <div class="score-value" id="best">0</div>
+    </div>
+  </div>
+
+  <div class="board-wrap" id="board-wrap">
+    <div class="board" id="board">
+      <canvas id="canvas"></canvas>
+      <div class="overlay visible" id="overlay">
+        <h2 id="overlay-title">Catch the Falling</h2>
+        <p id="overlay-text">Move the basket to catch fruit. Avoid bombs.</p>
+        <button class="btn" id="action-btn">Start</button>
+        <button class="rules-toggle" onclick="this.nextElementSibling.classList.toggle('open')">How to Play ▾</button>
+        <div class="rules-panel">
+          <ul>
+            <li>Move the basket with ← → arrow keys, A/D, or drag on the board</li>
+            <li>Catch fruit and coins to score points</li>
+            <li>Missing fruit costs a life — don't let any hit the ground</li>
+            <li>Catching a bomb ends the game instantly, so dodge them</li>
+            <li>Speed and spawn rate ramp up every level (every 500 points)</li>
+            <li>You start with 3 lives. Lose them all and the game ends</li>
+            <li>Press space or P to pause</li>
+          </ul>
+          <div style="margin-top:10px;font-weight:600;color:#1d1d1f">Items</div>
+          <ul>
+            <li><span class="pu" style="background:#ff3b30;border-radius:50%"></span><b>Apple</b> — 10 points</li>
+            <li><span class="pu" style="background:#ffcc00;border-radius:50%"></span><b>Coin</b> — 50 points</li>
+            <li><span class="pu" style="background:#1d1d1f;border-radius:50%"></span><b>Bomb</b> — game over if caught</li>
+          </ul>
+          <div style="margin-top:10px;font-weight:600;color:#1d1d1f">Power-ups</div>
+          <ul>
+            <li><span class="pu" style="background:#34c759"></span><b>W</b> — Wider basket for 10 seconds</li>
+            <li><span class="pu" style="background:#5856d6"></span><b>M</b> — Magnet pulls fruit toward you for 8 seconds</li>
+            <li><span class="pu" style="background:#af52de"></span><b>S</b> — Slow motion for 6 seconds</li>
+            <li><span class="pu" style="background:#ff9500"></span><b>2</b> — Double points for 8 seconds</li>
+            <li><span class="pu" style="background:#0071e3"></span><b>+</b> — Extra life</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="hint">← → · A D · Drag · Space to pause</p>
+</div>
+
+<script>
+(function () {
+  const VW = 400;
+  const VH = 560;
+
+  const BASKET_W_BASE = 90;
+  const BASKET_W_WIDE = 140;
+  const BASKET_H = 28;
+  const BASKET_Y_OFFSET = 36;
+  const BASKET_SPEED = 520;
+
+  const ITEM_R = 12;
+  const POWERUP_R = 14;
+
+  const FALL_BASE = 150;
+  const FALL_PER_LEVEL = 22;
+  const FALL_MAX = 400;
+
+  const SPAWN_BASE = 0.95;          // seconds between spawns at level 1
+  const SPAWN_PER_LEVEL = 0.07;     // shrinks per level
+  const SPAWN_MIN = 0.32;
+
+  const POWERUP_CHANCE = 0.07;      // chance any spawn becomes a power-up
+
+  const LEVEL_UP_EVERY = 500;       // score per level
+
+  const WIDE_MS = 10000;
+  const MAGNET_MS = 8000;
+  const SLOW_MS = 6000;
+  const DOUBLE_MS = 8000;
+
+  const PALETTE = {
+    apple: '#ff3b30',
+    pear:  '#34c759',
+    grape: '#5856d6',
+    orange:'#ff9500',
+    coin:  '#ffcc00',
+    bomb:  '#1d1d1f'
+  };
+
+  const FRUIT_KINDS = [
+    { kind: 'apple', color: PALETTE.apple, pts: 10, weight: 6 },
+    { kind: 'pear',  color: PALETTE.pear,  pts: 10, weight: 4 },
+    { kind: 'grape', color: PALETTE.grape, pts: 15, weight: 3 },
+    { kind: 'orange',color: PALETTE.orange,pts: 15, weight: 3 },
+    { kind: 'coin',  color: PALETTE.coin,  pts: 50, weight: 1.2 }
+  ];
+
+  const POWERUP_KINDS = [
+    { kind: 'W', color: '#34c759' },
+    { kind: 'M', color: '#5856d6' },
+    { kind: 'S', color: '#af52de' },
+    { kind: '2', color: '#ff9500' },
+    { kind: '+', color: '#0071e3' }
+  ];
+
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const boardWrap = document.getElementById('board-wrap');
+  const board = document.getElementById('board');
+  const scoreEl = document.getElementById('score');
+  const levelEl = document.getElementById('level');
+  const livesEl = document.getElementById('lives');
+  const bestEl = document.getElementById('best');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlay-title');
+  const overlayText = document.getElementById('overlay-text');
+  const actionBtn = document.getElementById('action-btn');
+  const pauseBtn = document.getElementById('pause-btn');
+
+  let boardW = 0, boardH = 0;
+  let scale = 1;
+
+  let state = 'idle'; // idle | running | paused | over
+  let score = 0;
+  let lives = 3;
+  let level = 1;
+  let newBest = false;
+
+  let basket;
+  let items;       // falling items: fruit, coins, bombs
+  let powerups;    // falling power-ups
+  let particles;
+  let floats;      // floating score numbers
+
+  let keyLeft = false, keyRight = false;
+
+  let spawnAcc = 0;
+  let bombChance = 0.0;
+
+  let wideUntil = 0;
+  let magnetUntil = 0;
+  let slowUntil = 0;
+  let doubleUntil = 0;
+
+  let best = parseInt(localStorage.getItem('catchfalling.best') || '0', 10);
+  bestEl.textContent = best;
+
+  function resize() {
+    const rect = boardWrap.getBoundingClientRect();
+    const availW = rect.width;
+    const availH = rect.height;
+    if (availW <= 0 || availH <= 0) return;
+    const ratio = VW / VH;
+    let w = availW, h = availW / ratio;
+    if (h > availH) { h = availH; w = h * ratio; }
+    w = Math.min(w, 480);
+    h = w / ratio;
+    boardW = Math.floor(w);
+    boardH = Math.floor(h);
+    scale = boardW / VW;
+    board.style.width = boardW + 'px';
+    board.style.height = boardH + 'px';
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(boardW * dpr);
+    canvas.height = Math.round(boardH * dpr);
+    ctx.setTransform(dpr * scale, 0, 0, dpr * scale, 0, 0);
+  }
+
+  function makeBasket() {
+    return {
+      x: VW / 2,
+      y: VH - BASKET_Y_OFFSET,
+      w: BASKET_W_BASE,
+      h: BASKET_H
+    };
+  }
+
+  function pickFruit() {
+    const total = FRUIT_KINDS.reduce((s, k) => s + k.weight, 0);
+    let r = Math.random() * total;
+    for (const k of FRUIT_KINDS) {
+      r -= k.weight;
+      if (r <= 0) return k;
+    }
+    return FRUIT_KINDS[0];
+  }
+
+  function pickPowerup() {
+    return POWERUP_KINDS[Math.floor(Math.random() * POWERUP_KINDS.length)];
+  }
+
+  function fallSpeed() {
+    return Math.min(FALL_MAX, FALL_BASE + (level - 1) * FALL_PER_LEVEL);
+  }
+
+  function spawnInterval() {
+    return Math.max(SPAWN_MIN, SPAWN_BASE - (level - 1) * SPAWN_PER_LEVEL);
+  }
+
+  function spawnOne() {
+    if (Math.random() < POWERUP_CHANCE) {
+      const p = pickPowerup();
+      powerups.push({
+        x: 24 + Math.random() * (VW - 48),
+        y: -POWERUP_R,
+        vy: fallSpeed() * 0.85,
+        kind: p.kind,
+        color: p.color,
+        r: POWERUP_R
+      });
+      return;
+    }
+    if (Math.random() < bombChance) {
+      items.push({
+        x: 20 + Math.random() * (VW - 40),
+        y: -ITEM_R,
+        vy: fallSpeed() * (0.95 + Math.random() * 0.25),
+        kind: 'bomb',
+        color: PALETTE.bomb,
+        pts: 0,
+        r: ITEM_R
+      });
+      return;
+    }
+    const f = pickFruit();
+    items.push({
+      x: 20 + Math.random() * (VW - 40),
+      y: -ITEM_R,
+      vy: fallSpeed() * (0.85 + Math.random() * 0.35),
+      kind: f.kind,
+      color: f.color,
+      pts: f.pts,
+      r: ITEM_R
+    });
+  }
+
+  function basketWidth() {
+    return performance.now() < wideUntil ? BASKET_W_WIDE : BASKET_W_BASE;
+  }
+
+  function startNewGame() {
+    score = 0;
+    lives = 3;
+    level = 1;
+    newBest = false;
+    bombChance = 0.06;
+    wideUntil = 0;
+    magnetUntil = 0;
+    slowUntil = 0;
+    doubleUntil = 0;
+    items = [];
+    powerups = [];
+    particles = [];
+    floats = [];
+    spawnAcc = 0;
+    basket = makeBasket();
+    updateHud();
+    hideOverlay();
+  }
+
+  function updateHud() {
+    scoreEl.textContent = score;
+    levelEl.textContent = level;
+    livesEl.textContent = lives > 0 ? '●'.repeat(lives) : '—';
+  }
+
+  function bumpScore(n) {
+    if (performance.now() < doubleUntil) n *= 2;
+    score += n;
+    if (score > best) {
+      best = score;
+      bestEl.textContent = best;
+      localStorage.setItem('catchfalling.best', String(best));
+      newBest = true;
+    }
+    scoreEl.textContent = score;
+    // Level up
+    const targetLevel = 1 + Math.floor(score / LEVEL_UP_EVERY);
+    if (targetLevel > level) {
+      level = targetLevel;
+      bombChance = Math.min(0.32, 0.06 + (level - 1) * 0.025);
+      levelEl.textContent = level;
+    }
+    return n;
+  }
+
+  function loseLife() {
+    lives--;
+    updateHud();
+    if (lives <= 0) gameOver();
+  }
+
+  function gameOver() {
+    state = 'over';
+    setTimeout(function () {
+      if (window.Leaderboard && typeof Leaderboard.submitScore === 'function') {
+        Leaderboard.submitScore(score);
+      }
+    }, 500);
+    showOverlay('Game over', 'You scored ' + score + (newBest && score > 0 ? '. A new best.' : '.'), 'Play again');
+  }
+
+  function showOverlay(title, text, btn) {
+    overlayTitle.textContent = title;
+    overlayText.textContent = text;
+    actionBtn.textContent = btn;
+    overlay.classList.add('visible');
+  }
+
+  function hideOverlay() {
+    overlay.classList.remove('visible');
+  }
+
+  function pause() {
+    if (state !== 'running') return;
+    state = 'paused';
+    showOverlay('Paused', 'Take a breath. Tap resume to continue.', 'Resume');
+  }
+
+  function resume() {
+    if (state !== 'paused') return;
+    state = 'running';
+    hideOverlay();
+  }
+
+  function onAction() {
+    if (state === 'idle' || state === 'over') {
+      startNewGame();
+      state = 'running';
+    } else if (state === 'paused') {
+      resume();
+    }
+  }
+
+  function onPauseBtn() {
+    if (state === 'running') pause();
+    else if (state === 'paused') resume();
+    else if (state === 'idle' || state === 'over') onAction();
+  }
+
+  function applyPowerup(k) {
+    const now = performance.now();
+    if (k === 'W') {
+      wideUntil = now + WIDE_MS;
+      basket.w = BASKET_W_WIDE;
+    } else if (k === 'M') {
+      magnetUntil = now + MAGNET_MS;
+    } else if (k === 'S') {
+      slowUntil = now + SLOW_MS;
+    } else if (k === '2') {
+      doubleUntil = now + DOUBLE_MS;
+    } else if (k === '+') {
+      lives = Math.min(lives + 1, 9);
+      updateHud();
+    }
+    bumpScore(25);
+  }
+
+  function spawnParticles(x, y, color, count) {
+    count = count || 10;
+    for (let i = 0; i < count; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const s = 60 + Math.random() * 140;
+      particles.push({
+        x, y,
+        vx: Math.cos(a) * s,
+        vy: Math.sin(a) * s - 40,
+        life: 0.4 + Math.random() * 0.3,
+        t: 0,
+        color,
+        size: 2 + Math.random() * 2
+      });
+    }
+  }
+
+  function spawnFloat(x, y, text, color) {
+    floats.push({ x, y, text, color, t: 0, life: 0.9 });
+  }
+
+  // AABB-ish: circle vs basket rect
+  function caught(item) {
+    const bw = basket.w;
+    const bh = basket.h;
+    const left = basket.x - bw / 2;
+    const right = basket.x + bw / 2;
+    const top = basket.y - bh / 2;
+    const bottom = basket.y + bh / 2;
+    const cx = Math.max(left, Math.min(item.x, right));
+    const cy = Math.max(top, Math.min(item.y, bottom));
+    const dx = item.x - cx;
+    const dy = item.y - cy;
+    return (dx * dx + dy * dy) <= (item.r * item.r);
+  }
+
+  function step(dt) {
+    if (state !== 'running') return;
+
+    const now = performance.now();
+    const slowMul = now < slowUntil ? 0.45 : 1;
+
+    // Basket input
+    if (keyLeft) basket.x -= BASKET_SPEED * dt;
+    if (keyRight) basket.x += BASKET_SPEED * dt;
+    // Wide width tween
+    const targetW = now < wideUntil ? BASKET_W_WIDE : BASKET_W_BASE;
+    if (basket.w !== targetW) {
+      basket.w += (targetW - basket.w) * Math.min(1, dt * 8);
+      if (Math.abs(basket.w - targetW) < 0.5) basket.w = targetW;
+    }
+    basket.x = Math.max(basket.w/2, Math.min(VW - basket.w/2, basket.x));
+
+    // Spawning
+    spawnAcc += dt;
+    const interval = spawnInterval();
+    while (spawnAcc >= interval) {
+      spawnAcc -= interval;
+      spawnOne();
+    }
+
+    const magnetActive = now < magnetUntil;
+
+    // Items
+    for (let i = items.length - 1; i >= 0; i--) {
+      const it = items[i];
+      it.y += it.vy * dt * slowMul;
+      // Magnet pulls fruit (not bombs) toward basket
+      if (magnetActive && it.kind !== 'bomb' && it.y > VH * 0.35 && it.y < basket.y - 10) {
+        const dx = basket.x - it.x;
+        const ax = Math.sign(dx) * Math.min(Math.abs(dx) * 4, 320);
+        it.x += ax * dt;
+        if (it.x < it.r) it.x = it.r;
+        if (it.x > VW - it.r) it.x = VW - it.r;
+      }
+      if (caught(it)) {
+        if (it.kind === 'bomb') {
+          spawnParticles(it.x, it.y, '#ff3b30', 16);
+          items.splice(i, 1);
+          lives = 0;
+          updateHud();
+          gameOver();
+          return;
+        }
+        const gained = bumpScore(it.pts);
+        spawnParticles(it.x, it.y, it.color, 8);
+        spawnFloat(it.x, it.y - 8, '+' + gained, it.color);
+        items.splice(i, 1);
+        continue;
+      }
+      // Missed (off bottom)
+      if (it.y - it.r > VH) {
+        items.splice(i, 1);
+        if (it.kind !== 'bomb') {
+          loseLife();
+          if (state === 'over') return;
+        }
+      }
+    }
+
+    // Power-ups
+    for (let i = powerups.length - 1; i >= 0; i--) {
+      const pu = powerups[i];
+      pu.y += pu.vy * dt * slowMul;
+      if (caught(pu)) {
+        applyPowerup(pu.kind);
+        spawnParticles(pu.x, pu.y, pu.color, 12);
+        spawnFloat(pu.x, pu.y - 8, pu.kind, pu.color);
+        powerups.splice(i, 1);
+        continue;
+      }
+      if (pu.y - pu.r > VH) powerups.splice(i, 1);
+    }
+
+    // Particles
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.t += dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += 320 * dt;
+      if (p.t >= p.life) particles.splice(i, 1);
+    }
+
+    // Floats
+    for (let i = floats.length - 1; i >= 0; i--) {
+      const f = floats[i];
+      f.t += dt;
+      f.y -= 26 * dt;
+      if (f.t >= f.life) floats.splice(i, 1);
+    }
+  }
+
+  function roundRect(x, y, w, h, r) {
+    const rr = Math.min(r, w/2, h/2);
+    ctx.beginPath();
+    ctx.moveTo(x + rr, y);
+    ctx.arcTo(x + w, y, x + w, y + h, rr);
+    ctx.arcTo(x + w, y + h, x, y + h, rr);
+    ctx.arcTo(x, y + h, x, y, rr);
+    ctx.arcTo(x, y, x + w, y, rr);
+    ctx.closePath();
+  }
+
+  function drawFruit(it) {
+    // Body
+    ctx.fillStyle = it.color;
+    ctx.beginPath();
+    ctx.arc(it.x, it.y, it.r, 0, Math.PI * 2);
+    ctx.fill();
+    // Highlight
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.beginPath();
+    ctx.arc(it.x - it.r * 0.35, it.y - it.r * 0.35, it.r * 0.35, 0, Math.PI * 2);
+    ctx.fill();
+    // Stem leaf for some fruits
+    if (it.kind === 'apple' || it.kind === 'pear' || it.kind === 'orange') {
+      ctx.fillStyle = '#34c759';
+      ctx.beginPath();
+      ctx.ellipse(it.x + it.r * 0.4, it.y - it.r * 0.85, it.r * 0.35, it.r * 0.18, -0.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#5e3a1a';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(it.x, it.y - it.r);
+      ctx.lineTo(it.x, it.y - it.r - 4);
+      ctx.stroke();
+    }
+    if (it.kind === 'coin') {
+      ctx.strokeStyle = 'rgba(180,130,0,0.55)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(it.x, it.y, it.r - 3, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = '#b8860b';
+      ctx.font = 'bold 12px -apple-system, BlinkMacSystemFont, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('$', it.x, it.y + 0.5);
+    }
+  }
+
+  function drawBomb(it) {
+    ctx.fillStyle = it.color;
+    ctx.beginPath();
+    ctx.arc(it.x, it.y, it.r, 0, Math.PI * 2);
+    ctx.fill();
+    // Highlight
+    ctx.fillStyle = 'rgba(255,255,255,0.18)';
+    ctx.beginPath();
+    ctx.arc(it.x - it.r * 0.4, it.y - it.r * 0.4, it.r * 0.3, 0, Math.PI * 2);
+    ctx.fill();
+    // Fuse
+    ctx.strokeStyle = '#6e6e73';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(it.x + it.r * 0.5, it.y - it.r * 0.7);
+    ctx.quadraticCurveTo(it.x + it.r * 1.1, it.y - it.r * 1.4, it.x + it.r * 0.7, it.y - it.r * 1.6);
+    ctx.stroke();
+    // Spark
+    ctx.fillStyle = '#ff9500';
+    ctx.beginPath();
+    ctx.arc(it.x + it.r * 0.7, it.y - it.r * 1.65, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawPowerup(pu) {
+    ctx.fillStyle = pu.color;
+    roundRect(pu.x - pu.r, pu.y - pu.r, pu.r * 2, pu.r * 2, 6);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 13px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(pu.kind, pu.x, pu.y + 0.5);
+  }
+
+  function drawBasket() {
+    const x = basket.x;
+    const y = basket.y;
+    const w = basket.w;
+    const h = basket.h;
+    // Rim
+    ctx.fillStyle = '#8b5a2b';
+    roundRect(x - w/2, y - h/2 - 4, w, 6, 3);
+    ctx.fill();
+    // Body — trapezoid look
+    ctx.fillStyle = '#a0623a';
+    ctx.beginPath();
+    ctx.moveTo(x - w/2, y - h/2);
+    ctx.lineTo(x + w/2, y - h/2);
+    ctx.lineTo(x + w/2 - 6, y + h/2);
+    ctx.lineTo(x - w/2 + 6, y + h/2);
+    ctx.closePath();
+    ctx.fill();
+    // Weave lines
+    ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < 6; i++) {
+      const t = i / 6;
+      const yy = y - h/2 + t * h;
+      const inset = t * 6;
+      ctx.beginPath();
+      ctx.moveTo(x - w/2 + inset, yy);
+      ctx.lineTo(x + w/2 - inset, yy);
+      ctx.stroke();
+    }
+    // Vertical stripes
+    for (let i = 1; i < 7; i++) {
+      const t = i / 7;
+      const xx = x - w/2 + t * w;
+      ctx.beginPath();
+      ctx.moveTo(xx, y - h/2);
+      ctx.lineTo(xx - 1.5, y + h/2);
+      ctx.stroke();
+    }
+  }
+
+  function drawHudOverlay() {
+    const now = performance.now();
+    const badges = [];
+    if (now < wideUntil)   badges.push({ k: 'W', c: '#34c759', t: wideUntil });
+    if (now < magnetUntil) badges.push({ k: 'M', c: '#5856d6', t: magnetUntil });
+    if (now < slowUntil)   badges.push({ k: 'S', c: '#af52de', t: slowUntil });
+    if (now < doubleUntil) badges.push({ k: '2', c: '#ff9500', t: doubleUntil });
+    if (badges.length === 0) return;
+    ctx.font = 'bold 11px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    let bx = 10;
+    const by = 10;
+    const sz = 22;
+    for (const b of badges) {
+      ctx.fillStyle = b.c;
+      roundRect(bx, by, sz, sz, 5);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.fillText(b.k, bx + sz/2, by + sz/2 + 0.5);
+      // remaining time bar
+      const remain = Math.max(0, (b.t - now) / 1000);
+      const total = b.k === 'W' ? WIDE_MS/1000 : b.k === 'M' ? MAGNET_MS/1000 : b.k === 'S' ? SLOW_MS/1000 : DOUBLE_MS/1000;
+      const frac = Math.min(1, remain / total);
+      ctx.fillStyle = 'rgba(0,0,0,0.15)';
+      ctx.fillRect(bx, by + sz + 2, sz, 3);
+      ctx.fillStyle = b.c;
+      ctx.fillRect(bx, by + sz + 2, sz * frac, 3);
+      bx += sz + 8;
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, VW, VH);
+
+    // Ground line
+    ctx.fillStyle = 'rgba(0,0,0,0.04)';
+    ctx.fillRect(0, VH - 14, VW, 14);
+
+    // Items
+    for (const it of items) {
+      if (it.kind === 'bomb') drawBomb(it);
+      else drawFruit(it);
+    }
+
+    // Power-ups
+    for (const pu of powerups) drawPowerup(pu);
+
+    // Basket
+    drawBasket();
+
+    // Particles
+    for (const p of particles) {
+      const a = 1 - p.t / p.life;
+      ctx.globalAlpha = a;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // Floating text
+    ctx.font = 'bold 13px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (const f of floats) {
+      const a = 1 - f.t / f.life;
+      ctx.globalAlpha = a;
+      ctx.fillStyle = f.color;
+      ctx.fillText(f.text, f.x, f.y);
+    }
+    ctx.globalAlpha = 1;
+
+    // Active power-up badges
+    drawHudOverlay();
+  }
+
+  let lastT = 0;
+  function loop(t) {
+    if (!lastT) lastT = t;
+    let dt = (t - lastT) / 1000;
+    lastT = t;
+    if (dt > 0.05) dt = 0.05;
+    step(dt);
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  // Keyboard
+  window.addEventListener('keydown', function (e) {
+    const k = e.key;
+    if (k === 'ArrowLeft' || k === 'a' || k === 'A') { keyLeft = true; e.preventDefault(); }
+    else if (k === 'ArrowRight' || k === 'd' || k === 'D') { keyRight = true; e.preventDefault(); }
+    else if (k === ' ' || e.code === 'Space') {
+      e.preventDefault();
+      if (state === 'idle' || state === 'over') onAction();
+      else if (state === 'running') pause();
+      else if (state === 'paused') resume();
+    } else if (k === 'p' || k === 'P') {
+      if (state === 'running') pause();
+      else if (state === 'paused') resume();
+    }
+  });
+  window.addEventListener('keyup', function (e) {
+    const k = e.key;
+    if (k === 'ArrowLeft' || k === 'a' || k === 'A') keyLeft = false;
+    else if (k === 'ArrowRight' || k === 'd' || k === 'D') keyRight = false;
+  });
+
+  // Pointer drag
+  let dragging = false;
+  function pointerPos(e) {
+    const rect = board.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: (clientX - rect.left) / rect.width * VW,
+      y: (clientY - rect.top) / rect.height * VH
+    };
+  }
+  function onPointerDown(e) {
+    if (state === 'over') return;
+    dragging = true;
+    const p = pointerPos(e);
+    basket.x = Math.max(basket.w/2, Math.min(VW - basket.w/2, p.x));
+  }
+  function onPointerMove(e) {
+    if (!dragging) return;
+    const p = pointerPos(e);
+    basket.x = Math.max(basket.w/2, Math.min(VW - basket.w/2, p.x));
+    if (e.cancelable) e.preventDefault();
+  }
+  function onPointerUp() { dragging = false; }
+
+  board.addEventListener('mousedown', onPointerDown);
+  window.addEventListener('mousemove', onPointerMove);
+  window.addEventListener('mouseup', onPointerUp);
+  board.addEventListener('touchstart', function (e) { onPointerDown(e); if (e.cancelable) e.preventDefault(); }, {passive: false});
+  board.addEventListener('touchmove', function (e) { onPointerMove(e); }, {passive: false});
+  board.addEventListener('touchend', onPointerUp);
+
+  actionBtn.addEventListener('click', onAction);
+  pauseBtn.addEventListener('click', onPauseBtn);
+
+  window.addEventListener('resize', resize);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
+
+  // Idle visuals
+  basket = makeBasket();
+  items = [];
+  powerups = [];
+  particles = [];
+  floats = [];
+  resize();
+  requestAnimationFrame(loop);
+})();
+</script>
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

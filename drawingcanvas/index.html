@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Drawing Canvas — FindPicked Games</title>
+<meta name="description" content="Free online drawing canvas. Pick a color, adjust brush size, draw with mouse or touch. Undo, redo, erase, and save your art as PNG.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Cpath d='M7 22 L16 13 L20 17 L11 26 L7 26 Z' fill='%23ffcc00'/%3E%3Cpath d='M17 12 L20 9 L24 13 L21 16 Z' fill='%23ff3b30'/%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-canvas: #ffffff;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --border: rgba(0,0,0,0.08);
+  --border-strong: rgba(0,0,0,0.14);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+  --radius: 16px;
+}
+
+html, body {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px 20px 40px;
+  touch-action: manipulation;
+}
+
+.back {
+  align-self: flex-start;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 400;
+  padding: 8px 4px;
+  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.back:hover { color: var(--text-primary); }
+.back .arrow { font-size: 18px; line-height: 1; }
+
+.wrap {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+h1 {
+  font-size: clamp(32px, 8vw, 44px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.scores {
+  display: flex;
+  gap: 8px;
+}
+
+.score-box {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 10px 16px;
+  min-width: 82px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.score-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  margin-bottom: 2px;
+}
+
+.score-value {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  transition: transform 0.2s ease;
+}
+
+.score-value.bump { transform: scale(1.12); }
+
+.subhead p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.btn {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 22px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease, opacity 0.2s ease;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn:disabled:hover { background: var(--accent); }
+
+.btn.secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
+}
+.btn.secondary:hover { background: rgba(0, 113, 227, 0.06); }
+
+.btn.ghost {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+.btn.ghost:hover { background: #f3f3f5; }
+
+.btn.danger {
+  background: transparent;
+  color: #ff3b30;
+  border: 1.5px solid rgba(255,59,48,0.4);
+}
+.btn.danger:hover { background: rgba(255,59,48,0.08); }
+
+/* Canvas */
+.canvas-box {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: var(--bg-canvas);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  touch-action: none;
+}
+
+#canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+  background: #ffffff;
+  /* checker pattern to show the canvas bounds clearly when empty is subtle */
+}
+
+.canvas-box.erase #canvas { cursor: cell; }
+
+/* Toolbar cards */
+.tools {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tool-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tool-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tool-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  min-width: 54px;
+}
+
+/* Color palette */
+.palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1;
+}
+
+.swatch {
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), inset 0 0 0 1px rgba(0,0,0,0.06);
+}
+.swatch:hover { transform: translateY(-2px); }
+.swatch:active { transform: scale(0.92); }
+.swatch.active::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  pointer-events: none;
+}
+
+.color-custom {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1.5px dashed var(--border-strong);
+  background: conic-gradient(#ff3b30, #ffcc00, #34c759, #0071e3, #af52de, #ff3b30);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.15s ease;
+}
+.color-custom:hover { transform: translateY(-2px); }
+.color-custom input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+}
+
+/* Slider */
+.slider-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+.slider-wrap input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  height: 44px;
+  background: transparent;
+  cursor: pointer;
+}
+.slider-wrap input[type=range]::-webkit-slider-runnable-track {
+  height: 4px;
+  background: #e5e5ea;
+  border-radius: 2px;
+}
+.slider-wrap input[type=range]::-moz-range-track {
+  height: 4px;
+  background: #e5e5ea;
+  border-radius: 2px;
+}
+.slider-wrap input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  background: #fff;
+  border: 1.5px solid var(--accent);
+  border-radius: 50%;
+  margin-top: -9px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+.slider-wrap input[type=range]::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  background: #fff;
+  border: 1.5px solid var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+
+.brush-preview {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #f3f3f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.brush-preview .dot {
+  background: currentColor;
+  border-radius: 50%;
+  transition: width 0.15s ease, height 0.15s ease, background 0.15s ease;
+}
+
+.brush-size-val {
+  min-width: 34px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+/* Action buttons row */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.actions .btn { flex: 1; min-width: 88px; }
+
+/* Overlay modal (shown on Save) */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  padding: 20px;
+}
+.modal.show { opacity: 1; pointer-events: auto; }
+.modal-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 28px 24px;
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+  transform: translateY(10px);
+  transition: transform 0.25s ease;
+}
+.modal.show .modal-card { transform: translateY(0); }
+.modal-card h2 {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+.modal-card p {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+.modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* How to Play */
+.rules-toggle {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 10px 12px;
+  min-height: 44px;
+}
+.rules-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+  text-align: left;
+}
+.rules-panel.open { max-height: 480px; }
+.rules-panel ul {
+  list-style: none;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-top: 8px;
+  box-shadow: var(--shadow);
+}
+.rules-panel li {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  padding: 5px 0;
+  padding-left: 18px;
+  position: relative;
+}
+.rules-panel li::before {
+  content: '•';
+  position: absolute;
+  left: 4px;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+footer {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-tertiary);
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+/* Small tweaks for phones */
+@media (max-width: 520px) {
+  .tool-label { min-width: 46px; font-size: 10px; }
+  .swatch { width: 40px; height: 40px; }
+  .color-custom { width: 40px; height: 40px; }
+  .actions .btn { min-width: 0; flex: 1 1 calc(50% - 4px); padding: 0 12px; font-size: 14px; }
+  .canvas-box { aspect-ratio: 1 / 1; }
+}
+
+@media (max-width: 380px) {
+  body { padding: 16px 12px 32px; }
+  .tool-card { padding: 12px; }
+}
+</style>
+</head>
+<body>
+<a class="back" href="../"><span class="arrow">‹</span> All games</a>
+
+<div class="wrap">
+  <header>
+    <h1>Drawing Canvas</h1>
+    <div class="scores">
+      <div class="score-box">
+        <div class="score-label">Saved</div>
+        <div class="score-value" id="saved-count">0</div>
+      </div>
+      <div class="score-box">
+        <div class="score-label">Best</div>
+        <div class="score-value" id="best-count">—</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="subhead">
+    <p>Freehand drawing with color picker, brush size, eraser, and undo/redo. Save your art as PNG.</p>
+  </div>
+
+  <div class="canvas-box" id="canvas-box">
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <div class="tools">
+    <div class="tool-card">
+      <div class="tool-row">
+        <span class="tool-label">Color</span>
+        <div class="palette" id="palette"></div>
+        <label class="color-custom" aria-label="Custom color">
+          <input type="color" id="custom-color" value="#0071e3">
+        </label>
+      </div>
+    </div>
+
+    <div class="tool-card">
+      <div class="tool-row">
+        <span class="tool-label">Brush</span>
+        <div class="brush-preview" id="brush-preview"><div class="dot" id="brush-dot"></div></div>
+        <div class="slider-wrap">
+          <input type="range" id="brush-size" min="1" max="60" value="6" aria-label="Brush size">
+          <span class="brush-size-val" id="brush-size-val">6</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tool-card">
+      <div class="actions">
+        <button class="btn ghost" id="undo-btn" aria-label="Undo">↶ Undo</button>
+        <button class="btn ghost" id="redo-btn" aria-label="Redo">↷ Redo</button>
+        <button class="btn ghost" id="erase-btn" aria-pressed="false">Eraser</button>
+        <button class="btn danger" id="clear-btn">Clear</button>
+      </div>
+      <div class="actions">
+        <button class="btn" id="save-btn">Save as PNG</button>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center">
+    <button class="rules-toggle" onclick="this.nextElementSibling.classList.toggle('open')">How to Play ▾</button>
+    <div class="rules-panel">
+      <ul>
+        <li>Pick a color from the palette or tap the rainbow circle for any custom color.</li>
+        <li>Drag the brush slider to change stroke thickness (1–60 px).</li>
+        <li>Click and drag on the canvas to draw — works with mouse, pen, or finger.</li>
+        <li>Tap <strong>Eraser</strong> to switch to erase mode; tap it again to resume drawing.</li>
+        <li>Use <strong>Undo</strong> and <strong>Redo</strong> to step through your strokes.</li>
+        <li><strong>Clear</strong> wipes the canvas; <strong>Save as PNG</strong> downloads your artwork.</li>
+        <li>Shortcuts: <kbd>Ctrl/⌘+Z</kbd> undo, <kbd>Ctrl/⌘+⇧+Z</kbd> redo, <kbd>E</kbd> eraser, <kbd>[</kbd>/<kbd>]</kbd> brush size.</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>
+    Every saved drawing counts toward your leaderboard score.
+  </footer>
+</div>
+
+<div class="modal" id="save-modal">
+  <div class="modal-card">
+    <h2>Drawing saved!</h2>
+    <p id="save-modal-text">Your PNG has been downloaded. Start a fresh canvas or keep drawing.</p>
+    <div class="modal-actions">
+      <button class="btn" id="modal-new-btn">Play Again</button>
+      <button class="btn secondary" id="modal-keep-btn">Keep Drawing</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const COLORS = [
+    '#1d1d1f', '#ffffff', '#ff3b30', '#ff9500', '#ffcc00',
+    '#34c759', '#0071e3', '#5856d6', '#af52de', '#ff2d55'
+  ];
+  const STORE_SAVED = 'findpicked:drawingcanvas:saved';
+  const STORE_BEST  = 'findpicked:drawingcanvas:best';
+
+  const canvasBox = document.getElementById('canvas-box');
+  const canvas    = document.getElementById('canvas');
+  const ctx       = canvas.getContext('2d');
+
+  const paletteEl    = document.getElementById('palette');
+  const customColor  = document.getElementById('custom-color');
+  const brushSize    = document.getElementById('brush-size');
+  const brushSizeVal = document.getElementById('brush-size-val');
+  const brushDot     = document.getElementById('brush-dot');
+  const undoBtn      = document.getElementById('undo-btn');
+  const redoBtn      = document.getElementById('redo-btn');
+  const eraseBtn     = document.getElementById('erase-btn');
+  const clearBtn     = document.getElementById('clear-btn');
+  const saveBtn      = document.getElementById('save-btn');
+
+  const savedCountEl = document.getElementById('saved-count');
+  const bestCountEl  = document.getElementById('best-count');
+
+  const saveModal    = document.getElementById('save-modal');
+  const modalNewBtn  = document.getElementById('modal-new-btn');
+  const modalKeepBtn = document.getElementById('modal-keep-btn');
+  const modalText    = document.getElementById('save-modal-text');
+
+  // State
+  let currentColor = '#1d1d1f';
+  let brushW = parseInt(brushSize.value, 10);
+  let erasing = false;
+  let drawing = false;
+  let lastX = 0, lastY = 0;
+  let activePointerId = null;
+
+  // History: store ImageData snapshots (simple + reliable).
+  // Cap the stack so memory stays sane.
+  const MAX_HISTORY = 40;
+  let history = [];
+  let redoStack = [];
+
+  let savedCount = parseInt(localStorage.getItem(STORE_SAVED) || '0', 10);
+  let bestCount  = parseInt(localStorage.getItem(STORE_BEST)  || '0', 10);
+  updateCounters();
+
+  // --- Setup canvas with device pixel ratio for crisp strokes ---
+  function setupCanvasSize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const rect = canvasBox.getBoundingClientRect();
+    const w = Math.round(rect.width);
+    const h = Math.round(rect.height);
+
+    // If size hasn't changed and we already have a drawing, keep it.
+    const oldW = canvas.width;
+    const oldH = canvas.height;
+    const newW = Math.round(w * dpr);
+    const newH = Math.round(h * dpr);
+
+    if (oldW === newW && oldH === newH) return;
+
+    // Preserve existing drawing by copying to temp.
+    let temp = null;
+    if (oldW > 0 && oldH > 0) {
+      temp = document.createElement('canvas');
+      temp.width = oldW;
+      temp.height = oldH;
+      temp.getContext('2d').drawImage(canvas, 0, 0);
+    }
+
+    canvas.width = newW;
+    canvas.height = newH;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+
+    // White background
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    if (temp) {
+      ctx.drawImage(temp, 0, 0, temp.width, temp.height, 0, 0, canvas.width, canvas.height);
+    }
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+  }
+
+  setupCanvasSize();
+  pushHistory(); // initial blank state
+
+  window.addEventListener('resize', () => {
+    setupCanvasSize();
+  });
+
+  // --- Palette ---
+  COLORS.forEach((hex, i) => {
+    const b = document.createElement('button');
+    b.className = 'swatch';
+    b.style.background = hex;
+    b.dataset.color = hex;
+    b.setAttribute('aria-label', 'Color ' + hex);
+    if (i === 0) b.classList.add('active');
+    b.addEventListener('click', () => selectColor(hex, b));
+    paletteEl.appendChild(b);
+  });
+
+  customColor.addEventListener('input', (e) => {
+    selectColor(e.target.value, null);
+    // Reflect custom color in outline
+    Array.from(paletteEl.children).forEach(el => el.classList.remove('active'));
+  });
+
+  function selectColor(hex, btn) {
+    currentColor = hex;
+    erasing = false;
+    eraseBtn.setAttribute('aria-pressed', 'false');
+    eraseBtn.classList.remove('secondary');
+    eraseBtn.classList.add('ghost');
+    canvasBox.classList.remove('erase');
+    updateBrushPreview();
+    if (btn) {
+      Array.from(paletteEl.children).forEach(el => el.classList.remove('active'));
+      btn.classList.add('active');
+    }
+  }
+
+  // --- Brush size ---
+  brushSize.addEventListener('input', () => {
+    brushW = parseInt(brushSize.value, 10);
+    brushSizeVal.textContent = brushW;
+    updateBrushPreview();
+  });
+
+  function updateBrushPreview() {
+    const size = Math.min(Math.max(brushW, 2), 28);
+    brushDot.style.width  = size + 'px';
+    brushDot.style.height = size + 'px';
+    brushDot.style.background = erasing ? '#e5e5ea' : currentColor;
+  }
+  updateBrushPreview();
+
+  // --- Eraser ---
+  eraseBtn.addEventListener('click', () => {
+    erasing = !erasing;
+    eraseBtn.setAttribute('aria-pressed', erasing ? 'true' : 'false');
+    if (erasing) {
+      eraseBtn.classList.remove('ghost');
+      eraseBtn.classList.add('secondary');
+      canvasBox.classList.add('erase');
+    } else {
+      eraseBtn.classList.add('ghost');
+      eraseBtn.classList.remove('secondary');
+      canvasBox.classList.remove('erase');
+    }
+    updateBrushPreview();
+  });
+
+  // --- Clear ---
+  clearBtn.addEventListener('click', () => {
+    if (!confirm('Clear the entire canvas? This cannot be undone beyond the undo stack.')) return;
+    clearCanvas();
+    pushHistory();
+  });
+
+  function clearCanvas() {
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+  }
+
+  // --- Undo / Redo ---
+  undoBtn.addEventListener('click', undo);
+  redoBtn.addEventListener('click', redo);
+
+  function pushHistory() {
+    try {
+      const snap = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      history.push(snap);
+      if (history.length > MAX_HISTORY) history.shift();
+      redoStack.length = 0;
+    } catch {}
+    updateButtons();
+  }
+
+  function undo() {
+    if (history.length <= 1) return;
+    const current = history.pop();
+    redoStack.push(current);
+    const prev = history[history.length - 1];
+    restoreSnap(prev);
+    updateButtons();
+  }
+
+  function redo() {
+    if (redoStack.length === 0) return;
+    const next = redoStack.pop();
+    history.push(next);
+    restoreSnap(next);
+    updateButtons();
+  }
+
+  function restoreSnap(snap) {
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.putImageData(snap, 0, 0);
+    ctx.restore();
+  }
+
+  function updateButtons() {
+    undoBtn.disabled = history.length <= 1;
+    redoBtn.disabled = redoStack.length === 0;
+  }
+
+  // --- Drawing (pointer events cover mouse + touch + pen) ---
+  function pos(e) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    };
+  }
+
+  canvas.addEventListener('pointerdown', (e) => {
+    if (activePointerId !== null) return;
+    activePointerId = e.pointerId;
+    canvas.setPointerCapture(e.pointerId);
+    drawing = true;
+    const p = pos(e);
+    lastX = p.x;
+    lastY = p.y;
+    // Draw a dot for single taps
+    ctx.beginPath();
+    ctx.fillStyle = erasing ? '#ffffff' : currentColor;
+    ctx.arc(p.x, p.y, Math.max(brushW / 2, 0.5), 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  canvas.addEventListener('pointermove', (e) => {
+    if (!drawing || e.pointerId !== activePointerId) return;
+    const p = pos(e);
+    ctx.lineWidth = brushW;
+    ctx.strokeStyle = erasing ? '#ffffff' : currentColor;
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+    lastX = p.x;
+    lastY = p.y;
+  });
+
+  function endStroke(e) {
+    if (!drawing || (e && e.pointerId !== activePointerId)) return;
+    drawing = false;
+    activePointerId = null;
+    try { if (e) canvas.releasePointerCapture(e.pointerId); } catch {}
+    pushHistory();
+  }
+
+  canvas.addEventListener('pointerup', endStroke);
+  canvas.addEventListener('pointercancel', endStroke);
+  canvas.addEventListener('pointerleave', (e) => {
+    // Only end if pointer was dropped outside with button up
+    if (e.buttons === 0) endStroke(e);
+  });
+
+  // Prevent context menu / scroll on touch
+  canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  // --- Save as PNG ---
+  saveBtn.addEventListener('click', () => {
+    // Create a copy so we download without the CSS scaling overhead
+    const link = document.createElement('a');
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    link.download = `drawing-${stamp}.png`;
+    link.href = canvas.toDataURL('image/png');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    savedCount += 1;
+    localStorage.setItem(STORE_SAVED, String(savedCount));
+    if (savedCount > bestCount) {
+      bestCount = savedCount;
+      localStorage.setItem(STORE_BEST, String(bestCount));
+    }
+    updateCounters(true);
+
+    // Submit to leaderboard (guarded)
+    const score = savedCount;
+    if (window.Leaderboard && Leaderboard.submitScore) {
+      try { Leaderboard.submitScore(score); } catch {}
+    }
+
+    modalText.textContent = `Your PNG has been downloaded. You've saved ${savedCount} drawing${savedCount === 1 ? '' : 's'}.`;
+    saveModal.classList.add('show');
+  });
+
+  modalNewBtn.addEventListener('click', () => {
+    saveModal.classList.remove('show');
+    clearCanvas();
+    history = [];
+    redoStack = [];
+    pushHistory();
+  });
+
+  modalKeepBtn.addEventListener('click', () => {
+    saveModal.classList.remove('show');
+  });
+
+  saveModal.addEventListener('click', (e) => {
+    if (e.target === saveModal) saveModal.classList.remove('show');
+  });
+
+  function updateCounters(bump) {
+    savedCountEl.textContent = savedCount;
+    bestCountEl.textContent  = bestCount > 0 ? bestCount : '—';
+    if (bump) {
+      savedCountEl.classList.remove('bump');
+      // force reflow so the animation replays
+      void savedCountEl.offsetWidth;
+      savedCountEl.classList.add('bump');
+      setTimeout(() => savedCountEl.classList.remove('bump'), 250);
+    }
+  }
+
+  // --- Keyboard shortcuts ---
+  window.addEventListener('keydown', (e) => {
+    if (saveModal.classList.contains('show')) {
+      if (e.key === 'Escape') saveModal.classList.remove('show');
+      return;
+    }
+    const meta = e.metaKey || e.ctrlKey;
+    if (meta && (e.key === 'z' || e.key === 'Z')) {
+      e.preventDefault();
+      if (e.shiftKey) redo(); else undo();
+      return;
+    }
+    if (meta && (e.key === 'y' || e.key === 'Y')) {
+      e.preventDefault();
+      redo();
+      return;
+    }
+    if (!meta && (e.key === 'e' || e.key === 'E')) {
+      e.preventDefault();
+      eraseBtn.click();
+      return;
+    }
+    if (e.key === '[') {
+      e.preventDefault();
+      brushSize.value = Math.max(1, brushW - 2);
+      brushSize.dispatchEvent(new Event('input'));
+      return;
+    }
+    if (e.key === ']') {
+      e.preventDefault();
+      brushSize.value = Math.min(60, brushW + 2);
+      brushSize.dispatchEvent(new Event('input'));
+      return;
+    }
+  });
+})();
+</script>
+
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

@@ -568,7 +568,6 @@
     // Column hit areas (above the board area, full height for easy tap)
     const existingCols = boardEl.querySelectorAll('.col-hover');
     existingCols.forEach(e => e.remove());
-    const pad = 0.07; // matches board padding in %
     for (let c = 0; c < COLS; c++) {
       const col = document.createElement('div');
       col.className = 'col-hover';
@@ -872,11 +871,8 @@
   undoBtn.addEventListener('click', () => {
     if (aiThinking) return;
     if (history.length === 0) return;
-    // In AI mode, undo last player+AI move
-    const undos = (mode === 'ai' && history.length >= 2 && !gameOver) ? 2 :
-                  (mode === 'ai' && gameOver && history.length >= 1) ? 1 : 1;
-    // When game is over due to win, undo the last winning move (1). When mid-game vs AI, undo 2.
-    const count = gameOver ? 1 : undos;
+    let count = 1;
+    if (!gameOver && mode === 'ai' && history.length >= 2) count = 2;
     for (let i = 0; i < count; i++) {
       const m = history.pop();
       if (!m) break;

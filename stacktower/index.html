@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Stack Tower · FindPicked Games</title>
+<meta name="description" content="Play Stack Tower online for free. Tap to drop each block, build the tallest tower you can.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ctext x='16' y='22' font-size='16' fill='white' text-anchor='middle' font-family='system-ui'%3ES%3C/text%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-hover: #f5f5f7;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: manipulation;
+}
+
+.app {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 12px 16px 20px;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+  flex-shrink: 0;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.back {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: background 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.back:hover, .back:active { background: var(--bg-hover); }
+
+.title {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease, color 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.icon-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.icon-btn svg { width: 18px; height: 18px; }
+
+.scores {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  flex-shrink: 0;
+}
+
+.score-card {
+  background: var(--bg-card);
+  box-shadow: var(--shadow);
+  border-radius: 14px;
+  padding: 10px 14px;
+  flex: 1;
+  text-align: center;
+  min-width: 0;
+}
+
+.score-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+}
+
+.score-value {
+  font-size: 22px;
+  font-weight: 700;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.board-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 16px;
+  position: relative;
+}
+
+.board {
+  background: var(--bg-card);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+  touch-action: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 28px;
+  text-align: center;
+  background: rgba(255,255,255,0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  z-index: 2;
+}
+.overlay.visible { opacity: 1; pointer-events: auto; }
+
+.overlay h2 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.overlay p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.5;
+  max-width: 280px;
+}
+
+.btn {
+  height: 44px;
+  padding: 0 24px;
+  border-radius: 22px;
+  border: none;
+  background: var(--accent);
+  color: white;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease, transform 0.1s ease;
+  -webkit-tap-highlight-color: transparent;
+  margin-top: 8px;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn:active { transform: scale(0.97); }
+
+.hint {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.rules-toggle{display:inline-block;margin-top:12px;font-size:13px;color:#0071e3;cursor:pointer;border:none;background:none;font-family:inherit;padding:0}
+.rules-toggle:hover{text-decoration:underline}
+.rules-panel{max-height:0;overflow:hidden;transition:max-height 0.3s ease;font-size:13px;color:#6e6e73;line-height:1.6;text-align:left;max-width:480px;margin:8px auto 0}
+.rules-panel.open{max-height:600px}
+.rules-panel ul{margin:8px 0 0 16px}
+.rules-panel li{margin-bottom:4px}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="nav">
+    <div class="nav-left">
+      <a class="back" href="../" aria-label="Back to games">←</a>
+      <div class="title">Stack Tower</div>
+    </div>
+    <button class="icon-btn" id="pause-btn" aria-label="Pause">
+      <svg viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="5" width="3.5" height="14" rx="1"/><rect x="13.5" y="5" width="3.5" height="14" rx="1"/></svg>
+    </button>
+  </nav>
+
+  <div class="scores">
+    <div class="score-card">
+      <div class="score-label">Height</div>
+      <div class="score-value" id="score">0</div>
+    </div>
+    <div class="score-card">
+      <div class="score-label">Perfect</div>
+      <div class="score-value" id="combo">0</div>
+    </div>
+    <div class="score-card">
+      <div class="score-label">Best</div>
+      <div class="score-value" id="best">0</div>
+    </div>
+  </div>
+
+  <div class="board-wrap" id="board-wrap">
+    <div class="board" id="board">
+      <canvas id="canvas"></canvas>
+      <div class="overlay visible" id="overlay">
+        <h2 id="overlay-title">Stack Tower</h2>
+        <p id="overlay-text">Tap to drop each block. Overhang gets trimmed — land perfectly to keep the full width.</p>
+        <button class="btn" id="action-btn">Start</button>
+        <button class="rules-toggle" onclick="this.nextElementSibling.classList.toggle('open')">How to Play ▾</button>
+        <div class="rules-panel">
+          <ul>
+            <li>A block slides side to side above the tower</li>
+            <li>Tap the board or press space to drop it</li>
+            <li>Any overhang past the block below gets sliced off and falls away</li>
+            <li>The next block inherits the trimmed width — keep landing clean to stay wide</li>
+            <li>A perfectly aligned drop restores a little width and counts as a combo</li>
+            <li>Miss completely and the tower ends — your height is your score</li>
+            <li>Blocks speed up the higher you climb</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="hint">Tap the board · Space to drop · Perfect drops restore width</p>
+</div>
+
+<script>
+(function () {
+  const VW = 400;
+  const VH = 600;
+
+  const BLOCK_H = 22;
+  const BASE_BLOCK_W = 240;
+  const MIN_BLOCK_W = 4;
+  const PERFECT_EPS = 2;
+  const PERFECT_BONUS = 6;
+
+  const SPEED_BASE = 160;
+  const SPEED_PER_LEVEL = 6;
+  const SPEED_MAX = 340;
+
+  const VISIBLE_ROWS = 10;
+  const FOCUS_Y_RATIO = 0.62;
+
+  const COLORS = [
+    '#0071e3','#34c759','#ff9500','#af52de','#ff3b30','#5ac8fa','#ffcc00','#ff2d55','#5856d6','#30b0c7'
+  ];
+
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const boardWrap = document.getElementById('board-wrap');
+  const board = document.getElementById('board');
+  const scoreEl = document.getElementById('score');
+  const comboEl = document.getElementById('combo');
+  const bestEl = document.getElementById('best');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlay-title');
+  const overlayText = document.getElementById('overlay-text');
+  const actionBtn = document.getElementById('action-btn');
+  const pauseBtn = document.getElementById('pause-btn');
+
+  let boardW = 0, boardH = 0;
+  let scale = 1;
+
+  let state = 'idle'; // idle | running | paused | over
+  let score = 0;
+  let combo = 0;
+  let newBest = false;
+
+  let tower = [];        // { x, w, y (world), color }
+  let moving = null;     // { x, w, y (world), color, dir, speed }
+  let falling = [];      // pieces drifting down after a trim
+  let cameraY = 0;       // world y of bottom of viewport
+  let targetCameraY = 0;
+  let flash = 0;
+
+  let best = parseInt(localStorage.getItem('stacktower.best') || '0', 10);
+  bestEl.textContent = best;
+
+  function resize() {
+    const rect = boardWrap.getBoundingClientRect();
+    const availW = rect.width;
+    const availH = rect.height;
+    if (availW <= 0 || availH <= 0) return;
+    const ratio = VW / VH;
+    let w = availW, h = availW / ratio;
+    if (h > availH) { h = availH; w = h * ratio; }
+    w = Math.min(w, 480);
+    h = w / ratio;
+    boardW = w;
+    boardH = h;
+    board.style.width = w + 'px';
+    board.style.height = h + 'px';
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(VW * dpr);
+    canvas.height = Math.round(VH * dpr);
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    scale = dpr;
+  }
+
+  function worldToScreenY(worldY) {
+    // worldY grows upward. bottom of viewport = cameraY.
+    // screen y = VH - (worldY - cameraY)
+    return VH - (worldY - cameraY);
+  }
+
+  function newMovingBlock() {
+    const prev = tower[tower.length - 1];
+    const w = prev.w;
+    const y = prev.y + BLOCK_H;
+    const level = tower.length;
+    const speed = Math.min(SPEED_MAX, SPEED_BASE + level * SPEED_PER_LEVEL);
+    const color = COLORS[level % COLORS.length];
+    // start from a side, alternate
+    const fromLeft = level % 2 === 0;
+    moving = {
+      x: fromLeft ? -w : VW,
+      w: w,
+      y: y,
+      color: color,
+      dir: fromLeft ? 1 : -1,
+      speed: speed
+    };
+  }
+
+  function resetGame() {
+    score = 0;
+    combo = 0;
+    newBest = false;
+    tower = [];
+    falling = [];
+    // base platform
+    const baseW = BASE_BLOCK_W;
+    const baseX = (VW - baseW) / 2;
+    tower.push({ x: baseX, w: baseW, y: 0, color: '#1d1d1f' });
+    cameraY = 0;
+    targetCameraY = 0;
+    flash = 0;
+    updateScore();
+    newMovingBlock();
+  }
+
+  function updateScore() {
+    scoreEl.textContent = score;
+    comboEl.textContent = combo;
+    bestEl.textContent = best;
+  }
+
+  function showOverlay(title, text, btnText, showRules) {
+    overlayTitle.textContent = title;
+    overlayText.textContent = text;
+    actionBtn.textContent = btnText;
+    overlay.classList.add('visible');
+    const panel = overlay.querySelector('.rules-panel');
+    const toggle = overlay.querySelector('.rules-toggle');
+    if (showRules) {
+      toggle.style.display = '';
+      panel.style.display = '';
+    } else {
+      toggle.style.display = 'none';
+      panel.style.display = 'none';
+      panel.classList.remove('open');
+    }
+  }
+
+  function hideOverlay() {
+    overlay.classList.remove('visible');
+  }
+
+  function startGame() {
+    resetGame();
+    state = 'running';
+    hideOverlay();
+  }
+
+  function dropBlock() {
+    if (!moving) return;
+    const top = tower[tower.length - 1];
+    const m = moving;
+    const leftOverlap = Math.max(m.x, top.x);
+    const rightOverlap = Math.min(m.x + m.w, top.x + top.w);
+    const overlap = rightOverlap - leftOverlap;
+
+    if (overlap <= 0) {
+      // complete miss
+      const missed = { x: m.x, w: m.w, y: m.y, color: m.color, vy: 0, vx: m.dir * 40, rot: 0, rotv: (Math.random()-0.5)*2 };
+      falling.push(missed);
+      moving = null;
+      gameOver();
+      return;
+    }
+
+    const offset = Math.abs((m.x + m.w/2) - (top.x + top.w/2));
+    let placedX, placedW;
+    let perfect = offset <= PERFECT_EPS;
+
+    if (perfect) {
+      // snap to center of top
+      placedX = top.x;
+      placedW = top.w;
+      combo++;
+      // reward: restore a little width for next block, capped at base
+      placedW = Math.min(BASE_BLOCK_W, placedW + PERFECT_BONUS);
+      placedX = top.x + top.w/2 - placedW/2;
+      flash = 1;
+    } else {
+      placedX = leftOverlap;
+      placedW = overlap;
+      combo = 0;
+      // spawn trimmed piece(s) as falling
+      if (m.x < top.x) {
+        const w = top.x - m.x;
+        if (w > 0.5) falling.push({ x: m.x, w: w, y: m.y, color: m.color, vy: 0, vx: -30, rot: 0, rotv: -1.5 });
+      }
+      if (m.x + m.w > top.x + top.w) {
+        const w = (m.x + m.w) - (top.x + top.w);
+        if (w > 0.5) falling.push({ x: top.x + top.w, w: w, y: m.y, color: m.color, vy: 0, vx: 30, rot: 0, rotv: 1.5 });
+      }
+    }
+
+    if (placedW < MIN_BLOCK_W) {
+      // too thin to stand on — treat as a miss
+      falling.push({ x: placedX, w: Math.max(placedW, 1), y: m.y, color: m.color, vy: 0, vx: 0, rot: 0, rotv: (Math.random()-0.5)*1.5 });
+      moving = null;
+      gameOver();
+      return;
+    }
+
+    tower.push({ x: placedX, w: placedW, y: m.y, color: m.color });
+    score = tower.length - 1;
+    if (score > best) {
+      best = score;
+      newBest = true;
+      localStorage.setItem('stacktower.best', String(best));
+    }
+    updateScore();
+
+    // camera follows the new top so there are always a few rows visible below
+    const topY = m.y;
+    const desired = Math.max(0, topY - (VH * (1 - FOCUS_Y_RATIO)));
+    targetCameraY = desired;
+
+    moving = null;
+    // spawn next shortly
+    setTimeout(function () {
+      if (state === 'running') newMovingBlock();
+    }, 80);
+  }
+
+  function gameOver() {
+    state = 'over';
+    setTimeout(function () {
+      if (window.Leaderboard && typeof Leaderboard.submitScore === 'function') {
+        Leaderboard.submitScore(score);
+      }
+    }, 500);
+    const msg = 'You stacked ' + score + (score === 1 ? ' block' : ' blocks') + (newBest && score > 0 ? '. A new best.' : '.');
+    showOverlay('Game over', msg, 'Play again', true);
+  }
+
+  function togglePause() {
+    if (state === 'running') {
+      state = 'paused';
+      showOverlay('Paused', 'Tap resume to keep stacking.', 'Resume', false);
+    } else if (state === 'paused') {
+      state = 'running';
+      hideOverlay();
+    }
+  }
+
+  function onAction() {
+    if (state === 'idle' || state === 'over') startGame();
+    else if (state === 'paused') togglePause();
+  }
+
+  function onBoardTap(e) {
+    if (state === 'running') {
+      dropBlock();
+      if (e && e.cancelable) e.preventDefault();
+    } else if (state === 'idle' || state === 'over') {
+      // allow tapping anywhere to start, but only if overlay button isn't handling it
+      if (e && e.target === canvas) startGame();
+    }
+  }
+
+  // input
+  board.addEventListener('click', function (e) {
+    if (e.target !== canvas) return;
+    onBoardTap(e);
+  });
+  board.addEventListener('touchstart', function (e) {
+    if (e.target !== canvas) return;
+    onBoardTap(e);
+  }, { passive: false });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === ' ' || e.code === 'Space') {
+      if (state === 'running') { dropBlock(); e.preventDefault(); }
+      else if (state === 'idle' || state === 'over') { startGame(); e.preventDefault(); }
+    } else if (e.key === 'p' || e.key === 'P') {
+      togglePause();
+    }
+  });
+
+  actionBtn.addEventListener('click', onAction);
+  pauseBtn.addEventListener('click', function () {
+    if (state === 'running' || state === 'paused') togglePause();
+  });
+
+  window.addEventListener('resize', resize);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
+
+  let lastT = 0;
+  function loop(t) {
+    if (!lastT) lastT = t;
+    const dt = Math.min(0.05, (t - lastT) / 1000);
+    lastT = t;
+    update(dt);
+    render();
+    requestAnimationFrame(loop);
+  }
+
+  function update(dt) {
+    // camera smoothing
+    cameraY += (targetCameraY - cameraY) * Math.min(1, dt * 6);
+
+    if (state === 'running' && moving) {
+      moving.x += moving.dir * moving.speed * dt;
+      if (moving.x < -moving.w * 0.25) {
+        moving.x = -moving.w * 0.25;
+        moving.dir = 1;
+      } else if (moving.x + moving.w > VW + moving.w * 0.25) {
+        moving.x = VW + moving.w * 0.25 - moving.w;
+        moving.dir = -1;
+      }
+    }
+
+    // falling physics
+    for (let i = falling.length - 1; i >= 0; i--) {
+      const f = falling[i];
+      f.vy += 700 * dt;
+      f.y -= f.vy * dt;   // y is world-up; falling decreases y
+      f.x += f.vx * dt;
+      f.rot += f.rotv * dt;
+      if (worldToScreenY(f.y) > VH + 80) falling.splice(i, 1);
+    }
+
+    if (flash > 0) flash = Math.max(0, flash - dt * 2);
+  }
+
+  function render() {
+    // background
+    ctx.clearRect(0, 0, VW, VH);
+    // subtle sky gradient
+    const g = ctx.createLinearGradient(0, 0, 0, VH);
+    g.addColorStop(0, '#f5f5f7');
+    g.addColorStop(1, '#ffffff');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, VW, VH);
+
+    // perfect flash
+    if (flash > 0) {
+      ctx.fillStyle = 'rgba(0,113,227,' + (flash * 0.15) + ')';
+      ctx.fillRect(0, 0, VW, VH);
+    }
+
+    // tower
+    for (let i = 0; i < tower.length; i++) {
+      drawBlock(tower[i]);
+    }
+
+    // falling pieces
+    for (let i = 0; i < falling.length; i++) {
+      drawFalling(falling[i]);
+    }
+
+    // moving block
+    if (moving) drawBlock(moving);
+
+    // guide line through center of top of tower (subtle)
+    const top = tower[tower.length - 1];
+    if (top && state === 'running' && moving) {
+      const cx = top.x + top.w / 2;
+      const topScreenY = worldToScreenY(top.y + BLOCK_H);
+      ctx.strokeStyle = 'rgba(0,113,227,0.18)';
+      ctx.setLineDash([3, 5]);
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(cx, 0);
+      ctx.lineTo(cx, topScreenY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // ground line shading at bottom
+    ctx.fillStyle = 'rgba(0,0,0,0.03)';
+    ctx.fillRect(0, VH - 10, VW, 10);
+  }
+
+  function drawBlock(b) {
+    const sy = worldToScreenY(b.y + BLOCK_H);
+    if (sy > VH + BLOCK_H || sy + BLOCK_H < -BLOCK_H) return;
+    roundRect(b.x, sy, b.w, BLOCK_H, 4);
+    ctx.fillStyle = b.color;
+    ctx.fill();
+    // top highlight
+    ctx.fillStyle = 'rgba(255,255,255,0.18)';
+    roundRect(b.x, sy, b.w, Math.min(6, BLOCK_H / 3), 4);
+    ctx.fill();
+  }
+
+  function drawFalling(f) {
+    const sy = worldToScreenY(f.y + BLOCK_H);
+    ctx.save();
+    ctx.translate(f.x + f.w/2, sy + BLOCK_H/2);
+    ctx.rotate(f.rot);
+    ctx.fillStyle = f.color;
+    roundRect(-f.w/2, -BLOCK_H/2, f.w, BLOCK_H, 3);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function roundRect(x, y, w, h, r) {
+    const rr = Math.min(r, w/2, h/2);
+    ctx.beginPath();
+    ctx.moveTo(x + rr, y);
+    ctx.lineTo(x + w - rr, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
+    ctx.lineTo(x + w, y + h - rr);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+    ctx.lineTo(x + rr, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - rr);
+    ctx.lineTo(x, y + rr);
+    ctx.quadraticCurveTo(x, y, x + rr, y);
+    ctx.closePath();
+  }
+
+  // prime idle visual
+  tower.push({ x: (VW - BASE_BLOCK_W) / 2, w: BASE_BLOCK_W, y: 0, color: '#1d1d1f' });
+  resize();
+  requestAnimationFrame(loop);
+})();
+</script>
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

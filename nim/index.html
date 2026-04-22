@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Nim — FindPicked Games</title>
+<meta name="description" content="Play Nim free — classic take-away strategy game against a perfect-play AI. Last to take loses. No downloads, no sign-ups.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Cg fill='white'%3E%3Ccircle cx='8' cy='16' r='3.2'/%3E%3Ccircle cx='16' cy='16' r='3.2'/%3E%3Ccircle cx='24' cy='16' r='3.2'/%3E%3C/g%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --accent-soft: rgba(0, 113, 227, 0.12);
+  --danger: #ff3b30;
+  --success: #34c759;
+  --warn: #ff9500;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.06);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+  --radius: 16px;
+  --chip: #d0d0d6;
+  --chip-hover: #b8b8c0;
+  --chip-selected: #0071e3;
+  --chip-hint: #ff9500;
+}
+
+html, body { height: 100%; overscroll-behavior: none; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px 20px 40px;
+  touch-action: manipulation;
+}
+
+.back {
+  align-self: flex-start;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 400;
+  padding: 8px 4px;
+  transition: color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+}
+.back:hover { color: var(--text-primary); }
+.back .arrow { font-size: 18px; line-height: 1; }
+
+.wrap {
+  width: 100%;
+  max-width: 460px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+header { margin-top: 4px; text-align: center; }
+
+h1 {
+  font-size: clamp(36px, 9vw, 48px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.subhead {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-top: 8px;
+}
+
+.config-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 14px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.config-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+.preset-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.preset-btn {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: white;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 36px;
+  -webkit-tap-highlight-color: transparent;
+}
+.preset-btn:hover { color: var(--text-primary); background: #f5f5f7; }
+.preset-btn.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.status {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+  text-align: center;
+  min-height: 24px;
+  transition: color 0.2s ease;
+}
+.status .you { color: var(--accent); font-weight: 700; }
+.status .ai { color: var(--danger); font-weight: 700; }
+.status.warn { color: var(--warn); }
+
+.board {
+  position: relative;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 18px 14px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 200px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  min-height: 48px;
+}
+
+.row-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  letter-spacing: 0.04em;
+  min-width: 20px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.chips {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+  justify-content: center;
+  flex-wrap: nowrap;
+  min-height: 44px;
+  align-items: center;
+}
+
+.chip {
+  border: none;
+  background: var(--chip);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  position: relative;
+  transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: inset 0 -2px 0 rgba(0,0,0,0.08);
+}
+/* Expand touch target to 44px without visual change */
+.chip::after {
+  content: '';
+  position: absolute;
+  top: -6px; left: -6px; right: -6px; bottom: -6px;
+}
+.chip:hover:not(:disabled) { background: var(--chip-hover); transform: translateY(-1px); }
+.chip:active:not(:disabled) { transform: translateY(0); }
+.chip.selected {
+  background: var(--chip-selected);
+  box-shadow: inset 0 -2px 0 rgba(0,0,0,0.15), 0 0 0 2px var(--accent-soft);
+}
+.chip.gone {
+  visibility: hidden;
+  pointer-events: none;
+}
+.chip.hint {
+  background: var(--chip-hint);
+  box-shadow: inset 0 -2px 0 rgba(0,0,0,0.15), 0 0 0 3px rgba(255, 149, 0, 0.25);
+  animation: pulse 1s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: inset 0 -2px 0 rgba(0,0,0,0.15), 0 0 0 3px rgba(255, 149, 0, 0.25); }
+  50% { box-shadow: inset 0 -2px 0 rgba(0,0,0,0.15), 0 0 0 6px rgba(255, 149, 0, 0.15); }
+}
+.chip.taking {
+  animation: fly 0.35s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+@keyframes fly {
+  to { transform: scale(0.3) translateY(-20px); opacity: 0; }
+}
+
+.action-bar {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  min-height: 44px;
+  align-items: center;
+}
+
+.action-info {
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-align: center;
+  flex-basis: 100%;
+}
+.action-info strong { color: var(--accent); font-weight: 600; }
+
+.btn {
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 12px 22px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 44px;
+  background: var(--accent);
+  color: white;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:hover:not(:disabled) { background: var(--accent-hover); transform: translateY(-1px); }
+.btn:active:not(:disabled) { transform: translateY(0); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn.secondary {
+  background: white;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+.btn.secondary:hover:not(:disabled) { background: #f5f5f7; }
+
+.btn.ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 10px 16px;
+  font-size: 14px;
+}
+.btn.ghost:hover:not(:disabled) { color: var(--text-primary); background: rgba(0,0,0,0.04); }
+
+.scoreboard {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  background: white;
+  border-radius: var(--radius);
+  padding: 14px;
+  box-shadow: var(--shadow);
+}
+.score-box { text-align: center; }
+.score-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 4px;
+}
+.score-box.you .score-label { color: var(--accent); }
+.score-box.ai .score-label { color: var(--danger); }
+.score-value {
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.rules-toggle {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--accent);
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+  padding: 4px;
+  min-height: 44px;
+}
+.rules-toggle:hover { text-decoration: underline; }
+.rules-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  text-align: left;
+  max-width: 420px;
+  margin: 0 auto;
+}
+.rules-panel.open { max-height: 900px; }
+.rules-panel ul { margin: 8px 0 0 16px; }
+.rules-panel li { margin-bottom: 4px; }
+.rules-panel strong { color: var(--text-primary); }
+
+footer {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  text-align: center;
+  line-height: 1.6;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 10;
+  padding: 20px;
+}
+.overlay.show { opacity: 1; pointer-events: auto; }
+.overlay .badge {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.overlay .badge.loss { background: rgba(255, 59, 48, 0.12); color: var(--danger); }
+.overlay h2 {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-align: center;
+}
+.overlay p {
+  font-size: 15px;
+  color: var(--text-secondary);
+  text-align: center;
+  max-width: 340px;
+  line-height: 1.5;
+}
+.overlay .actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+@media (max-width: 420px) {
+  body { padding: 16px 14px 32px; }
+  .wrap { gap: 14px; }
+  .chip { width: 28px; height: 28px; }
+  .chips { gap: 5px; }
+  .row-label { font-size: 11px; min-width: 16px; }
+  .score-value { font-size: 20px; }
+  .overlay h2 { font-size: 28px; }
+}
+
+@media (max-width: 360px) {
+  .chip { width: 24px; height: 24px; }
+  .chips { gap: 4px; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="back" href="../" aria-label="Back to games">
+    <span class="arrow">←</span>
+    <span>Games</span>
+  </a>
+
+  <header>
+    <h1>Nim</h1>
+    <div class="subhead">Take any number from one row. Last to take loses.</div>
+  </header>
+
+  <div class="config-card">
+    <div class="config-label">Starting Rows</div>
+    <div class="preset-row" id="presets" role="tablist" aria-label="Starting configuration"></div>
+  </div>
+
+  <div class="status" id="status">Your turn</div>
+
+  <div class="board" id="board" aria-label="Nim board"></div>
+
+  <div class="action-bar">
+    <div class="action-info" id="action-info">Tap a chip to pick what to take.</div>
+    <button class="btn" id="take-btn" disabled>Take</button>
+    <button class="btn secondary" id="cancel-btn" disabled>Cancel</button>
+  </div>
+
+  <div class="scoreboard" aria-label="Scores">
+    <div class="score-box you">
+      <div class="score-label">You</div>
+      <div class="score-value" id="score-you">0</div>
+    </div>
+    <div class="score-box">
+      <div class="score-label">Streak</div>
+      <div class="score-value" id="score-streak">0</div>
+    </div>
+    <div class="score-box ai">
+      <div class="score-label">AI</div>
+      <div class="score-value" id="score-ai">0</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn" id="new-game">New Game</button>
+    <button class="btn secondary" id="hint-btn">Hint</button>
+    <button class="btn ghost" id="reset-scores">Reset Scores</button>
+  </div>
+
+  <div style="text-align:center">
+    <button class="rules-toggle" id="rules-toggle" aria-expanded="false">How to Play ▾</button>
+    <div class="rules-panel" id="rules-panel">
+      <ul>
+        <li><strong>Goal:</strong> Force the AI to take the last chip.</li>
+        <li>On your turn, pick <strong>one row</strong> and remove <strong>any number</strong> of chips from it (at least one).</li>
+        <li>Tap a chip — that chip and every chip to its right in the same row get selected.</li>
+        <li>Confirm with <strong>Take</strong>, or tap <strong>Cancel</strong> to change your mind.</li>
+        <li>Players alternate. Whoever is forced to take the <strong>last chip loses</strong> (misère Nim).</li>
+        <li>The AI plays <strong>perfectly</strong> — from a losing start it will never slip. Choose a configuration where you can win, and play exact moves.</li>
+        <li>Stuck? Tap <strong>Hint</strong> to see the best move for the current position (highlighted in orange).</li>
+        <li>Your winning streak is submitted to the leaderboard.</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>
+    Five starting configurations. Last to take loses.
+  </footer>
+</div>
+
+<div class="overlay" id="overlay" role="dialog" aria-live="polite">
+  <div class="badge" id="overlay-badge">Round</div>
+  <h2 id="overlay-title">Game Over</h2>
+  <p id="overlay-text"></p>
+  <div class="actions">
+    <button class="btn" id="overlay-new">Play Again</button>
+    <button class="btn secondary" id="overlay-close">Close</button>
+  </div>
+</div>
+
+<script>
+(function() {
+  const LS_SCORES = 'nim-scores';
+  const LS_STREAK = 'nim-streak';
+  const LS_PRESET = 'nim-preset';
+
+  const PRESETS = [
+    { id: 'tiny',    label: '1·2·3',   piles: [1, 2, 3] },
+    { id: 'small',   label: '3·4·5',   piles: [3, 4, 5] },
+    { id: 'classic', label: '1·3·5·7', piles: [1, 3, 5, 7] },
+    { id: 'wide',    label: '2·4·6·8', piles: [2, 4, 6, 8] },
+    { id: 'epic',    label: '3·5·7·9', piles: [3, 5, 7, 9] }
+  ];
+
+  const boardEl = document.getElementById('board');
+  const statusEl = document.getElementById('status');
+  const presetsEl = document.getElementById('presets');
+  const takeBtn = document.getElementById('take-btn');
+  const cancelBtn = document.getElementById('cancel-btn');
+  const newGameBtn = document.getElementById('new-game');
+  const hintBtn = document.getElementById('hint-btn');
+  const resetScoresBtn = document.getElementById('reset-scores');
+  const actionInfo = document.getElementById('action-info');
+  const scoreYouEl = document.getElementById('score-you');
+  const scoreAiEl = document.getElementById('score-ai');
+  const streakEl = document.getElementById('score-streak');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlay-title');
+  const overlayText = document.getElementById('overlay-text');
+  const overlayBadge = document.getElementById('overlay-badge');
+  const overlayNewBtn = document.getElementById('overlay-new');
+  const overlayCloseBtn = document.getElementById('overlay-close');
+  const rulesToggle = document.getElementById('rules-toggle');
+  const rulesPanel = document.getElementById('rules-panel');
+
+  let presetId = loadPreset();
+  let piles = [];
+  let turn = 'you';        // 'you' | 'ai'
+  let gameOver = false;
+  let busy = false;
+  let selection = null;    // { row, from } — from is index of leftmost chip to take
+  let scores = loadScores();
+  let streak = loadStreak();
+
+  function loadScores() {
+    try {
+      const s = JSON.parse(localStorage.getItem(LS_SCORES));
+      if (s && typeof s.you === 'number') return s;
+    } catch {}
+    return { you: 0, ai: 0 };
+  }
+  function saveScores() {
+    try { localStorage.setItem(LS_SCORES, JSON.stringify(scores)); } catch {}
+  }
+  function loadStreak() {
+    try {
+      const v = parseInt(localStorage.getItem(LS_STREAK), 10);
+      return isNaN(v) ? 0 : v;
+    } catch { return 0; }
+  }
+  function saveStreak() {
+    try { localStorage.setItem(LS_STREAK, String(streak)); } catch {}
+  }
+  function loadPreset() {
+    try {
+      const p = localStorage.getItem(LS_PRESET);
+      if (PRESETS.some(x => x.id === p)) return p;
+    } catch {}
+    return 'classic';
+  }
+  function savePreset() {
+    try { localStorage.setItem(LS_PRESET, presetId); } catch {}
+  }
+
+  function buildPresets() {
+    presetsEl.innerHTML = '';
+    PRESETS.forEach(p => {
+      const b = document.createElement('button');
+      b.className = 'preset-btn' + (p.id === presetId ? ' active' : '');
+      b.textContent = p.label;
+      b.dataset.id = p.id;
+      b.setAttribute('role', 'tab');
+      b.setAttribute('aria-selected', p.id === presetId ? 'true' : 'false');
+      b.addEventListener('click', () => {
+        if (p.id === presetId) return;
+        presetId = p.id;
+        savePreset();
+        buildPresets();
+        newGame();
+      });
+      presetsEl.appendChild(b);
+    });
+  }
+
+  function currentPreset() {
+    return PRESETS.find(p => p.id === presetId) || PRESETS[2];
+  }
+
+  function buildBoard() {
+    boardEl.innerHTML = '';
+    piles.forEach((count, rowIdx) => {
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.dataset.row = rowIdx;
+
+      const label = document.createElement('div');
+      label.className = 'row-label';
+      label.textContent = count;
+      label.id = `row-label-${rowIdx}`;
+
+      const chips = document.createElement('div');
+      chips.className = 'chips';
+      chips.id = `chips-${rowIdx}`;
+
+      for (let i = 0; i < count; i++) {
+        const chip = document.createElement('button');
+        chip.className = 'chip';
+        chip.setAttribute('aria-label', `Row ${rowIdx + 1}, chip ${i + 1}`);
+        chip.dataset.row = rowIdx;
+        chip.dataset.idx = i;
+        chip.addEventListener('click', onChipClick);
+        chips.appendChild(chip);
+      }
+
+      row.appendChild(label);
+      row.appendChild(chips);
+      boardEl.appendChild(row);
+    });
+  }
+
+  function updateRowLabel(rowIdx) {
+    const el = document.getElementById(`row-label-${rowIdx}`);
+    if (el) el.textContent = piles[rowIdx];
+  }
+
+  function clearHints() {
+    document.querySelectorAll('.chip.hint').forEach(c => c.classList.remove('hint'));
+  }
+
+  function clearSelection() {
+    selection = null;
+    document.querySelectorAll('.chip.selected').forEach(c => c.classList.remove('selected'));
+    updateActionBar();
+  }
+
+  function applySelection() {
+    document.querySelectorAll('.chip.selected').forEach(c => c.classList.remove('selected'));
+    if (!selection) return;
+    const chips = document.getElementById(`chips-${selection.row}`);
+    if (!chips) return;
+    const count = piles[selection.row];
+    for (let i = selection.from; i < count; i++) {
+      chips.children[i].classList.add('selected');
+    }
+  }
+
+  function updateActionBar() {
+    if (gameOver) {
+      takeBtn.disabled = true;
+      cancelBtn.disabled = true;
+      actionInfo.textContent = 'Round over.';
+      return;
+    }
+    if (turn !== 'you' || busy) {
+      takeBtn.disabled = true;
+      cancelBtn.disabled = true;
+      actionInfo.textContent = 'Waiting for AI…';
+      return;
+    }
+    if (!selection) {
+      takeBtn.disabled = true;
+      cancelBtn.disabled = true;
+      actionInfo.textContent = 'Tap a chip to pick what to take.';
+      return;
+    }
+    const take = piles[selection.row] - selection.from;
+    takeBtn.disabled = false;
+    cancelBtn.disabled = false;
+    actionInfo.innerHTML = `Take <strong>${take}</strong> from row <strong>${selection.row + 1}</strong>`;
+  }
+
+  function onChipClick(e) {
+    if (gameOver || busy || turn !== 'you') return;
+    clearHints();
+    const row = parseInt(e.currentTarget.dataset.row, 10);
+    const idx = parseInt(e.currentTarget.dataset.idx, 10);
+
+    if (selection && selection.row === row && selection.from === idx) {
+      clearSelection();
+      return;
+    }
+    selection = { row, from: idx };
+    applySelection();
+    updateActionBar();
+  }
+
+  function updateStatus() {
+    if (gameOver) return;
+    if (turn === 'you') {
+      statusEl.innerHTML = '<span class="you">Your turn</span>';
+    } else {
+      statusEl.innerHTML = '<span class="ai">AI thinking</span>…';
+    }
+  }
+
+  function totalChips() { return piles.reduce((s, n) => s + n, 0); }
+
+  // Animate removal, then update state
+  function commitTake(row, from, onDone) {
+    const chipsWrap = document.getElementById(`chips-${row}`);
+    const total = piles[row];
+    const removing = [];
+    for (let i = from; i < total; i++) {
+      removing.push(chipsWrap.children[i]);
+    }
+    removing.forEach((el, i) => {
+      el.classList.remove('selected');
+      setTimeout(() => el.classList.add('taking'), i * 50);
+    });
+    const dur = 350 + (removing.length - 1) * 50;
+    setTimeout(() => {
+      piles[row] = from;
+      // Rebuild just this row so chips indices stay clean
+      rebuildRow(row);
+      updateRowLabel(row);
+      if (onDone) onDone();
+    }, dur);
+  }
+
+  function rebuildRow(rowIdx) {
+    const chips = document.getElementById(`chips-${rowIdx}`);
+    chips.innerHTML = '';
+    const count = piles[rowIdx];
+    for (let i = 0; i < count; i++) {
+      const chip = document.createElement('button');
+      chip.className = 'chip';
+      chip.setAttribute('aria-label', `Row ${rowIdx + 1}, chip ${i + 1}`);
+      chip.dataset.row = rowIdx;
+      chip.dataset.idx = i;
+      chip.addEventListener('click', onChipClick);
+      chips.appendChild(chip);
+    }
+  }
+
+  function playerTake() {
+    if (!selection) return;
+    const { row, from } = selection;
+    const take = piles[row] - from;
+    if (take < 1) return;
+    clearHints();
+    selection = null;
+    busy = true;
+    updateActionBar();
+    commitTake(row, from, () => {
+      busy = false;
+      if (totalChips() === 0) {
+        // Player took the last chip — player loses
+        endGame('ai');
+        return;
+      }
+      turn = 'ai';
+      updateStatus();
+      scheduleAI();
+    });
+  }
+
+  function scheduleAI() {
+    busy = true;
+    updateActionBar();
+    setTimeout(() => {
+      const move = bestMove(piles);
+      if (!move) { busy = false; return; }
+      const { row, take } = move;
+      const from = piles[row] - take;
+      // Highlight AI's chips briefly so it's clear what it took
+      const chipsWrap = document.getElementById(`chips-${row}`);
+      for (let i = from; i < piles[row]; i++) {
+        chipsWrap.children[i].style.background = 'var(--danger)';
+      }
+      setTimeout(() => {
+        commitTake(row, from, () => {
+          busy = false;
+          if (totalChips() === 0) {
+            // AI took last chip — AI loses, player wins
+            endGame('you');
+            return;
+          }
+          turn = 'you';
+          updateStatus();
+          updateActionBar();
+        });
+      }, 260);
+    }, 520);
+  }
+
+  // Misère Nim perfect-play move
+  function bestMove(p) {
+    const nonZero = p.filter(x => x > 0).length;
+    if (nonZero === 0) return null;
+
+    const bigIndices = p.map((v, i) => v > 1 ? i : -1).filter(i => i >= 0);
+    const onesIndices = p.map((v, i) => v === 1 ? i : -1).filter(i => i >= 0);
+
+    if (bigIndices.length === 0) {
+      // Only ones remain. If ones is even → winning move: take one 1.
+      // If ones is odd → losing, take one 1 anyway.
+      return { row: onesIndices[0], take: 1 };
+    }
+
+    if (bigIndices.length === 1) {
+      // Exactly one pile > 1: transition to ones-only endgame.
+      const bigIdx = bigIndices[0];
+      const bigSize = p[bigIdx];
+      const onesCount = onesIndices.length;
+      // Want opponent to face odd ones (losing for them).
+      if (onesCount % 2 === 0) {
+        // Reduce big to 1 → opp faces (onesCount + 1) = odd
+        return { row: bigIdx, take: bigSize - 1 };
+      } else {
+        // Reduce big to 0 → opp faces onesCount = odd
+        return { row: bigIdx, take: bigSize };
+      }
+    }
+
+    // 2+ big piles: play standard Nim (XOR = 0 is losing).
+    let xor = 0;
+    for (const v of p) xor ^= v;
+    if (xor === 0) {
+      // Losing position; play a move that preserves options (take 1 from biggest).
+      let idx = 0, max = -1;
+      for (let i = 0; i < p.length; i++) {
+        if (p[i] > max) { max = p[i]; idx = i; }
+      }
+      return { row: idx, take: 1 };
+    }
+    for (let i = 0; i < p.length; i++) {
+      const target = p[i] ^ xor;
+      if (target < p[i]) {
+        return { row: i, take: p[i] - target };
+      }
+    }
+    return null;
+  }
+
+  function endGame(winner) {
+    gameOver = true;
+    clearSelection();
+    clearHints();
+    if (winner === 'you') {
+      scores.you++;
+      streak++;
+      saveStreak();
+      showOverlay('You Win!', 'The AI took the last chip.', 'win');
+      if (streak > 0) {
+        setTimeout(() => {
+          window.Leaderboard && Leaderboard.submitScore(streak);
+        }, 600);
+      }
+    } else {
+      scores.ai++;
+      streak = 0;
+      saveStreak();
+      showOverlay('AI Wins', 'You took the last chip. Try a different configuration or tap Hint.', 'loss');
+    }
+    saveScores();
+    updateScoreDisplay();
+    statusEl.textContent = winner === 'you' ? 'You win!' : 'AI wins.';
+    updateActionBar();
+  }
+
+  function showOverlay(title, text, kind) {
+    overlayTitle.textContent = title;
+    overlayText.textContent = text;
+    overlayBadge.textContent = kind === 'win' ? 'Victory' : 'Defeat';
+    overlayBadge.classList.toggle('loss', kind !== 'win');
+    overlay.classList.add('show');
+  }
+  function hideOverlay() { overlay.classList.remove('show'); }
+
+  function updateScoreDisplay() {
+    scoreYouEl.textContent = scores.you;
+    scoreAiEl.textContent = scores.ai;
+    streakEl.textContent = streak;
+  }
+
+  function showHint() {
+    if (gameOver || busy || turn !== 'you') return;
+    clearHints();
+    clearSelection();
+    const move = bestMove(piles);
+    if (!move) return;
+    const chipsWrap = document.getElementById(`chips-${move.row}`);
+    const from = piles[move.row] - move.take;
+    for (let i = from; i < piles[move.row]; i++) {
+      chipsWrap.children[i].classList.add('hint');
+    }
+    const xor = piles.reduce((a, b) => a ^ b, 0);
+    const bigCount = piles.filter(v => v > 1).length;
+    let verdict;
+    if (bigCount >= 2) {
+      verdict = xor === 0 ? 'Losing position — any move; take 1 to stall.' : 'Winning move — keep the pressure on.';
+    } else if (bigCount === 1) {
+      verdict = 'Endgame — set up an odd count of singles for the AI.';
+    } else {
+      const onesLeft = piles.filter(v => v === 1).length;
+      verdict = onesLeft % 2 === 0 ? 'Winning move — force the AI to take the last.' : 'Losing position — any move leaves the AI winning.';
+    }
+    actionInfo.textContent = verdict;
+  }
+
+  function newGame() {
+    piles = currentPreset().piles.slice();
+    turn = 'you';
+    gameOver = false;
+    busy = false;
+    selection = null;
+    hideOverlay();
+    buildBoard();
+    updateStatus();
+    updateActionBar();
+  }
+
+  // Events
+  takeBtn.addEventListener('click', playerTake);
+  cancelBtn.addEventListener('click', clearSelection);
+  newGameBtn.addEventListener('click', newGame);
+  overlayNewBtn.addEventListener('click', newGame);
+  overlayCloseBtn.addEventListener('click', hideOverlay);
+  hintBtn.addEventListener('click', showHint);
+  resetScoresBtn.addEventListener('click', () => {
+    scores = { you: 0, ai: 0 };
+    streak = 0;
+    saveScores();
+    saveStreak();
+    updateScoreDisplay();
+  });
+  rulesToggle.addEventListener('click', () => {
+    const open = rulesPanel.classList.toggle('open');
+    rulesToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    rulesToggle.textContent = open ? 'How to Play ▴' : 'How to Play ▾';
+  });
+
+  // Init
+  buildPresets();
+  updateScoreDisplay();
+  newGame();
+})();
+</script>
+
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>

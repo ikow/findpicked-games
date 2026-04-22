@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Checkers — Classic Draughts</title>
+<meta name="description" content="Play Checkers free online. 8x8 board with mandatory jumps, chain captures, and king promotion. Challenge the AI or play 2-player.">
+<style>
+  :root {
+    --bg: #fafafa;
+    --text: #1d1d1f;
+    --text-2: #6e6e73;
+    --text-3: #86868b;
+    --accent: #0071e3;
+    --accent-hover: #0077ed;
+    --square-light: #f0ebe3;
+    --square-dark: #a87d57;
+    --border: rgba(0, 0, 0, 0.08);
+    --shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    --red: #c9352e;
+    --red-light: #e8675f;
+    --red-dark: #7a1e19;
+    --black: #1d1d1f;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 56px 20px 40px;
+  }
+
+  .title {
+    font-size: 38px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 0 0 4px;
+    text-align: center;
+  }
+
+  .subtitle {
+    font-size: 15px;
+    color: var(--text-2);
+    margin: 0 0 24px;
+    text-align: center;
+  }
+
+  .controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    width: 100%;
+    max-width: 560px;
+  }
+
+  .pill-group {
+    display: inline-flex;
+    background: #ececec;
+    border-radius: 999px;
+    padding: 3px;
+    gap: 2px;
+  }
+
+  .pill {
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 10px 18px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    font-family: inherit;
+    white-space: nowrap;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .pill.active {
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+
+  .pill:not(.active):hover { color: var(--text-2); }
+
+  .status {
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--text);
+    min-height: 26px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: center;
+  }
+
+  .status-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .status-dot.red {
+    background: radial-gradient(circle at 35% 30%, var(--red-light), var(--red) 80%);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+
+  .status-dot.black {
+    background: radial-gradient(circle at 35% 30%, #555, #000 80%);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+
+  .status.won {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .board-wrap {
+    width: min(92vw, 480px);
+    margin: 6px 0 20px;
+  }
+
+  .board {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow:
+      0 1px 2px rgba(0,0,0,0.06),
+      0 8px 24px rgba(60, 40, 20, 0.18);
+    touch-action: manipulation;
+    user-select: none;
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+  }
+
+  .square {
+    position: relative;
+  }
+
+  .square.light { background: var(--square-light); }
+  .square.dark {
+    background: var(--square-dark);
+    cursor: pointer;
+  }
+
+  .square.last::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 113, 227, 0.22);
+    pointer-events: none;
+  }
+
+  .square.selected::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    box-shadow: inset 0 0 0 3px var(--accent);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .square.valid::after,
+  .square.capture::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 30%;
+    height: 30%;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 113, 227, 0.42);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .square.capture::after {
+    background: rgba(201, 53, 46, 0.6);
+    width: 38%;
+    height: 38%;
+  }
+
+  .piece {
+    position: absolute;
+    top: 10%;
+    left: 10%;
+    width: 80%;
+    height: 80%;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 3;
+    animation: enter 0.18s cubic-bezier(0.2, 0.8, 0.3, 1.2);
+  }
+
+  .piece.red {
+    background: radial-gradient(circle at 32% 28%, var(--red-light) 0%, var(--red) 55%, var(--red-dark) 100%);
+    box-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.35),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.35);
+  }
+
+  .piece.black {
+    background: radial-gradient(circle at 32% 28%, #5a5a5a 0%, #1a1a1a 55%, #000 100%);
+    box-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.35),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.5);
+  }
+
+  .piece.king::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 42%;
+    height: 42%;
+    border-radius: 50%;
+    border: 2.5px solid #ffd45a;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 6px rgba(255, 212, 90, 0.4);
+  }
+
+  @keyframes enter {
+    0%   { transform: scale(0); }
+    60%  { transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+
+  .buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .btn {
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    padding: 12px 26px;
+    border-radius: 999px;
+    transition: all 0.2s;
+    min-height: 44px;
+  }
+
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid rgba(0, 113, 227, 0.3);
+  }
+  .btn-secondary:hover { background: rgba(0, 113, 227, 0.05); }
+
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn-primary:disabled:hover { transform: none; background: var(--accent); }
+
+  .stats {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 18px;
+    font-size: 13px;
+    color: var(--text-2);
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .stats .stat strong {
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 600;
+    margin-right: 5px;
+  }
+
+  .rules-toggle {
+    background: none;
+    border: none;
+    color: var(--text-2);
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 8px 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+  }
+
+  .rules-toggle:hover { color: var(--text); }
+  .rules-toggle .arrow { transition: transform 0.2s; }
+  .rules-toggle.open .arrow { transform: rotate(180deg); }
+
+  .rules {
+    max-width: 460px;
+    text-align: left;
+    font-size: 14px;
+    color: var(--text-2);
+    line-height: 1.6;
+    margin-top: 10px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    padding: 0 20px;
+    transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+  }
+
+  .rules.open {
+    max-height: 560px;
+    padding: 16px 20px;
+    opacity: 1;
+  }
+
+  .rules p { margin: 0 0 10px; }
+  .rules p:last-child { margin: 0; }
+  .rules strong { color: var(--text); }
+
+  @media (max-width: 480px) {
+    body { padding-top: 50px; }
+    .title { font-size: 30px; }
+    .subtitle { font-size: 14px; margin-bottom: 18px; }
+    .pill { padding: 9px 14px; font-size: 13px; }
+    .stats { gap: 14px; }
+    .btn { padding: 11px 20px; }
+    .board-wrap { width: min(94vw, 420px); }
+  }
+
+  .ai-thinking .board { opacity: 0.96; pointer-events: none; }
+</style>
+</head>
+<body>
+
+<a href='../' style='position:fixed;top:16px;left:16px;color:#6e6e73;text-decoration:none;font-size:15px;z-index:9999'>← Back</a>
+
+<h1 class="title">Checkers</h1>
+<p class="subtitle">Classic Draughts — 8×8</p>
+
+<div class="controls">
+  <div class="pill-group" id="modeGroup">
+    <button class="pill active" data-mode="ai">vs AI</button>
+    <button class="pill" data-mode="player">2 Players</button>
+  </div>
+  <div class="pill-group" id="difficultyGroup">
+    <button class="pill" data-diff="easy">Easy</button>
+    <button class="pill active" data-diff="medium">Medium</button>
+    <button class="pill" data-diff="hard">Hard</button>
+  </div>
+</div>
+
+<div class="status" id="status">
+  <span class="status-dot red" id="statusDot"></span>
+  <span id="statusText">Your turn</span>
+</div>
+
+<div class="board-wrap">
+  <div class="board" id="board"></div>
+</div>
+
+<div class="buttons">
+  <button class="btn btn-primary" id="newBtn">New Game</button>
+</div>
+
+<div class="stats" id="stats"></div>
+
+<button class="rules-toggle" id="rulesToggle">How to Play <span class="arrow">▾</span></button>
+<div class="rules" id="rules">
+  <p><strong>Goal.</strong> Capture all of your opponent's pieces, or leave them with no legal moves.</p>
+  <p><strong>Moving.</strong> Pieces move one square diagonally forward to an empty dark square. Red moves up the board; Black moves down.</p>
+  <p><strong>Capturing.</strong> Jump diagonally over an adjacent opponent piece onto the empty square beyond. If a capture is available, you must take it. When the same piece can keep capturing, you must continue the chain.</p>
+  <p><strong>Kings.</strong> Reach the far row and your piece is crowned (marked with a gold ring). Kings move and capture diagonally in any direction.</p>
+  <p><strong>How to play.</strong> Click one of your pieces to see its valid moves, then click a destination to move. Blue dots are moves; red dots are captures.</p>
+</div>
+
+<script>
+(function() {
+  const RED = 1;
+  const BLACK = 2;
+  const STATS_KEY = 'checkers-stats-v1';
+  const PREFS_KEY = 'checkers-prefs-v1';
+
+  const boardEl = document.getElementById('board');
+  const statusEl = document.getElementById('status');
+  const statusDot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+  const modeGroup = document.getElementById('modeGroup');
+  const difficultyGroup = document.getElementById('difficultyGroup');
+  const newBtn = document.getElementById('newBtn');
+  const rulesToggle = document.getElementById('rulesToggle');
+  const rulesEl = document.getElementById('rules');
+  const statsEl = document.getElementById('stats');
+
+  let board, currentPlayer, chainFrom, selected, validMoves, gameOver, winner, lastMove;
+  let mode, difficulty;
+  let aiTimer = null, gameId = 0, aiThinking = false;
+
+  function loadJSON(key, fallback) {
+    try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; }
+  }
+  function saveJSON(key, v) {
+    try { localStorage.setItem(key, JSON.stringify(v)); } catch {}
+  }
+
+  let stats = loadJSON(STATS_KEY, {wins: 0, losses: 0, red: 0, black: 0});
+  const prefs = loadJSON(PREFS_KEY, {});
+  mode = prefs.mode || 'ai';
+  difficulty = prefs.difficulty || 'medium';
+
+  function initialBoard() {
+    const b = Array.from({length: 8}, () => Array(8).fill(null));
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 8; c++) {
+        if ((r + c) % 2 === 1) b[r][c] = {player: BLACK, king: false};
+      }
+    }
+    for (let r = 5; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        if ((r + c) % 2 === 1) b[r][c] = {player: RED, king: false};
+      }
+    }
+    return b;
+  }
+
+  function cloneBoard(bd) {
+    return bd.map(row => row.map(p => p ? {player: p.player, king: p.king} : null));
+  }
+
+  function pieceDirs(p) {
+    if (p.king) return [[-1,-1],[-1,1],[1,-1],[1,1]];
+    return p.player === RED ? [[-1,-1],[-1,1]] : [[1,-1],[1,1]];
+  }
+
+  function getPieceCaptures(bd, r, c) {
+    const p = bd[r][c];
+    if (!p) return [];
+    const out = [];
+    for (const [dr, dc] of pieceDirs(p)) {
+      const mr = r + dr, mc = c + dc;
+      const jr = r + 2*dr, jc = c + 2*dc;
+      if (jr < 0 || jr >= 8 || jc < 0 || jc >= 8) continue;
+      const mid = bd[mr][mc];
+      if (!mid || mid.player === p.player) continue;
+      if (bd[jr][jc]) continue;
+      out.push({from: [r, c], to: [jr, jc], captured: [mr, mc]});
+    }
+    return out;
+  }
+
+  function getPieceSimpleMoves(bd, r, c) {
+    const p = bd[r][c];
+    if (!p) return [];
+    const out = [];
+    for (const [dr, dc] of pieceDirs(p)) {
+      const nr = r + dr, nc = c + dc;
+      if (nr < 0 || nr >= 8 || nc < 0 || nc >= 8) continue;
+      if (bd[nr][nc]) continue;
+      out.push({from: [r, c], to: [nr, nc]});
+    }
+    return out;
+  }
+
+  function getLegalMoves(bd, player, chainFromPos) {
+    if (chainFromPos) {
+      return getPieceCaptures(bd, chainFromPos[0], chainFromPos[1]);
+    }
+    const allCaptures = [];
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const p = bd[r][c];
+        if (!p || p.player !== player) continue;
+        const caps = getPieceCaptures(bd, r, c);
+        for (const m of caps) allCaptures.push(m);
+      }
+    }
+    if (allCaptures.length > 0) return allCaptures;
+
+    const simple = [];
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const p = bd[r][c];
+        if (!p || p.player !== player) continue;
+        const moves = getPieceSimpleMoves(bd, r, c);
+        for (const m of moves) simple.push(m);
+      }
+    }
+    return simple;
+  }
+
+  function applyMove(bd, move) {
+    const newBd = cloneBoard(bd);
+    const [fr, fc] = move.from;
+    const [tr, tc] = move.to;
+    const piece = newBd[fr][fc];
+    newBd[fr][fc] = null;
+    if (move.captured) newBd[move.captured[0]][move.captured[1]] = null;
+    let promoted = false;
+    if (!piece.king) {
+      if (piece.player === RED && tr === 0) { piece.king = true; promoted = true; }
+      if (piece.player === BLACK && tr === 7) { piece.king = true; promoted = true; }
+    }
+    newBd[tr][tc] = piece;
+    return {board: newBd, promoted};
+  }
+
+  function reset() {
+    if (aiTimer) { clearTimeout(aiTimer); aiTimer = null; }
+    gameId++;
+    board = initialBoard();
+    currentPlayer = RED;
+    chainFrom = null;
+    selected = null;
+    validMoves = [];
+    gameOver = false;
+    winner = null;
+    lastMove = null;
+    aiThinking = false;
+    document.body.classList.remove('ai-thinking');
+    statusEl.classList.remove('won');
+    render();
+    updateStatus();
+  }
+
+  function render() {
+    const frag = document.createDocumentFragment();
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const sq = document.createElement('div');
+        const dark = (r + c) % 2 === 1;
+        sq.className = 'square ' + (dark ? 'dark' : 'light');
+        sq.dataset.r = r;
+        sq.dataset.c = c;
+        if (lastMove && ((lastMove.from[0] === r && lastMove.from[1] === c) ||
+                        (lastMove.to[0] === r && lastMove.to[1] === c))) {
+          sq.classList.add('last');
+        }
+        if (selected && selected[0] === r && selected[1] === c) sq.classList.add('selected');
+        const vm = validMoves.find(m => m.to[0] === r && m.to[1] === c);
+        if (vm) sq.classList.add(vm.captured ? 'capture' : 'valid');
+
+        const piece = board[r][c];
+        if (piece) {
+          const pe = document.createElement('div');
+          pe.className = 'piece ' + (piece.player === RED ? 'red' : 'black');
+          if (piece.king) pe.classList.add('king');
+          sq.appendChild(pe);
+        }
+        frag.appendChild(sq);
+      }
+    }
+    boardEl.innerHTML = '';
+    boardEl.appendChild(frag);
+  }
+
+  function onBoardClick(e) {
+    if (gameOver || aiThinking) return;
+    if (mode === 'ai' && currentPlayer !== RED) return;
+    const sq = e.target.closest('.square');
+    if (!sq || !sq.classList.contains('dark')) return;
+    const r = +sq.dataset.r;
+    const c = +sq.dataset.c;
+    handleClick(r, c);
+  }
+
+  function handleClick(r, c) {
+    const legalMoves = getLegalMoves(board, currentPlayer, chainFrom);
+
+    if (selected) {
+      const m = legalMoves.find(mv =>
+        mv.from[0] === selected[0] && mv.from[1] === selected[1] &&
+        mv.to[0] === r && mv.to[1] === c);
+      if (m) { executeMove(m); return; }
+    }
+
+    if (chainFrom) return; // locked to chain piece
+
+    const piece = board[r][c];
+    if (piece && piece.player === currentPlayer) {
+      const pieceMoves = legalMoves.filter(m => m.from[0] === r && m.from[1] === c);
+      if (pieceMoves.length > 0) {
+        selected = [r, c];
+        validMoves = pieceMoves;
+        render();
+        return;
+      }
+    }
+
+    if (selected) {
+      selected = null;
+      validMoves = [];
+      render();
+    }
+  }
+
+  function executeMove(move) {
+    const result = applyMove(board, move);
+    board = result.board;
+    lastMove = move;
+
+    if (move.captured && !result.promoted) {
+      const more = getPieceCaptures(board, move.to[0], move.to[1]);
+      if (more.length > 0) {
+        chainFrom = [move.to[0], move.to[1]];
+        selected = [move.to[0], move.to[1]];
+        validMoves = more;
+        render();
+        updateStatus();
+        if (mode === 'ai' && currentPlayer === BLACK) scheduleAI(true);
+        return;
+      }
+    }
+
+    chainFrom = null;
+    selected = null;
+    validMoves = [];
+    currentPlayer = currentPlayer === RED ? BLACK : RED;
+    render();
+    checkGameEnd();
+    updateStatus();
+
+    if (!gameOver && mode === 'ai' && currentPlayer === BLACK) scheduleAI(false);
+  }
+
+  function checkGameEnd() {
+    const moves = getLegalMoves(board, currentPlayer, null);
+    if (moves.length === 0) {
+      gameOver = true;
+      winner = currentPlayer === RED ? BLACK : RED;
+      recordResult(winner);
+    }
+  }
+
+  function recordResult(w) {
+    if (mode === 'ai') {
+      if (w === RED) stats.wins = (stats.wins || 0) + 1;
+      else stats.losses = (stats.losses || 0) + 1;
+    } else {
+      if (w === RED) stats.red = (stats.red || 0) + 1;
+      else stats.black = (stats.black || 0) + 1;
+    }
+    saveJSON(STATS_KEY, stats);
+    updateStatsDisplay();
+
+    if (mode === 'ai' && w === RED) {
+      const counts = countPieces(board);
+      const diffBonus = difficulty === 'easy' ? 0 : difficulty === 'medium' ? 500 : 1500;
+      const score = counts.red * 100 + counts.redKings * 50 + diffBonus;
+      setTimeout(() => {
+        if (window.Leaderboard && Leaderboard.submitScore) Leaderboard.submitScore(score);
+      }, 400);
+    }
+  }
+
+  function countPieces(bd) {
+    let red = 0, black = 0, redKings = 0, blackKings = 0;
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const p = bd[r][c];
+        if (!p) continue;
+        if (p.player === RED) { red++; if (p.king) redKings++; }
+        else { black++; if (p.king) blackKings++; }
+      }
+    }
+    return {red, black, redKings, blackKings};
+  }
+
+  function updateStatus() {
+    if (gameOver) {
+      statusEl.classList.add('won');
+      if (mode === 'ai') {
+        statusText.textContent = winner === RED ? 'You win!' : 'AI wins';
+      } else {
+        statusText.textContent = (winner === RED ? 'Red' : 'Black') + ' wins!';
+      }
+      statusDot.style.visibility = 'visible';
+      statusDot.className = 'status-dot ' + (winner === RED ? 'red' : 'black');
+      newBtn.textContent = 'Play Again';
+      return;
+    }
+    newBtn.textContent = 'New Game';
+    statusEl.classList.remove('won');
+    statusDot.style.visibility = 'visible';
+    statusDot.className = 'status-dot ' + (currentPlayer === RED ? 'red' : 'black');
+    let txt;
+    if (mode === 'ai') {
+      if (currentPlayer === RED) txt = 'Your turn';
+      else txt = aiThinking ? 'AI thinking…' : "AI's turn";
+    } else {
+      txt = (currentPlayer === RED ? 'Red' : 'Black') + "'s turn";
+    }
+    if (chainFrom) txt += ' — chain capture';
+    statusText.textContent = txt;
+  }
+
+  function updateStatsDisplay() {
+    let html;
+    if (mode === 'ai') {
+      html = '<span class="stat"><strong>' + (stats.wins || 0) + '</strong>Wins</span>' +
+             '<span class="stat"><strong>' + (stats.losses || 0) + '</strong>Losses</span>';
+    } else {
+      html = '<span class="stat"><strong>' + (stats.red || 0) + '</strong>Red wins</span>' +
+             '<span class="stat"><strong>' + (stats.black || 0) + '</strong>Black wins</span>';
+    }
+    statsEl.innerHTML = html;
+  }
+
+  // ----- AI -----
+  function evaluate(bd, aiPlayer) {
+    let score = 0;
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const p = bd[r][c];
+        if (!p) continue;
+        let v = p.king ? 175 : 100;
+        if (!p.king) {
+          const advance = p.player === RED ? (7 - r) : r;
+          v += advance * 3;
+        }
+        const centerBonus = 6 - (Math.abs(c - 3.5) + Math.abs(r - 3.5));
+        v += centerBonus;
+        if (!p.king) {
+          if (p.player === RED && r === 7) v += 8;
+          if (p.player === BLACK && r === 0) v += 8;
+        }
+        if (c === 0 || c === 7) v -= 3;
+        if (p.player === aiPlayer) score += v;
+        else score -= v;
+      }
+    }
+    return score;
+  }
+
+  function minimax(bd, player, chainFromPos, depth, alpha, beta, aiPlayer) {
+    const moves = getLegalMoves(bd, player, chainFromPos);
+    if (moves.length === 0) {
+      return player === aiPlayer ? -100000 - depth * 100 : 100000 + depth * 100;
+    }
+    if (depth === 0) return evaluate(bd, aiPlayer);
+
+    const isMax = player === aiPlayer;
+    let best = isMax ? -Infinity : Infinity;
+
+    for (const move of moves) {
+      const result = applyMove(bd, move);
+      let nextPlayer = player === RED ? BLACK : RED;
+      let nextChain = null;
+      if (move.captured && !result.promoted) {
+        const more = getPieceCaptures(result.board, move.to[0], move.to[1]);
+        if (more.length > 0) {
+          nextPlayer = player;
+          nextChain = move.to;
+        }
+      }
+      const val = minimax(result.board, nextPlayer, nextChain, depth - 1, alpha, beta, aiPlayer);
+      if (isMax) {
+        if (val > best) best = val;
+        if (best > alpha) alpha = best;
+      } else {
+        if (val < best) best = val;
+        if (best < beta) beta = best;
+      }
+      if (beta <= alpha) break;
+    }
+    return best;
+  }
+
+  function computeAIMove(bd, player, chainFromPos) {
+    const moves = getLegalMoves(bd, player, chainFromPos);
+    if (moves.length === 0) return null;
+    if (moves.length === 1) return moves[0];
+
+    const depth = difficulty === 'easy' ? 2 : difficulty === 'medium' ? 4 : 6;
+    const scored = [];
+    let alpha = -Infinity;
+    const beta = Infinity;
+
+    for (const move of moves) {
+      const result = applyMove(bd, move);
+      let nextPlayer = player === RED ? BLACK : RED;
+      let nextChain = null;
+      if (move.captured && !result.promoted) {
+        const more = getPieceCaptures(result.board, move.to[0], move.to[1]);
+        if (more.length > 0) {
+          nextPlayer = player;
+          nextChain = move.to;
+        }
+      }
+      const val = minimax(result.board, nextPlayer, nextChain, depth - 1, alpha, beta, player);
+      scored.push({move, val});
+      if (val > alpha) alpha = val;
+    }
+    scored.sort((a, b) => b.val - a.val);
+
+    if (difficulty === 'easy') {
+      const pool = scored.slice(0, Math.min(4, scored.length));
+      return pool[Math.floor(Math.random() * pool.length)].move;
+    }
+    if (difficulty === 'medium') {
+      const r = Math.random();
+      if (r < 0.78 || scored.length === 1) return scored[0].move;
+      if (r < 0.94 && scored.length >= 2) return scored[1].move;
+      return scored[Math.min(2, scored.length - 1)].move;
+    }
+    const bestVal = scored[0].val;
+    const ties = scored.filter(s => s.val === bestVal);
+    return ties[Math.floor(Math.random() * ties.length)].move;
+  }
+
+  function scheduleAI(isContinuation) {
+    aiThinking = true;
+    document.body.classList.add('ai-thinking');
+    updateStatus();
+    const myGame = gameId;
+    const delay = isContinuation ? 280 : 340;
+    aiTimer = setTimeout(() => {
+      aiTimer = null;
+      if (myGame !== gameId || gameOver || currentPlayer !== BLACK) return;
+      const move = computeAIMove(board, BLACK, chainFrom);
+      aiThinking = false;
+      document.body.classList.remove('ai-thinking');
+      if (myGame !== gameId) return;
+      if (!move) {
+        checkGameEnd();
+        render();
+        updateStatus();
+        return;
+      }
+      executeMove(move);
+    }, delay);
+  }
+
+  // ----- UI handlers -----
+  boardEl.addEventListener('click', onBoardClick);
+  newBtn.addEventListener('click', reset);
+
+  modeGroup.addEventListener('click', e => {
+    const p = e.target.closest('.pill');
+    if (!p || mode === p.dataset.mode) return;
+    mode = p.dataset.mode;
+    prefs.mode = mode;
+    saveJSON(PREFS_KEY, prefs);
+    modeGroup.querySelectorAll('.pill').forEach(pp => pp.classList.toggle('active', pp.dataset.mode === mode));
+    difficultyGroup.style.display = mode === 'ai' ? 'inline-flex' : 'none';
+    reset();
+    updateStatsDisplay();
+  });
+
+  difficultyGroup.addEventListener('click', e => {
+    const p = e.target.closest('.pill');
+    if (!p || difficulty === p.dataset.diff) return;
+    difficulty = p.dataset.diff;
+    prefs.difficulty = difficulty;
+    saveJSON(PREFS_KEY, prefs);
+    difficultyGroup.querySelectorAll('.pill').forEach(pp => pp.classList.toggle('active', pp.dataset.diff === difficulty));
+    reset();
+  });
+
+  rulesToggle.addEventListener('click', () => {
+    rulesToggle.classList.toggle('open');
+    rulesEl.classList.toggle('open');
+  });
+
+  // init
+  modeGroup.querySelectorAll('.pill').forEach(p => p.classList.toggle('active', p.dataset.mode === mode));
+  difficultyGroup.style.display = mode === 'ai' ? 'inline-flex' : 'none';
+  difficultyGroup.querySelectorAll('.pill').forEach(p => p.classList.toggle('active', p.dataset.diff === difficulty));
+  updateStatsDisplay();
+  reset();
+})();
+</script>
+<script src='../shared-leaderboard.js'></script>
+</body>
+</html>

@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>24 Game — FindPicked Games</title>
+<meta name="description" content="Play the 24 Game free — combine four numbers with +−×÷ to make 24. Race the clock across 10 puzzles.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ctext x='16' y='22' font-size='14' fill='white' text-anchor='middle' font-family='system-ui' font-weight='700'%3E24%3C/text%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --green: #00875a;
+  --red: #d72d2d;
+  --gold: #d4a637;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-card: 0 4px 14px rgba(0,0,0,0.10);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+  --radius: 16px;
+}
+
+html, body { height: 100%; overscroll-behavior: none; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px 20px 40px;
+  touch-action: manipulation;
+}
+
+.back {
+  align-self: flex-start;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 15px;
+  padding: 8px 4px;
+  margin-bottom: 8px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+.back:hover { color: var(--accent); }
+
+h1 {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+  text-align: center;
+}
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 15px;
+  margin-bottom: 22px;
+  text-align: center;
+}
+
+.scoreboard {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.score-box {
+  background: var(--bg-card);
+  border-radius: 14px;
+  padding: 12px 18px;
+  min-width: 86px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.score-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 4px;
+}
+.score-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.score-value.timer-warn { color: var(--red); }
+
+.rules-toggle {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 15px;
+  cursor: pointer;
+  padding: 12px 16px;
+  font-family: inherit;
+  min-height: 44px;
+  border-radius: 999px;
+}
+.rules-toggle:hover { background: rgba(0,113,227,0.06); }
+.rules-panel {
+  background: var(--bg-card);
+  border-radius: 14px;
+  padding: 0 20px;
+  margin-top: 8px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+  text-align: left;
+  box-shadow: var(--shadow);
+  max-width: 520px;
+}
+.rules-panel.open {
+  max-height: 600px;
+  padding: 18px 20px;
+}
+.rules-panel ul { list-style: none; }
+.rules-panel li {
+  font-size: 14px;
+  color: var(--text-secondary);
+  padding: 6px 0;
+  line-height: 1.55;
+}
+.rules-panel li strong { color: var(--text-primary); font-weight: 600; }
+
+.rules-wrap { text-align: center; margin-bottom: 18px; }
+
+.target {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 4px 0 14px;
+  text-align: center;
+}
+.target strong {
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.board {
+  background: var(--bg-card);
+  border-radius: 22px;
+  padding: 26px 22px;
+  box-shadow: var(--shadow-card);
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.cards {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  min-height: 92px;
+  margin-bottom: 22px;
+}
+
+.num-card {
+  width: 76px;
+  height: 92px;
+  border-radius: 14px;
+  background: var(--bg);
+  color: var(--text-primary);
+  border: 2px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  padding: 4px;
+  line-height: 1.05;
+  text-align: center;
+  word-break: break-all;
+}
+.num-card:hover:not(.used):not(:disabled) { transform: translateY(-2px); }
+.num-card.selected {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.num-card.used {
+  opacity: 0.25;
+  cursor: default;
+  pointer-events: none;
+}
+.num-card.win {
+  background: var(--green);
+  color: #fff;
+  border-color: var(--green);
+  animation: pop 0.45s ease;
+}
+@keyframes pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+.ops {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.op-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  border: 1.5px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 22px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.op-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.op-btn.selected {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.op-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.hint-line {
+  min-height: 22px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: 16px;
+  font-variant-numeric: tabular-nums;
+  padding: 0 8px;
+  word-break: break-word;
+}
+.hint-line.success { color: var(--green); font-weight: 600; }
+.hint-line.error { color: var(--red); }
+.hint-line.hint { color: var(--accent); font-weight: 500; }
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+}
+.btn {
+  padding: 0 22px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1.5px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.btn.primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.btn.primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: #fff;
+}
+.btn:disabled { opacity: 0.45; cursor: default; }
+
+.modal-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 20px;
+}
+.modal-bg.open { display: flex; }
+.modal {
+  background: var(--bg-card);
+  border-radius: 22px;
+  padding: 32px 26px 26px;
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+.modal h2 {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 10px;
+}
+.modal p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+.modal .final-score {
+  font-size: 56px;
+  font-weight: 700;
+  color: var(--accent);
+  margin: 8px 0 4px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.modal .stats {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin: 12px 0 20px;
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+.modal .stats span strong {
+  display: block;
+  font-size: 18px;
+  color: var(--text-primary);
+  font-weight: 700;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 420px) {
+  body { padding: 18px 14px 32px; }
+  h1 { font-size: 26px; }
+  .board { padding: 20px 16px; }
+  .num-card { width: 66px; height: 82px; font-size: 24px; }
+  .op-btn { width: 52px; height: 52px; font-size: 20px; }
+  .score-box { padding: 10px 14px; min-width: 74px; }
+  .score-value { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+
+<a href="../" class="back">← All games</a>
+
+<h1>24 Game</h1>
+<p class="subtitle">Make 24 from four numbers · 10 puzzles</p>
+
+<div class="scoreboard">
+  <div class="score-box">
+    <div class="score-label">Round</div>
+    <div class="score-value" id="round">1<span style="color:var(--text-tertiary);font-weight:500">/10</span></div>
+  </div>
+  <div class="score-box">
+    <div class="score-label">Score</div>
+    <div class="score-value" id="score">0</div>
+  </div>
+  <div class="score-box">
+    <div class="score-label">Time</div>
+    <div class="score-value" id="timer">0.0</div>
+  </div>
+  <div class="score-box">
+    <div class="score-label">Best</div>
+    <div class="score-value" id="best">0</div>
+  </div>
+</div>
+
+<div class="rules-wrap">
+  <button class="rules-toggle" onclick="this.nextElementSibling.classList.toggle('open')">How to Play ▾</button>
+  <div class="rules-panel">
+    <ul>
+      <li><strong>Goal:</strong> Use all four numbers exactly once with <strong>+ − × ÷</strong> to make <strong>24</strong>.</li>
+      <li><strong>Tap a number</strong>, tap an <strong>operator</strong>, then tap a second number — the two combine into their result.</li>
+      <li>Repeat until one number remains. If it equals <strong>24</strong>, you win the round.</li>
+      <li><strong>Undo</strong> reverts your last move. Use it freely.</li>
+      <li><strong>Hint</strong> reveals one valid solution (costs 50 points).</li>
+      <li><strong>Skip</strong> moves on to the next puzzle with no points awarded.</li>
+      <li><strong>Score</strong> per round = 100 base + a time bonus (faster = more). Total across 10 puzzles is your final score.</li>
+      <li>Division must be exact — fractions like 8 ÷ 3 are allowed and tracked precisely.</li>
+    </ul>
+  </div>
+</div>
+
+<p class="target">Make <strong>24</strong> using all four numbers</p>
+
+<div class="board">
+  <div class="cards" id="cards"></div>
+
+  <div class="ops">
+    <button class="op-btn" data-op="+" aria-label="plus">+</button>
+    <button class="op-btn" data-op="-" aria-label="minus">−</button>
+    <button class="op-btn" data-op="*" aria-label="multiply">×</button>
+    <button class="op-btn" data-op="/" aria-label="divide">÷</button>
+  </div>
+
+  <div class="hint-line" id="hint-line">Tap a number to begin.</div>
+
+  <div class="actions">
+    <button class="btn" id="undo-btn">Undo</button>
+    <button class="btn" id="hint-btn">Hint</button>
+    <button class="btn" id="skip-btn">Skip</button>
+    <button class="btn primary" id="reset-btn">New Game</button>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-bg">
+  <div class="modal">
+    <h2 id="modal-title">Game Over</h2>
+    <p id="modal-msg">You completed all 10 puzzles.</p>
+    <div class="final-score" id="modal-score">0</div>
+    <div class="stats">
+      <span>Solved<strong id="modal-solved">0</strong></span>
+      <span>Best<strong id="modal-best">0</strong></span>
+      <span>Time<strong id="modal-time">0s</strong></span>
+    </div>
+    <button class="btn primary" id="play-again-btn" style="width:100%;">Play Again</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const TOTAL_ROUNDS = 10;
+  const HINT_COST = 50;
+  const ROUND_BASE = 100;
+  const TIME_BONUS_MAX = 200;   // bonus if solved instantly
+  const TIME_BONUS_DECAY = 60;  // seconds for bonus to reach 0
+  const EPS = 1e-9;
+
+  // ---- Rational arithmetic (so 8/3 etc. stay exact) ----
+  function gcd(a, b) {
+    a = Math.abs(a); b = Math.abs(b);
+    while (b) { [a, b] = [b, a % b]; }
+    return a || 1;
+  }
+  function frac(n, d) {
+    if (d === 0) return null;
+    if (d < 0) { n = -n; d = -d; }
+    const g = gcd(Math.round(n), Math.round(d));
+    return { n: Math.round(n) / g, d: Math.round(d) / g };
+  }
+  const F = {
+    from: (x) => frac(x, 1),
+    add: (a, b) => frac(a.n * b.d + b.n * a.d, a.d * b.d),
+    sub: (a, b) => frac(a.n * b.d - b.n * a.d, a.d * b.d),
+    mul: (a, b) => frac(a.n * b.n, a.d * b.d),
+    div: (a, b) => (b.n === 0 ? null : frac(a.n * b.d, a.d * b.n)),
+    eq: (a, b) => a.n * b.d === b.n * a.d,
+    is24: (a) => a.d === 1 && a.n === 24,
+    fmt: (a) => a.d === 1 ? String(a.n) : `${a.n}/${a.d}`,
+  };
+
+  function applyOp(a, op, b) {
+    if (op === '+') return F.add(a, b);
+    if (op === '-') return F.sub(a, b);
+    if (op === '*') return F.mul(a, b);
+    if (op === '/') return F.div(a, b);
+    return null;
+  }
+
+  // ---- Solver: returns a solution string or null ----
+  function findSolution(nums, exprs) {
+    if (nums.length === 1) {
+      return F.is24(nums[0]) ? exprs[0] : null;
+    }
+    for (let i = 0; i < nums.length; i++) {
+      for (let j = i + 1; j < nums.length; j++) {
+        const restN = [], restE = [];
+        for (let k = 0; k < nums.length; k++) {
+          if (k !== i && k !== j) { restN.push(nums[k]); restE.push(exprs[k]); }
+        }
+        const a = nums[i], b = nums[j];
+        const ea = exprs[i], eb = exprs[j];
+        const tries = [
+          [F.add(a, b), `(${ea} + ${eb})`],
+          [F.mul(a, b), `(${ea} × ${eb})`],
+          [F.sub(a, b), `(${ea} − ${eb})`],
+          [F.sub(b, a), `(${eb} − ${ea})`],
+          [F.div(a, b), `(${ea} ÷ ${eb})`],
+          [F.div(b, a), `(${eb} ÷ ${ea})`],
+        ];
+        for (const [r, e] of tries) {
+          if (!r) continue;
+          const sol = findSolution([...restN, r], [...restE, e]);
+          if (sol) return sol;
+        }
+      }
+    }
+    return null;
+  }
+
+  function solvable(nums) {
+    const fnums = nums.map(F.from);
+    const exprs = nums.map(String);
+    return findSolution(fnums, exprs);
+  }
+
+  // ---- Puzzle generator ----
+  function newPuzzle() {
+    // Mix of easier and harder puzzles. Numbers 1-9.
+    for (let attempts = 0; attempts < 500; attempts++) {
+      const nums = [];
+      for (let i = 0; i < 4; i++) nums.push(1 + Math.floor(Math.random() * 9));
+      const sol = solvable(nums);
+      if (sol) return { nums, solution: sol };
+    }
+    // Fallback (very unlikely)
+    return { nums: [3, 8, 8, 3], solution: '8 ÷ (3 − 8÷3)' };
+  }
+
+  // ---- State ----
+  const els = {
+    cards: document.getElementById('cards'),
+    ops: document.querySelectorAll('.op-btn'),
+    hint: document.getElementById('hint-line'),
+    undo: document.getElementById('undo-btn'),
+    hintBtn: document.getElementById('hint-btn'),
+    skip: document.getElementById('skip-btn'),
+    reset: document.getElementById('reset-btn'),
+    round: document.getElementById('round'),
+    score: document.getElementById('score'),
+    timer: document.getElementById('timer'),
+    best: document.getElementById('best'),
+    modalBg: document.getElementById('modal-bg'),
+    modalScore: document.getElementById('modal-score'),
+    modalTitle: document.getElementById('modal-title'),
+    modalMsg: document.getElementById('modal-msg'),
+    modalSolved: document.getElementById('modal-solved'),
+    modalBest: document.getElementById('modal-best'),
+    modalTime: document.getElementById('modal-time'),
+    playAgain: document.getElementById('play-again-btn'),
+  };
+
+  const BEST_KEY = 'game24-best-score';
+  function getBest() {
+    try { return parseInt(localStorage.getItem(BEST_KEY) || '0', 10) || 0; } catch { return 0; }
+  }
+  function setBest(v) {
+    try { localStorage.setItem(BEST_KEY, String(v)); } catch {}
+  }
+
+  let state = null;
+
+  function init() {
+    state = {
+      round: 1,
+      score: 0,
+      solved: 0,
+      hintUsedThisRound: false,
+      puzzle: null,
+      // history of {cards: [{id, value, expr}], idCounter, selectedId, selectedOp}
+      history: [],
+      cards: [],     // current cards
+      idCounter: 0,
+      selectedId: null,
+      selectedOp: null,
+      roundStartMs: 0,
+      sessionStartMs: Date.now(),
+      gameOver: false,
+    };
+    els.best.textContent = getBest();
+    startRound();
+    tick();
+  }
+
+  function startRound() {
+    state.puzzle = newPuzzle();
+    state.cards = state.puzzle.nums.map((v) => ({
+      id: ++state.idCounter,
+      value: F.from(v),
+      label: String(v),
+    }));
+    state.history = [];
+    state.selectedId = null;
+    state.selectedOp = null;
+    state.hintUsedThisRound = false;
+    state.roundStartMs = performance.now();
+    setHint('Tap a number, then an operator, then another number.', '');
+    render();
+  }
+
+  function snapshot() {
+    state.history.push({
+      cards: state.cards.map(c => ({ id: c.id, value: { ...c.value }, label: c.label })),
+      idCounter: state.idCounter,
+      selectedId: state.selectedId,
+      selectedOp: state.selectedOp,
+    });
+  }
+
+  function setHint(msg, cls) {
+    els.hint.textContent = msg;
+    els.hint.className = 'hint-line' + (cls ? ' ' + cls : '');
+  }
+
+  function render() {
+    els.cards.innerHTML = '';
+    state.cards.forEach((c) => {
+      const btn = document.createElement('button');
+      btn.className = 'num-card';
+      btn.textContent = c.label;
+      btn.dataset.id = c.id;
+      if (state.selectedId === c.id) btn.classList.add('selected');
+      btn.addEventListener('click', () => onCard(c.id));
+      els.cards.appendChild(btn);
+    });
+    els.ops.forEach((b) => {
+      b.classList.toggle('selected', state.selectedOp === b.dataset.op);
+      b.disabled = state.gameOver;
+    });
+    els.undo.disabled = state.history.length === 0 || state.gameOver;
+    els.hintBtn.disabled = state.gameOver;
+    els.skip.disabled = state.gameOver;
+    els.round.innerHTML = `${state.round}<span style="color:var(--text-tertiary);font-weight:500">/${TOTAL_ROUNDS}</span>`;
+    els.score.textContent = state.score;
+  }
+
+  function onCard(id) {
+    if (state.gameOver) return;
+    if (state.selectedId === id) {
+      // deselect
+      state.selectedId = null;
+      render();
+      return;
+    }
+    if (state.selectedId === null) {
+      state.selectedId = id;
+      render();
+      return;
+    }
+    // Have first card + maybe op + second card
+    if (!state.selectedOp) {
+      // Switch selection to this one instead
+      state.selectedId = id;
+      render();
+      return;
+    }
+    // Combine
+    const aIdx = state.cards.findIndex(c => c.id === state.selectedId);
+    const bIdx = state.cards.findIndex(c => c.id === id);
+    if (aIdx < 0 || bIdx < 0 || aIdx === bIdx) return;
+    const a = state.cards[aIdx];
+    const b = state.cards[bIdx];
+    const result = applyOp(a.value, state.selectedOp, b.value);
+    if (!result) {
+      setHint('Cannot divide by zero.', 'error');
+      return;
+    }
+    snapshot();
+    const opSym = state.selectedOp === '*' ? '×' : state.selectedOp === '/' ? '÷' : state.selectedOp === '-' ? '−' : '+';
+    const newCard = {
+      id: ++state.idCounter,
+      value: result,
+      label: F.fmt(result),
+    };
+    // Replace a and b with single new card. Insert at aIdx.
+    const newCards = state.cards.filter((_, i) => i !== aIdx && i !== bIdx);
+    newCards.splice(Math.min(aIdx, bIdx), 0, newCard);
+    state.cards = newCards;
+    state.selectedId = null;
+    state.selectedOp = null;
+
+    if (state.cards.length === 1) {
+      const final = state.cards[0].value;
+      if (F.is24(final)) {
+        roundWon();
+      } else {
+        setHint(`Result is ${F.fmt(final)}, not 24. Undo to try again.`, 'error');
+      }
+    } else {
+      setHint(`${a.label} ${opSym} ${b.label} = ${newCard.label}`, '');
+    }
+    render();
+  }
+
+  function roundWon() {
+    const elapsedSec = (performance.now() - state.roundStartMs) / 1000;
+    const bonus = Math.max(0, Math.round(TIME_BONUS_MAX * (1 - elapsedSec / TIME_BONUS_DECAY)));
+    let gained = ROUND_BASE + bonus;
+    if (state.hintUsedThisRound) gained = Math.max(0, gained - HINT_COST);
+    state.score += gained;
+    state.solved += 1;
+
+    setHint(`24! +${gained} points (${elapsedSec.toFixed(1)}s${state.hintUsedThisRound ? ', hint used' : ''})`, 'success');
+    render();
+    const lastBtn = els.cards.querySelector('.num-card');
+    if (lastBtn) lastBtn.classList.add('win');
+
+    setTimeout(() => {
+      if (state.round >= TOTAL_ROUNDS) {
+        endGame();
+      } else {
+        state.round += 1;
+        startRound();
+      }
+    }, 1100);
+  }
+
+  function tick() {
+    if (state.gameOver) {
+      els.timer.textContent = ((performance.now() - state.roundStartMs) / 1000).toFixed(1);
+      return;
+    }
+    const sec = (performance.now() - state.roundStartMs) / 1000;
+    els.timer.textContent = sec.toFixed(1);
+    els.timer.classList.toggle('timer-warn', sec > TIME_BONUS_DECAY);
+    requestAnimationFrame(tick);
+  }
+
+  function endGame() {
+    state.gameOver = true;
+    const totalTime = Math.round((Date.now() - state.sessionStartMs) / 1000);
+    const best = getBest();
+    const isNewBest = state.score > best;
+    if (isNewBest) {
+      setBest(state.score);
+      els.best.textContent = state.score;
+    }
+    els.modalScore.textContent = state.score;
+    els.modalSolved.textContent = `${state.solved}/${TOTAL_ROUNDS}`;
+    els.modalBest.textContent = isNewBest ? state.score : best;
+    els.modalTime.textContent = `${totalTime}s`;
+    els.modalTitle.textContent = isNewBest ? 'New Best!' : 'Game Over';
+    els.modalMsg.textContent = isNewBest
+      ? 'A new personal best — nicely done.'
+      : `You solved ${state.solved} of ${TOTAL_ROUNDS} puzzles.`;
+    els.modalBg.classList.add('open');
+    render();
+
+    if (window.Leaderboard && Leaderboard.submitScore) {
+      try { Leaderboard.submitScore(state.score); } catch (e) {}
+    }
+  }
+
+  // ---- Buttons ----
+  els.ops.forEach((b) => {
+    b.addEventListener('click', () => {
+      if (state.gameOver) return;
+      if (state.selectedId === null) {
+        setHint('Pick a number first.', 'error');
+        return;
+      }
+      state.selectedOp = (state.selectedOp === b.dataset.op) ? null : b.dataset.op;
+      render();
+    });
+  });
+
+  els.undo.addEventListener('click', () => {
+    if (state.gameOver || !state.history.length) return;
+    const prev = state.history.pop();
+    state.cards = prev.cards;
+    state.idCounter = prev.idCounter;
+    state.selectedId = null;
+    state.selectedOp = null;
+    setHint('Move undone.', '');
+    render();
+  });
+
+  els.hintBtn.addEventListener('click', () => {
+    if (state.gameOver) return;
+    state.hintUsedThisRound = true;
+    setHint('Hint: ' + state.puzzle.solution, 'hint');
+  });
+
+  els.skip.addEventListener('click', () => {
+    if (state.gameOver) return;
+    setHint(`Skipped. Solution was: ${state.puzzle.solution}`, '');
+    setTimeout(() => {
+      if (state.round >= TOTAL_ROUNDS) {
+        endGame();
+      } else {
+        state.round += 1;
+        startRound();
+      }
+    }, 1400);
+  });
+
+  els.reset.addEventListener('click', () => {
+    if (!state.gameOver && !confirm('Start a new game? Current progress will be lost.')) return;
+    els.modalBg.classList.remove('open');
+    init();
+  });
+
+  els.playAgain.addEventListener('click', () => {
+    els.modalBg.classList.remove('open');
+    init();
+  });
+
+  init();
+})();
+</script>
+<script src="../shared-leaderboard.js"></script>
+</body>
+</html>
