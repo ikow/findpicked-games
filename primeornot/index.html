@@ -5,6 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Prime or Not — FindPicked Games</title>
 <meta name="description" content="Prime or Not — a 30-second mental math sprint. Decide if each flashing number is prime before the bar runs out.">
+<link rel="canonical" href="https://game.findpicked.com/primeornot/">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="theme-color" content="#0071e3">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="FindPicked Games">
+<meta property="og:title" content="Prime or Not — FindPicked Games">
+<meta property="og:description" content="Prime or Not — a 30-second mental math sprint. Decide if each flashing number is prime before the bar runs out.">
+<meta property="og:url" content="https://game.findpicked.com/primeornot/">
+<meta property="og:image" content="https://game.findpicked.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="en_US">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Prime or Not — FindPicked Games">
+<meta name="twitter:description" content="Prime or Not — a 30-second mental math sprint. Decide if each flashing number is prime before the bar runs out.">
+<meta name="twitter:image" content="https://game.findpicked.com/og-image.png">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='-apple-system,sans-serif' font-size='18' font-weight='700' fill='white'%3E7%3C/text%3E%3C/svg%3E">
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -423,9 +439,76 @@ footer {
   .choice { height: 56px; font-size: 16px; }
   .choice .key { display: none; }
 }
+
+.breadcrumb{padding:8px 16px;font-size:13px;color:var(--text-secondary,#6e6e73)}
+.breadcrumb a{color:#0071e3;text-decoration:none}
+.breadcrumb span{margin:0 4px}
+.related{max-width:680px;margin:24px auto;padding:0 20px}
+.related h2{font-size:18px;font-weight:600;margin-bottom:12px;color:var(--text-primary,#1d1d1f)}
+.related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.related-card{display:block;padding:12px 16px;background:var(--bg-card,#fff);border-radius:12px;text-decoration:none;color:var(--text-primary,#1d1d1f);border:1px solid rgba(0,0,0,0.06);font-size:14px;font-weight:500;transition:transform 0.2s,box-shadow 0.2s}
+.related-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.08)}
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Prime or Not",
+  "description": "Prime or Not — a 30-second mental math sprint. Decide if each flashing number is prime before the bar runs out.",
+  "url": "https://game.findpicked.com/primeornot/",
+  "playMode": "SinglePlayer",
+  "applicationCategory": "Game",
+  "applicationSubCategory": "Math",
+  "gamePlatform": [
+    "Web Browser",
+    "Mobile Browser"
+  ],
+  "operatingSystem": "Any",
+  "browserRequirements": "Requires JavaScript",
+  "inLanguage": "en",
+  "isAccessibleForFree": true,
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD",
+    "availability": "https://schema.org/InStock"
+  },
+  "author": {
+    "@type": "Organization",
+    "name": "FindPicked Games",
+    "url": "https://game.findpicked.com/"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "FindPicked Games",
+      "item": "https://game.findpicked.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Math Games",
+      "item": "https://game.findpicked.com/math/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Prime or Not",
+      "item": "https://game.findpicked.com/primeornot/"
+    }
+  ]
+}
+</script>
 </head>
 <body>
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Games</a> <span>›</span> <a href="/math/">Math</a> <span>›</span> <span>Prime or Not</span></nav>
 
 <div class="wrap">
   <a class="back" href="../" aria-label="Back to games">
@@ -809,5 +892,14 @@ footer {
 </script>
 
 <script src="../shared-leaderboard.js"></script>
+<section class="related">
+<h2>You Might Also Like</h2>
+<div class="related-grid">
+<a href="/mentalmath/" class="related-card"><span class="related-name">Mental Math</span></a>
+<a href="/mathsprint/" class="related-card"><span class="related-name">Math Sprint</span></a>
+<a href="/game24/" class="related-card"><span class="related-name">24 Game</span></a>
+<a href="/2048/" class="related-card"><span class="related-name">2048</span></a>
+</div>
+</section>
 </body>
 </html>

@@ -5,6 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HexGL — Futuristic 3D Racing | FindPicked Games</title>
 <meta name="description" content="Race at breakneck speed through a futuristic neon track. A stunning WebGL 3D racing game you can play right in your browser.">
+<link rel="canonical" href="https://game.findpicked.com/hexgl/">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="theme-color" content="#0071e3">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="FindPicked Games">
+<meta property="og:title" content="HexGL — Futuristic 3D Racing | FindPicked Games">
+<meta property="og:description" content="Race at breakneck speed through a futuristic neon track. A stunning WebGL 3D racing game you can play right in your browser.">
+<meta property="og:url" content="https://game.findpicked.com/hexgl/">
+<meta property="og:image" content="https://game.findpicked.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="en_US">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="HexGL — Futuristic 3D Racing | FindPicked Games">
+<meta name="twitter:description" content="Race at breakneck speed through a futuristic neon track. A stunning WebGL 3D racing game you can play right in your browser.">
+<meta name="twitter:image" content="https://game.findpicked.com/og-image.png">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,sans-serif;background:#0a0a0a;color:#f5f5f7;-webkit-font-smoothing:antialiased;overflow-x:hidden}
@@ -87,9 +103,76 @@ a{color:inherit;text-decoration:none}
   #hero{padding:60px 20px 40px}
   .topbar-title{display:none}
 }
+
+.breadcrumb{padding:8px 16px;font-size:13px;color:var(--text-secondary,#6e6e73)}
+.breadcrumb a{color:#0071e3;text-decoration:none}
+.breadcrumb span{margin:0 4px}
+.related{max-width:680px;margin:24px auto;padding:0 20px}
+.related h2{font-size:18px;font-weight:600;margin-bottom:12px;color:var(--text-primary,#1d1d1f)}
+.related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.related-card{display:block;padding:12px 16px;background:var(--bg-card,#fff);border-radius:12px;text-decoration:none;color:var(--text-primary,#1d1d1f);border:1px solid rgba(0,0,0,0.06);font-size:14px;font-weight:500;transition:transform 0.2s,box-shadow 0.2s}
+.related-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.08)}
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "HexGL",
+  "description": "Race at breakneck speed through a futuristic neon track. A stunning WebGL 3D racing game you can play right in your browser.",
+  "url": "https://game.findpicked.com/hexgl/",
+  "playMode": "SinglePlayer",
+  "applicationCategory": "Game",
+  "applicationSubCategory": "Arcade",
+  "gamePlatform": [
+    "Web Browser",
+    "Mobile Browser"
+  ],
+  "operatingSystem": "Any",
+  "browserRequirements": "Requires JavaScript",
+  "inLanguage": "en",
+  "isAccessibleForFree": true,
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD",
+    "availability": "https://schema.org/InStock"
+  },
+  "author": {
+    "@type": "Organization",
+    "name": "FindPicked Games",
+    "url": "https://game.findpicked.com/"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "FindPicked Games",
+      "item": "https://game.findpicked.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Arcade Games",
+      "item": "https://game.findpicked.com/arcade/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "HexGL",
+      "item": "https://game.findpicked.com/hexgl/"
+    }
+  ]
+}
+</script>
 </head>
 <body>
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Games</a> <span>›</span> <a href="/arcade/">Arcade</a> <span>›</span> <span>HexGL</span></nav>
 
 <div class="webgl-warn" id="webglWarn"><div><p style="font-size:48px;margin-bottom:16px">&#128308;</p><p>This game requires WebGL, which your browser doesn't support.</p><p style="margin-top:12px"><a href="../">Back to all games</a></p></div></div>
 <a href="../" class="back-home" id="backHome">&larr; All Games</a>
@@ -310,5 +393,14 @@ function exitGame() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 </script>
+<section class="related">
+<h2>You Might Also Like</h2>
+<div class="related-grid">
+<a href="/snake/" class="related-card"><span class="related-name">Snake</span></a>
+<a href="/asteroids/" class="related-card"><span class="related-name">Asteroids</span></a>
+<a href="/snakeio/" class="related-card"><span class="related-name">Snake.io</span></a>
+<a href="/2048/" class="related-card"><span class="related-name">2048</span></a>
+</div>
+</section>
 </body>
 </html>

@@ -5,6 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Drawing Canvas — FindPicked Games</title>
 <meta name="description" content="Free online drawing canvas. Pick a color, adjust brush size, draw with mouse or touch. Undo, redo, erase, and save your art as PNG.">
+<link rel="canonical" href="https://game.findpicked.com/drawingcanvas/">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="theme-color" content="#0071e3">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="FindPicked Games">
+<meta property="og:title" content="Drawing Canvas — FindPicked Games">
+<meta property="og:description" content="Free online drawing canvas. Pick a color, adjust brush size, draw with mouse or touch. Undo, redo, erase, and save your art as PNG.">
+<meta property="og:url" content="https://game.findpicked.com/drawingcanvas/">
+<meta property="og:image" content="https://game.findpicked.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="en_US">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Drawing Canvas — FindPicked Games">
+<meta name="twitter:description" content="Free online drawing canvas. Pick a color, adjust brush size, draw with mouse or touch. Undo, redo, erase, and save your art as PNG.">
+<meta name="twitter:image" content="https://game.findpicked.com/og-image.png">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Cpath d='M7 22 L16 13 L20 17 L11 26 L7 26 Z' fill='%23ffcc00'/%3E%3Cpath d='M17 12 L20 9 L24 13 L21 16 Z' fill='%23ff3b30'/%3E%3C/svg%3E">
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -470,9 +486,76 @@ footer {
   body { padding: 16px 12px 32px; }
   .tool-card { padding: 12px; }
 }
+
+.breadcrumb{padding:8px 16px;font-size:13px;color:var(--text-secondary,#6e6e73)}
+.breadcrumb a{color:#0071e3;text-decoration:none}
+.breadcrumb span{margin:0 4px}
+.related{max-width:680px;margin:24px auto;padding:0 20px}
+.related h2{font-size:18px;font-weight:600;margin-bottom:12px;color:var(--text-primary,#1d1d1f)}
+.related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.related-card{display:block;padding:12px 16px;background:var(--bg-card,#fff);border-radius:12px;text-decoration:none;color:var(--text-primary,#1d1d1f);border:1px solid rgba(0,0,0,0.06);font-size:14px;font-weight:500;transition:transform 0.2s,box-shadow 0.2s}
+.related-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.08)}
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Drawing Canvas",
+  "description": "Free online drawing canvas. Pick a color, adjust brush size, draw with mouse or touch. Undo, redo, erase, and save your art as PNG.",
+  "url": "https://game.findpicked.com/drawingcanvas/",
+  "playMode": "SinglePlayer",
+  "applicationCategory": "Game",
+  "applicationSubCategory": "Creative",
+  "gamePlatform": [
+    "Web Browser",
+    "Mobile Browser"
+  ],
+  "operatingSystem": "Any",
+  "browserRequirements": "Requires JavaScript",
+  "inLanguage": "en",
+  "isAccessibleForFree": true,
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD",
+    "availability": "https://schema.org/InStock"
+  },
+  "author": {
+    "@type": "Organization",
+    "name": "FindPicked Games",
+    "url": "https://game.findpicked.com/"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "FindPicked Games",
+      "item": "https://game.findpicked.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Creative Games",
+      "item": "https://game.findpicked.com/creative/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Drawing Canvas",
+      "item": "https://game.findpicked.com/drawingcanvas/"
+    }
+  ]
+}
+</script>
 </head>
 <body>
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Games</a> <span>›</span> <a href="/creative/">Creative</a> <span>›</span> <span>Drawing Canvas</span></nav>
 <a class="back" href="../"><span class="arrow">‹</span> All games</a>
 
 <div class="wrap">
@@ -936,5 +1019,14 @@ footer {
 </script>
 
 <script src="../shared-leaderboard.js"></script>
+<section class="related">
+<h2>You Might Also Like</h2>
+<div class="related-grid">
+<a href="/dotconnect/" class="related-card"><span class="related-name">Dot Connect</span></a>
+<a href="/zengarden/" class="related-card"><span class="related-name">Zen Garden</span></a>
+<a href="/gravitysim/" class="related-card"><span class="related-name">Gravity Simulator</span></a>
+<a href="/2048/" class="related-card"><span class="related-name">2048</span></a>
+</div>
+</section>
 </body>
 </html>
