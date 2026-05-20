@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Play Connections Online Free — Word Group Puzzle | FindPicked Games</title>
+<meta name="description" content="Play Connections free online — find four groups of four related words. A daily word puzzle challenge. No downloads, no sign-ups.">
+<link rel="canonical" href="https://game.findpicked.com/connections/">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="theme-color" content="#0071e3">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="FindPicked Games">
+<meta property="og:title" content="Play Connections Online Free — Word Group Puzzle | FindPicked Games">
+<meta property="og:description" content="Find four groups of four related words. Free word puzzle, no downloads.">
+<meta property="og:url" content="https://game.findpicked.com/connections/">
+<meta property="og:image" content="https://game.findpicked.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="en_US">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Play Connections Online Free | FindPicked Games">
+<meta name="twitter:description" content="Find four groups of four related words. Free, no downloads.">
+<meta name="twitter:image" content="https://game.findpicked.com/og-image.png">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ctext x='16' y='22' font-size='16' fill='white' text-anchor='middle' font-family='system-ui' font-weight='700'%3EC%3C/text%3E%3C/svg%3E">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#fafafa;--bg-card:#fff;--text-primary:#1d1d1f;--text-secondary:#6e6e73;
+  --accent:#0071e3;--accent-hover:#0077ed;--border:rgba(0,0,0,0.08);
+  --shadow:0 2px 12px rgba(0,0,0,0.08);--shadow-hover:0 8px 30px rgba(0,0,0,0.12);
+  --yellow:#f9df6d;--green:#a0c35a;--blue:#b0c4ef;--purple:#ba81c5;
+  --yellow-text:#5a4a00;--green-text:#2a3f00;--blue-text:#1a2f5a;--purple-text:#3a1a4a;
+}
+html,body{height:100%;overscroll-behavior:none}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',sans-serif;
+  background:var(--bg);color:var(--text-primary);-webkit-font-smoothing:antialiased;
+  display:flex;flex-direction:column;align-items:center;min-height:100vh;
+  padding:24px 16px 40px;touch-action:manipulation;
+}
+a.back{
+  position:fixed;top:16px;left:16px;color:var(--text-secondary);text-decoration:none;
+  font-size:15px;z-index:9999;padding:8px 10px 8px 4px;display:inline-flex;align-items:center;gap:4px;
+  border-radius:10px;transition:background .15s;
+}
+a.back:hover{background:rgba(0,0,0,0.04)}
+.header{
+  text-align:center;margin-top:40px;margin-bottom:20px;width:100%;max-width:500px;
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+}
+.header h1{font-size:28px;font-weight:700;letter-spacing:-0.5px}
+.header p{font-size:14px;color:var(--text-secondary);line-height:1.4}
+.mistakes-bar{
+  display:flex;align-items:center;gap:8px;justify-content:center;
+  margin-bottom:12px;font-size:14px;color:var(--text-secondary);min-height:28px;
+}
+.mistake-dot{
+  width:14px;height:14px;border-radius:50%;background:#e0e0e0;transition:background .3s;
+}
+.mistake-dot.used{background:#e74c3c}
+.solved-area{width:100%;max-width:500px;display:flex;flex-direction:column;gap:8px;margin-bottom:8px}
+.solved-row{
+  border-radius:12px;padding:14px 16px;text-align:center;
+  animation:solvedIn .4s cubic-bezier(.34,1.56,.64,1);
+}
+.solved-row .cat-name{font-size:15px;font-weight:700;letter-spacing:.3px}
+.solved-row .cat-words{font-size:13px;margin-top:3px;opacity:.85}
+@keyframes solvedIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+.grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
+  width:100%;max-width:500px;margin-bottom:16px;
+}
+.tile{
+  background:var(--bg-card);border:2px solid var(--border);border-radius:12px;
+  min-height:60px;display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:600;letter-spacing:.3px;text-align:center;
+  cursor:pointer;user-select:none;-webkit-user-select:none;
+  transition:all .15s ease;padding:6px 4px;word-break:break-word;line-height:1.2;
+  -webkit-tap-highlight-color:transparent;
+}
+.tile:hover{border-color:rgba(0,0,0,0.15);box-shadow:var(--shadow)}
+.tile.selected{
+  background:var(--text-primary);color:#fff;border-color:var(--text-primary);
+  transform:scale(.96);
+}
+.tile.shake{animation:shake .4s ease}
+@keyframes shake{
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-6px)}
+  40%{transform:translateX(6px)}
+  60%{transform:translateX(-4px)}
+  80%{transform:translateX(4px)}
+}
+.tile.pop-out{animation:popOut .3s ease forwards}
+@keyframes popOut{to{opacity:0;transform:scale(.7)}}
+.controls{
+  display:flex;gap:10px;justify-content:center;width:100%;max-width:500px;
+  flex-wrap:wrap;margin-bottom:8px;
+}
+.btn{
+  padding:12px 24px;border-radius:22px;font-size:15px;font-weight:600;
+  cursor:pointer;border:none;transition:all .15s;min-height:44px;
+  display:inline-flex;align-items:center;justify-content:center;
+  -webkit-tap-highlight-color:transparent;
+}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-hover)}
+.btn-primary:disabled{background:#c7c7cc;cursor:not-allowed}
+.btn-secondary{background:transparent;color:var(--text-primary);border:1.5px solid #d2d2d7}
+.btn-secondary:hover{background:rgba(0,0,0,0.03)}
+.btn-icon{
+  width:44px;height:44px;border-radius:50%;background:transparent;
+  border:1.5px solid #d2d2d7;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .15s;padding:0;font-size:18px;
+  -webkit-tap-highlight-color:transparent;
+}
+.btn-icon:hover{background:rgba(0,0,0,0.03)}
+.toast{
+  position:fixed;top:80px;left:50%;transform:translateX(-50%);
+  background:var(--text-primary);color:#fff;padding:12px 24px;border-radius:22px;
+  font-size:14px;font-weight:600;z-index:10000;opacity:0;pointer-events:none;
+  transition:opacity .2s;white-space:nowrap;
+}
+.toast.show{opacity:1}
+/* Modal */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:10001;
+  display:none;align-items:center;justify-content:center;padding:20px;
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+}
+.modal-overlay.active{display:flex}
+.modal{
+  background:var(--bg-card);border-radius:22px;padding:32px 28px;
+  max-width:400px;width:100%;box-shadow:var(--shadow-hover);
+  animation:modalIn .25s ease;max-height:85vh;overflow-y:auto;
+}
+@keyframes modalIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+.modal h2{font-size:22px;font-weight:700;margin-bottom:16px;text-align:center}
+.modal p,.modal li{font-size:14px;line-height:1.6;color:var(--text-secondary)}
+.modal ul{padding-left:20px;margin:10px 0}
+.modal li{margin-bottom:6px}
+.modal .close-btn{
+  display:block;margin:20px auto 0;padding:12px 32px;border-radius:22px;
+  background:var(--accent);color:#fff;border:none;font-size:15px;font-weight:600;
+  cursor:pointer;min-height:44px;
+}
+.color-dot{display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:middle;margin-right:4px}
+/* Game Over */
+.game-over-content{text-align:center}
+.game-over-content .result-icon{font-size:48px;margin-bottom:12px}
+.game-over-content h2{margin-bottom:8px}
+.game-over-content .stat-row{
+  display:flex;justify-content:center;gap:24px;margin:16px 0;
+}
+.game-over-content .stat{text-align:center}
+.game-over-content .stat .num{font-size:28px;font-weight:700;color:var(--text-primary)}
+.game-over-content .stat .label{font-size:12px;color:var(--text-secondary);margin-top:2px}
+.game-over-content .reveal{margin:16px 0;text-align:left}
+.game-over-content .reveal-row{
+  display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;margin-bottom:6px;
+}
+.game-over-content .reveal-row .r-name{font-size:13px;font-weight:700}
+.game-over-content .reveal-row .r-words{font-size:12px;opacity:.8}
+.game-over-content .play-again{
+  margin-top:20px;padding:14px 36px;border-radius:22px;background:var(--accent);
+  color:#fff;border:none;font-size:16px;font-weight:600;cursor:pointer;min-height:44px;
+}
+/* Responsive */
+@media(max-width:420px){
+  body{padding:20px 10px 36px}
+  .header{margin-top:44px}
+  .header h1{font-size:24px}
+  .grid{gap:6px}
+  .tile{min-height:54px;font-size:12px;border-radius:10px;padding:4px 3px}
+  .solved-row{padding:10px 12px;border-radius:10px}
+  .solved-row .cat-name{font-size:13px}
+  .solved-row .cat-words{font-size:11px}
+  .controls{gap:8px}
+  .btn{padding:10px 18px;font-size:14px}
+  .modal{padding:24px 20px;border-radius:18px}
+}
+@media(max-width:340px){
+  .tile{min-height:48px;font-size:11px}
+}
+
+.breadcrumb{padding:8px 16px;font-size:13px;color:#6e6e73}
+.breadcrumb a{color:#0071e3;text-decoration:none}
+.breadcrumb span{margin:0 4px}
+.related{max-width:680px;margin:24px auto;padding:0 20px}
+.related h2{font-size:18px;font-weight:600;margin-bottom:12px;color:#1d1d1f}
+.related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.related-card{display:block;padding:12px 16px;background:#fff;border-radius:12px;text-decoration:none;color:#1d1d1f;border:1px solid rgba(0,0,0,0.06);font-size:14px;font-weight:500;transition:transform 0.2s,box-shadow 0.2s}
+.related-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.08)}
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Connections",
+  "description": "Play Connections free online — find four groups of four related words. A daily word puzzle challenge. No downloads, no sign-ups.",
+  "url": "https://game.findpicked.com/connections/",
+  "playMode": "SinglePlayer",
+  "applicationCategory": "Game",
+  "applicationSubCategory": "Word",
+  "gamePlatform": [
+    "Web Browser",
+    "Mobile Browser"
+  ],
+  "operatingSystem": "Any",
+  "browserRequirements": "Requires JavaScript",
+  "inLanguage": "en",
+  "isAccessibleForFree": true,
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD",
+    "availability": "https://schema.org/InStock"
+  },
+  "author": {
+    "@type": "Organization",
+    "name": "FindPicked Games",
+    "url": "https://game.findpicked.com/"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "FindPicked Games",
+      "item": "https://game.findpicked.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Word Games",
+      "item": "https://game.findpicked.com/word/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Connections",
+      "item": "https://game.findpicked.com/connections/"
+    }
+  ]
+}
+</script>
+</head>
+<body>
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Games</a> <span>›</span> <a href="/word/">Word</a> <span>›</span> <span>Connections</span></nav>
+<a href="../" class="back">&#8592; Back</a>
+
+<div class="header">
+  <h1>Connections</h1>
+  <p>Find four groups of four related words</p>
+</div>
+
+<div class="mistakes-bar" id="mistakesBar">
+  <span>Mistakes remaining:</span>
+  <span class="mistake-dot" id="dot0"></span>
+  <span class="mistake-dot" id="dot1"></span>
+  <span class="mistake-dot" id="dot2"></span>
+  <span class="mistake-dot" id="dot3"></span>
+</div>
+
+<div class="solved-area" id="solvedArea"></div>
+<div class="grid" id="grid"></div>
+
+<div class="controls" id="controls">
+  <button class="btn-icon" id="helpBtn" title="How to Play">?</button>
+  <button class="btn btn-secondary" id="shuffleBtn">Shuffle</button>
+  <button class="btn btn-secondary" id="deselectBtn">Deselect All</button>
+  <button class="btn btn-primary" id="submitBtn" disabled>Submit</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- How to Play Modal -->
+<div class="modal-overlay" id="helpModal">
+  <div class="modal">
+    <h2>How to Play</h2>
+    <p>Find groups of four items that share something in common.</p>
+    <ul>
+      <li>Select four words and tap <strong>Submit</strong> to check if they form a group.</li>
+      <li>Find all four groups without making 4 mistakes to win!</li>
+      <li>Difficulty levels:
+        <br><span class="color-dot" style="background:var(--yellow)"></span> Yellow — Straightforward
+        <br><span class="color-dot" style="background:var(--green)"></span> Green — Moderate
+        <br><span class="color-dot" style="background:var(--blue)"></span> Blue — Tricky
+        <br><span class="color-dot" style="background:var(--purple)"></span> Purple — Devious
+      </li>
+      <li>Use <strong>Shuffle</strong> to rearrange the board.</li>
+      <li>Each puzzle has exactly one correct solution.</li>
+    </ul>
+    <button class="close-btn" id="helpClose">Got It</button>
+  </div>
+</div>
+
+<!-- Game Over Modal -->
+<div class="modal-overlay" id="gameOverModal">
+  <div class="modal game-over-content" id="gameOverContent"></div>
+</div>
+
+<script>
+// ─── Puzzle Data ────────────────────────────────────────────
+const PUZZLES = [
+  // Puzzle 1
+  {categories:[
+    {name:"Planets in our Solar System",words:["MERCURY","VENUS","MARS","SATURN"],color:"var(--yellow)",textColor:"var(--yellow-text)",difficulty:1},
+    {name:"Poker Hands",words:["FLUSH","STRAIGHT","FULLHOUSE","ROYAL"],color:"var(--green)",textColor:"var(--green-text)",difficulty:2},
+    {name:"___ King (Famous Figures)",words:["BURGER","LION","STEPHEN","MARTIN LUTHER"],color:"var(--blue)",textColor:"var(--blue-text)",difficulty:3},
+    {name:"Words Before \"Board\"",words:["SKATE","CARD","DART","SURF"],color:"var(--purple)",textColor:"var(--purple-text)",difficulty:4}
+  ]},
+  // Puzzle 2
+  {categories:[
+    {name:"Types of Bread",words:["RYE","SOURDOUGH","PUMPERNICKEL","BRIOCHE"],color:"var(--yellow)",textColor:"var(--yellow-text)",difficulty:1},
+    {name:"Chess Pieces",words:["KNIGHT","BISHOP","ROOK","PAWN"],color:"var(--green)",textColor:"var(--green-text)",difficulty:2},
+    {name:"Shades of Blue",words:["NAVY","COBALT","TEAL","CERULEAN"],color:"var(--blue)",textColor:"var(--blue-text)",difficulty:3},
+    {name:"___ Fish",words:["SWORD","BLOW","ANGEL","CAT"],color:"var(--purple)",textColor:"var(--purple-text)",difficulty:4}
+  ]},
+  // Puzzle 3
+  {categories:[
+    {name:"Fruits",words:["MANGO","PAPAYA","KIWI","LYCHEE"],color:"var(--yellow)",textColor:"var(--yellow-text)",difficulty:1},
+    {name:"Musical Instruments",words:["CELLO","OBOE","HARP","TUBA"],color:"var(--green)",textColor:"var(--green-text)",difficulty:2},
+    {name:"Things That Are Pitched",words:["TENT","VOICE","BASEBALL","IDEA"],color:"var(--blue)",textColor:"var(--blue-text)",difficulty:3},
+    {name:"Silent Letters",words:["KNIFE","PSALM","GNOME","WRECK"],color:"var(--purple)",textColor:"var(--purple-text)",difficulty:4}
+  ]},
+  // Puzzle 4
+  {categories:[
+    {name:"Olympic Sports",words:["FENCING","ROWING","ARCHERY","JUDO"],color:"var(--yellow)",textColor:"var(--yellow-text)",difficulty:1},
+    {name:"Parts of a Book",words:["SPINE","CHAPTER","INDEX","COVER"],color:"var(--green)",textColor:"var(--green-text)",difficulty:2},
+    {name:"Words Meaning \"Fast\"",words:["NIMBLE","RAPID","FLEET","BRISK"],color:"var(--blue)",textColor:"var(--blue-text)",difficulty:3},
+    {name:"Taylor ___",words:["SWIFT","MADE","LAUTNER","HAWKINS"],color:"var(--purple)",textColor:"var(--purple-text)",difficulty:4}
+  ]},
+  // Puzzle 5
+  {categories:[
+    {name:"Dog Breeds",words:["POODLE","BEAGLE","BOXER","COLLIE"],color:"var(--yellow)",textColor:"var(--yellow-text)",difficulty:1},
+    {name:"Card Games",words:["BRIDGE","HEARTS","SPADES","RUMMY"],color:"var(--green)",textColor:"var(--green-text)",difficulty:2},
+    {name:"Things with Keys",words:["PIANO","KEYBOARD","MAP","LOCK"],color:"var(--blue)",textColor:"var(--blue-text)",difficulty:3},
+    {name:"___ Run",words:["HOME","BULL","DRY","TRIAL"],color:"var(--purple)",textColor:"var(--purple-text)",difficulty:4}
+  ]},
+  // Puzzle 6
+  {categories:[
+    {name:"Baked Goods",words:["CROISSANT","SCONE","MUFFIN","BAGEL"],color:"var(--yellow)",textColor:"var(--yellow-text)",difficulty:1},
+    {name:"Things in a Wallet",words:["CASH","LICENSE","RECEIPT","PHOTO"],color:"var(--green)",textColor:"var(--green-text)",difficulty:2},
+    {name:"Words After \"Black\"",words:["BERRY","BIRD","SMITH","JACK"],color:"var(--blue)",textColor:"var(--blue-text)",difficulty:3},
+    {name:"Famous Jacks",words:["SPARROW","NICHOLSON","DANIELS","FROST"],color:"var(--purple)",textColor:"var(--purple-text)",difficulty:4}
+  ]},
+  // Puzzle 7
+  {categories:[
+    {name:"Vegetables",words:["BROCCOLI","ZUCCHINI","EGGPLANT","ARTICHOKE"],color:"var(--yellow)",textColor:"var(--yellow-text)",difficulty:1},
+    {name:"Dances",words:["WALTZ","TANGO","SALSA","FOXTROT"],color:"var(--green)",textColor:"var(--green-text)",difficulty:2},
+    {name:"Things That Spin",words:["TOP","WHEEL","RECORD","DRYER"],color:"var(--blue)",textColor:"var(--blue-text)",difficulty:3},
+    {name:"___ Drop",words:["RAIN","BACK","LEMON","JAW"],color:"var(--purple)",textColor:"var(--purple-text)",difficulty:4}
+  ]},
+  // Puzzle 8
+  {categories:[
+    {name:"Countries in Asia",words:["JAPAN","VIETNAM","NEPAL","LAOS"],color:"var(--yellow)",textColor:"var(--yellow-text)",difficulty:1},
+    {name:"Fabrics",words:["SILK","DENIM","VELVET","LINEN"],color:"var(--green)",textColor:"var(--green-text)",difficulty:2},
+    {name:"Things That Have Rings",words:["SATURN","ONION","TREE","PHONE"],color:"var(--blue)",textColor:"var(--blue-text)",difficulty:3},
+    {name:"Famous Trios (One Member)",words:["LARRY","ATHOS","SNAP","LUKE"],color:"var(--purple)",textColor:"var(--purple-text)",difficulty:4}
+  ]},
+  // Puzzle 9
+  {categories:[
+    {name:"Kitchen Appliances",words:["BLENDER","TOASTER","KETTLE","MICROWAVE"],color:"var(--yellow)",textColor:"var(--yellow-text)",difficulty:1},
+    {name:"Currencies",words:["YEN","EURO","PESO","FRANC"],color:"var(--green)",textColor:"var(--green-text)",difficulty:2},
+    {name:"Things That Are Drawn",words:["BATH","CURTAIN","SWORD","CONCLUSION"],color:"var(--blue)",textColor:"var(--blue-text)",difficulty:3},
+    {name:"Starts with a Body Part",words:["ELBOW","KNEECAP","THUMBNAIL","EYEBROW"],color:"var(--purple)",textColor:"var(--purple-text)",difficulty:4}
+  ]},
+  // Puzzle 10
+  {categories:[
+    {name:"Ice Cream Flavors",words:["VANILLA","PISTACHIO","STRAWBERRY","CARAMEL"],color:"var(--yellow)",textColor:"var(--yellow-text)",difficulty:1},
+    {name:"Zodiac Signs",words:["GEMINI","SCORPIO","AQUARIUS","LEO"],color:"var(--green)",textColor:"var(--green-text)",difficulty:2},
+    {name:"Things with Hands",words:["CLOCK","POKER","PUPPET","DECK"],color:"var(--blue)",textColor:"var(--blue-text)",difficulty:3},
+    {name:"___-Man",words:["SPIDER","IRON","PAC","BAT"],color:"var(--purple)",textColor:"var(--purple-text)",difficulty:4}
+  ]},
+  // Puzzle 11
+  {categories:[
+    {name:"Types of Pasta",words:["PENNE","RIGATONI","FUSILLI","ORZO"],color:"var(--yellow)",textColor:"var(--yellow-text)",difficulty:1},
+    {name:"Weather Phenomena",words:["TORNADO","BLIZZARD","MONSOON","HAIL"],color:"var(--green)",textColor:"var(--green-text)",difficulty:2},
+    {name:"Things That Are Sealed",words:["ENVELOPE","DEAL","FATE","LIPS"],color:"var(--blue)",textColor:"var(--blue-text)",difficulty:3},
+    {name:"NBA Teams (Mascots)",words:["HEAT","THUNDER","JAZZ","MAGIC"],color:"var(--purple)",textColor:"var(--purple-text)",difficulty:4}
+  ]},
+  // Puzzle 12
+  {categories:[
+    {name:"Camping Gear",words:["TENT","LANTERN","COMPASS","SLEEPING BAG"],color:"var(--yellow)",textColor:"var(--yellow-text)",difficulty:1},
+    {name:"Types of Hat",words:["BERET","FEDORA","BEANIE","TURBAN"],color:"var(--green)",textColor:"var(--green-text)",difficulty:2},
+    {name:"Words Before \"Light\"",words:["MOON","FLASH","SPOT","HIGH"],color:"var(--blue)",textColor:"var(--blue-text)",difficulty:3},
+    {name:"Things with Crowns",words:["TOOTH","QUEEN","ROLEX","PINEAPPLE"],color:"var(--purple)",textColor:"var(--purple-text)",difficulty:4}
+  ]}
+];
+
+// ─── Game State ─────────────────────────────────────────────
+let currentPuzzle = null;
+let remainingWords = [];
+let selectedWords = [];
+let solvedCategories = [];
+let mistakes = 0;
+let maxMistakes = 4;
+let gameActive = false;
+let guessedSets = [];
+
+// DOM
+const grid = document.getElementById('grid');
+const solvedArea = document.getElementById('solvedArea');
+const submitBtn = document.getElementById('submitBtn');
+const shuffleBtn = document.getElementById('shuffleBtn');
+const deselectBtn = document.getElementById('deselectBtn');
+const helpBtn = document.getElementById('helpBtn');
+const helpModal = document.getElementById('helpModal');
+const helpClose = document.getElementById('helpClose');
+const gameOverModal = document.getElementById('gameOverModal');
+const gameOverContent = document.getElementById('gameOverContent');
+const toastEl = document.getElementById('toast');
+
+// ─── Utilities ──────────────────────────────────────────────
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function showToast(msg, duration) {
+  duration = duration || 1500;
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  setTimeout(function() { toastEl.classList.remove('show'); }, duration);
+}
+
+// ─── Stats ──────────────────────────────────────────────────
+function loadStats() {
+  try {
+    return JSON.parse(localStorage.getItem('connections_stats')) || {played:0,won:0,streak:0,maxStreak:0};
+  } catch(e) {
+    return {played:0,won:0,streak:0,maxStreak:0};
+  }
+}
+function saveStats(stats) {
+  try { localStorage.setItem('connections_stats', JSON.stringify(stats)); } catch(e) {}
+}
+
+// ─── Init ───────────────────────────────────────────────────
+function initGame() {
+  currentPuzzle = PUZZLES[Math.floor(Math.random() * PUZZLES.length)];
+  var allWords = [];
+  currentPuzzle.categories.forEach(function(cat) {
+    cat.words.forEach(function(w) { allWords.push(w); });
+  });
+  remainingWords = shuffle(allWords);
+  selectedWords = [];
+  solvedCategories = [];
+  mistakes = 0;
+  gameActive = true;
+  guessedSets = [];
+  solvedArea.innerHTML = '';
+  updateMistakes();
+  renderGrid();
+  updateSubmitBtn();
+  document.getElementById('controls').style.display = 'flex';
+}
+
+// ─── Render Grid ────────────────────────────────────────────
+function renderGrid() {
+  grid.innerHTML = '';
+  remainingWords.forEach(function(word) {
+    var tile = document.createElement('div');
+    tile.className = 'tile';
+    tile.textContent = word;
+    tile.setAttribute('data-word', word);
+    if (selectedWords.indexOf(word) !== -1) {
+      tile.classList.add('selected');
+    }
+    tile.addEventListener('click', function() { toggleWord(word); });
+    grid.appendChild(tile);
+  });
+  // Update grid columns based on remaining count
+  var cols = remainingWords.length >= 4 ? 4 : remainingWords.length;
+  grid.style.gridTemplateColumns = 'repeat(' + cols + ', 1fr)';
+}
+
+// ─── Toggle Word ────────────────────────────────────────────
+function toggleWord(word) {
+  if (!gameActive) return;
+  var idx = selectedWords.indexOf(word);
+  if (idx !== -1) {
+    selectedWords.splice(idx, 1);
+  } else {
+    if (selectedWords.length >= 4) return;
+    selectedWords.push(word);
+  }
+  renderGrid();
+  updateSubmitBtn();
+}
+
+function updateSubmitBtn() {
+  submitBtn.disabled = selectedWords.length !== 4;
+}
+
+// ─── Mistakes ───────────────────────────────────────────────
+function updateMistakes() {
+  for (var i = 0; i < maxMistakes; i++) {
+    var dot = document.getElementById('dot' + i);
+    if (i < mistakes) {
+      dot.classList.add('used');
+    } else {
+      dot.classList.remove('used');
+    }
+  }
+}
+
+// ─── Submit Guess ───────────────────────────────────────────
+function submitGuess() {
+  if (!gameActive || selectedWords.length !== 4) return;
+
+  var sorted = selectedWords.slice().sort().join(',');
+  if (guessedSets.indexOf(sorted) !== -1) {
+    showToast('Already guessed!');
+    return;
+  }
+  guessedSets.push(sorted);
+
+  // Check for match
+  var matchedCat = null;
+  currentPuzzle.categories.forEach(function(cat) {
+    if (matchedCat) return;
+    var catSorted = cat.words.slice().sort().join(',');
+    if (catSorted === sorted) {
+      matchedCat = cat;
+    }
+  });
+
+  if (matchedCat) {
+    solveCategoryAnim(matchedCat);
+  } else {
+    // Check "one away"
+    var oneAway = false;
+    currentPuzzle.categories.forEach(function(cat) {
+      if (solvedCategories.indexOf(cat) !== -1) return;
+      var overlap = 0;
+      selectedWords.forEach(function(w) {
+        if (cat.words.indexOf(w) !== -1) overlap++;
+      });
+      if (overlap === 3) oneAway = true;
+    });
+
+    // Shake tiles
+    var tiles = grid.querySelectorAll('.tile.selected');
+    tiles.forEach(function(t) { t.classList.add('shake'); });
+    setTimeout(function() {
+      tiles.forEach(function(t) { t.classList.remove('shake'); });
+    }, 500);
+
+    mistakes++;
+    updateMistakes();
+
+    if (oneAway) {
+      showToast('One away!');
+    } else {
+      showToast('Not quite...');
+    }
+
+    if (mistakes >= maxMistakes) {
+      gameActive = false;
+      setTimeout(function() { endGame(false); }, 800);
+    }
+  }
+}
+
+// ─── Solve Category Animation ───────────────────────────────
+function solveCategoryAnim(cat) {
+  gameActive = false;
+  solvedCategories.push(cat);
+
+  // Pop tiles out
+  var tiles = grid.querySelectorAll('.tile');
+  tiles.forEach(function(t) {
+    if (cat.words.indexOf(t.getAttribute('data-word')) !== -1) {
+      t.classList.add('pop-out');
+    }
+  });
+
+  setTimeout(function() {
+    // Remove words
+    remainingWords = remainingWords.filter(function(w) { return cat.words.indexOf(w) === -1; });
+    selectedWords = [];
+
+    // Add solved row
+    var row = document.createElement('div');
+    row.className = 'solved-row';
+    row.style.background = cat.color;
+    row.style.color = cat.textColor;
+    row.innerHTML = '<div class="cat-name">' + cat.name + '</div><div class="cat-words">' + cat.words.join(', ') + '</div>';
+    solvedArea.appendChild(row);
+
+    renderGrid();
+    updateSubmitBtn();
+
+    if (solvedCategories.length === 4) {
+      setTimeout(function() { endGame(true); }, 600);
+    } else {
+      gameActive = true;
+    }
+  }, 350);
+}
+
+// ─── End Game ───────────────────────────────────────────────
+function endGame(won) {
+  gameActive = false;
+  document.getElementById('controls').style.display = 'none';
+
+  // If lost, reveal remaining
+  if (!won) {
+    currentPuzzle.categories.forEach(function(cat) {
+      if (solvedCategories.indexOf(cat) === -1) {
+        solvedCategories.push(cat);
+        var row = document.createElement('div');
+        row.className = 'solved-row';
+        row.style.background = cat.color;
+        row.style.color = cat.textColor;
+        row.innerHTML = '<div class="cat-name">' + cat.name + '</div><div class="cat-words">' + cat.words.join(', ') + '</div>';
+        solvedArea.appendChild(row);
+      }
+    });
+    remainingWords = [];
+    grid.innerHTML = '';
+  }
+
+  // Update stats
+  var stats = loadStats();
+  stats.played++;
+  if (won) {
+    stats.won++;
+    stats.streak++;
+    if (stats.streak > stats.maxStreak) stats.maxStreak = stats.streak;
+  } else {
+    stats.streak = 0;
+  }
+  saveStats(stats);
+
+  // Score: groups_found * 100 - mistakes * 25
+  // Correct guesses = total guesses minus mistakes (each correct guess solves a group)
+  var groupsFound = guessedSets.length - mistakes;
+  var score = Math.max(0, groupsFound * 100 - mistakes * 25);
+
+  // Leaderboard
+  if (window.Leaderboard && typeof Leaderboard.submitScore === 'function') {
+    Leaderboard.submitScore(score);
+  }
+
+  // Build game over modal
+  var icon = won ? '&#127881;' : '&#128532;';
+  var title = won ? 'Brilliant!' : 'Game Over';
+  var subtitle = won ? 'You found all four groups!' : 'Better luck next time!';
+
+  var revealHTML = '';
+  // Sort categories by difficulty for display
+  var sorted = currentPuzzle.categories.slice().sort(function(a,b) { return a.difficulty - b.difficulty; });
+  sorted.forEach(function(cat) {
+    revealHTML += '<div class="reveal-row" style="background:' + cat.color + ';color:' + cat.textColor + '">';
+    revealHTML += '<span class="r-name">' + cat.name + '</span>';
+    revealHTML += '<span class="r-words">' + cat.words.join(', ') + '</span>';
+    revealHTML += '</div>';
+  });
+
+  gameOverContent.innerHTML =
+    '<div class="result-icon">' + icon + '</div>' +
+    '<h2>' + title + '</h2>' +
+    '<p style="color:var(--text-secondary);font-size:14px">' + subtitle + '</p>' +
+    '<div class="stat-row">' +
+      '<div class="stat"><div class="num">' + stats.played + '</div><div class="label">Played</div></div>' +
+      '<div class="stat"><div class="num">' + (stats.played > 0 ? Math.round(stats.won / stats.played * 100) : 0) + '%</div><div class="label">Win Rate</div></div>' +
+      '<div class="stat"><div class="num">' + stats.streak + '</div><div class="label">Streak</div></div>' +
+      '<div class="stat"><div class="num">' + stats.maxStreak + '</div><div class="label">Best</div></div>' +
+    '</div>' +
+    '<div class="reveal">' + revealHTML + '</div>' +
+    '<button class="play-again" id="playAgainBtn">Play Again</button>';
+
+  gameOverModal.classList.add('active');
+  document.getElementById('playAgainBtn').addEventListener('click', function() {
+    gameOverModal.classList.remove('active');
+    initGame();
+  });
+}
+
+// ─── Shuffle ────────────────────────────────────────────────
+shuffleBtn.addEventListener('click', function() {
+  if (!gameActive) return;
+  remainingWords = shuffle(remainingWords);
+  renderGrid();
+});
+
+// ─── Deselect All ───────────────────────────────────────────
+deselectBtn.addEventListener('click', function() {
+  selectedWords = [];
+  renderGrid();
+  updateSubmitBtn();
+});
+
+// ─── Submit ─────────────────────────────────────────────────
+submitBtn.addEventListener('click', submitGuess);
+
+// ─── Help Modal ─────────────────────────────────────────────
+helpBtn.addEventListener('click', function() { helpModal.classList.add('active'); });
+helpClose.addEventListener('click', function() { helpModal.classList.remove('active'); });
+helpModal.addEventListener('click', function(e) { if (e.target === helpModal) helpModal.classList.remove('active'); });
+gameOverModal.addEventListener('click', function(e) { if (e.target === gameOverModal) gameOverModal.classList.remove('active'); });
+
+// ─── Start ──────────────────────────────────────────────────
+initGame();
+</script>
+<script src="../shared-leaderboard.js"></script>
+<section class="related"><h2>You Might Also Like</h2><div class="related-grid">
+<a href="/wordle/" class="related-card"><span class="related-name">Wordle</span></a>
+<a href="/spellingbee/" class="related-card"><span class="related-name">Spellingbee</span></a>
+<a href="/boggle/" class="related-card"><span class="related-name">Boggle</span></a>
+<a href="/anagram/" class="related-card"><span class="related-name">Anagram</span></a>
+</div></section>
+</body>
+</html>

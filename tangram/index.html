@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Play Tangram Online Free — Classic Shape Puzzle | FindPicked Games</title>
+<meta name="description" content="Play Tangram free online — arrange 7 geometric pieces to match target shapes. Classic Chinese puzzle, no downloads, no sign-ups.">
+<link rel="canonical" href="https://game.findpicked.com/tangram/">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="theme-color" content="#0071e3">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="FindPicked Games">
+<meta property="og:title" content="Play Tangram Online Free — Classic Shape Puzzle | FindPicked Games">
+<meta property="og:description" content="Arrange 7 geometric pieces to match target shapes. Free Tangram puzzle, no downloads.">
+<meta property="og:url" content="https://game.findpicked.com/tangram/">
+<meta property="og:image" content="https://game.findpicked.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="en_US">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Play Tangram Online Free | FindPicked Games">
+<meta name="twitter:description" content="Classic shape puzzle — arrange pieces to match the silhouette. Free, no downloads.">
+<meta name="twitter:image" content="https://game.findpicked.com/og-image.png">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Cpolygon points='8,24 24,24 16,8' fill='white'/%3E%3C/svg%3E">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#fafafa;--card:#fff;--text:#1d1d1f;--text2:#6e6e73;--text3:#86868b;
+--accent:#0071e3;--accent2:#0077ed;--border:rgba(0,0,0,.08);
+--sh:0 2px 12px rgba(0,0,0,.08);--sh2:0 8px 30px rgba(0,0,0,.12);
+--r:16px;--r2:22px}
+html,body{height:100%;overscroll-behavior:none;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',sans-serif;
+background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;
+-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;touch-action:none}
+
+/* top bar */
+.bar{position:fixed;top:0;left:0;right:0;height:52px;display:flex;align-items:center;justify-content:center;
+z-index:100;background:rgba(250,250,250,.88);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+border-bottom:1px solid var(--border);padding:0 80px}
+.bar h1{font-size:17px;font-weight:600;letter-spacing:-.01em}
+.bar-r{position:absolute;right:14px;top:50%;transform:translateY(-50%);display:flex;gap:6px}
+.ib{width:36px;height:36px;min-width:36px;border-radius:50%;border:none;background:transparent;
+color:var(--text2);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s}
+.ib:hover{background:rgba(0,0,0,.05);color:var(--text)}
+
+/* stats */
+.stats{position:fixed;top:58px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:90}
+.pill{background:var(--card);border-radius:18px;padding:5px 12px;font-size:12px;font-weight:500;
+color:var(--text2);box-shadow:var(--sh);white-space:nowrap;display:flex;align-items:center;gap:3px}
+.pill b{color:var(--text);font-weight:600}
+
+/* difficulty */
+.diff{position:fixed;top:92px;left:14px;display:flex;background:var(--card);border-radius:10px;
+box-shadow:var(--sh);z-index:80;overflow:hidden}
+.dbtn{padding:7px 12px;border:none;background:transparent;font-size:11px;font-weight:600;
+font-family:inherit;color:var(--text3);cursor:pointer;transition:.2s;min-width:52px}
+.dbtn.on{background:var(--accent);color:#fff}
+
+/* target preview */
+.tprev{position:fixed;top:92px;right:14px;width:90px;height:90px;background:var(--card);
+border-radius:var(--r);box-shadow:var(--sh);z-index:80;overflow:hidden}
+.tprev canvas{width:100%;height:100%}
+.tlbl{position:absolute;bottom:3px;left:0;right:0;text-align:center;font-size:9px;font-weight:700;
+text-transform:uppercase;letter-spacing:.06em;color:var(--text3)}
+
+/* game canvas */
+.game{position:fixed;top:52px;left:0;right:0;bottom:0}
+.game canvas{display:block;width:100%;height:100%}
+
+/* bottom */
+.bot{position:fixed;bottom:max(16px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);
+display:flex;gap:8px;z-index:90}
+.cb{height:44px;padding:0 18px;border-radius:22px;border:none;background:var(--card);color:var(--text);
+font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;box-shadow:var(--sh);
+transition:.2s;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.cb:hover{box-shadow:var(--sh2);transform:translateY(-1px)}.cb:active{transform:translateY(0)}
+.cb.ac{background:var(--accent);color:#fff}.cb.ac:hover{background:var(--accent2)}
+
+.hint{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);font-size:11px;
+color:var(--text3);z-index:80;white-space:nowrap;opacity:.7;pointer-events:none}
+
+/* overlay */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.4);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+z-index:1000;display:flex;align-items:center;justify-content:center;
+opacity:0;pointer-events:none;transition:opacity .3s}
+.ov.show{opacity:1;pointer-events:auto}
+.md{background:var(--card);border-radius:var(--r2);padding:30px 26px;max-width:360px;width:calc(100% - 40px);
+box-shadow:var(--sh2);text-align:center;transform:translateY(20px) scale(.95);transition:transform .3s}
+.ov.show .md{transform:translateY(0) scale(1)}
+.md h2{font-size:24px;font-weight:700;letter-spacing:-.02em;margin-bottom:6px}
+.md p{font-size:14px;color:var(--text2);line-height:1.5;margin-bottom:4px}
+.score-big{font-size:48px;font-weight:700;color:var(--accent);margin:14px 0;letter-spacing:-.03em}
+.det{font-size:12px;color:var(--text3);margin-bottom:16px}
+.hs-badge{display:inline-block;background:linear-gradient(135deg,#ffd700,#ffaa00);color:#000;
+font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;margin-top:6px}
+.mb{display:flex;gap:8px;margin-top:18px}
+.mbtn{flex:1;height:46px;border-radius:14px;border:none;font-size:14px;font-weight:600;
+font-family:inherit;cursor:pointer;transition:.2s}
+.mbtn.p{background:var(--accent);color:#fff}.mbtn.p:hover{background:var(--accent2)}
+.mbtn.s{background:rgba(0,0,0,.05);color:var(--text)}.mbtn.s:hover{background:rgba(0,0,0,.08)}
+
+/* rules */
+.rc{text-align:left;margin-top:14px}
+.rc h3{font-size:13px;font-weight:600;margin:10px 0 4px;color:var(--text)}
+.rc ul{padding-left:16px}.rc li{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:1px}
+
+@media(max-width:480px){
+.bar{padding:0 56px}.bar h1{font-size:15px}
+.tprev{width:72px;height:72px;top:86px;right:10px}
+.diff{top:86px;left:10px}.dbtn{padding:5px 9px;font-size:10px;min-width:42px}
+.pill{font-size:11px;padding:4px 9px}.stats{top:56px}
+.bot{bottom:max(12px,env(safe-area-inset-bottom));gap:6px}
+.cb{height:40px;padding:0 13px;font-size:12px}}
+@media(max-height:600px){.tprev{width:60px;height:60px;top:56px}.diff{top:56px}.stats{display:none}}
+
+.breadcrumb{padding:8px 16px;font-size:13px;color:#6e6e73}
+.breadcrumb a{color:#0071e3;text-decoration:none}
+.breadcrumb span{margin:0 4px}
+.related{max-width:680px;margin:24px auto;padding:0 20px}
+.related h2{font-size:18px;font-weight:600;margin-bottom:12px;color:#1d1d1f}
+.related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.related-card{display:block;padding:12px 16px;background:#fff;border-radius:12px;text-decoration:none;color:#1d1d1f;border:1px solid rgba(0,0,0,0.06);font-size:14px;font-weight:500;transition:transform 0.2s,box-shadow 0.2s}
+.related-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.08)}
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Tangram",
+  "description": "Play Tangram free online — arrange 7 geometric pieces to match target shapes. Classic Chinese puzzle, no downloads, no sign-ups.",
+  "url": "https://game.findpicked.com/tangram/",
+  "playMode": "SinglePlayer",
+  "applicationCategory": "Game",
+  "applicationSubCategory": "Puzzle",
+  "gamePlatform": [
+    "Web Browser",
+    "Mobile Browser"
+  ],
+  "operatingSystem": "Any",
+  "browserRequirements": "Requires JavaScript",
+  "inLanguage": "en",
+  "isAccessibleForFree": true,
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD",
+    "availability": "https://schema.org/InStock"
+  },
+  "author": {
+    "@type": "Organization",
+    "name": "FindPicked Games",
+    "url": "https://game.findpicked.com/"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "FindPicked Games",
+      "item": "https://game.findpicked.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Puzzle Games",
+      "item": "https://game.findpicked.com/puzzle/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Tangram",
+      "item": "https://game.findpicked.com/tangram/"
+    }
+  ]
+}
+</script>
+</head>
+<body>
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Games</a> <span>›</span> <a href="/puzzle/">Puzzle</a> <span>›</span> <span>Tangram</span></nav>
+<a href="../" style="position:fixed;top:16px;left:16px;color:#6e6e73;text-decoration:none;font-size:15px;z-index:9999">← Back</a>
+<div class="bar"><h1>Tangram</h1><div class="bar-r">
+<button class="ib" id="bHelp" title="How to Play">?</button>
+<button class="ib" id="bReset" title="Reset">&#8635;</button>
+</div></div>
+
+<div class="stats">
+<div class="pill">&#9201; <b id="sTime">0:00</b></div>
+<div class="pill">Moves <b id="sMov">0</b></div>
+<div class="pill">Placed <b id="sPlc">0</b>/7</div>
+</div>
+
+<div class="diff">
+<button class="dbtn on" data-d="easy">Easy</button>
+<button class="dbtn" data-d="hard">Hard</button>
+</div>
+
+<div class="tprev"><canvas id="tc"></canvas><div class="tlbl" id="tl">Square</div></div>
+
+<div class="game"><canvas id="gc"></canvas></div>
+
+<div class="hint" id="hint">Drag pieces to the board. Tap to rotate.</div>
+
+<div class="bot">
+<button class="cb" id="bPrv">&#9664; Prev</button>
+<button class="cb ac" id="bNxt">Next &#9654;</button>
+<button class="cb" id="bShf">Shuffle</button>
+</div>
+
+<div class="ov" id="ovDone"><div class="md">
+<h2>Puzzle Complete!</h2>
+<p id="dName">Square</p>
+<div class="score-big" id="dScore">0</div>
+<div class="det" id="dDet">Time: 0:00 | Moves: 0</div>
+<div id="dHs" style="display:none"><span class="hs-badge">New High Score!</span></div>
+<div class="mb">
+<button class="mbtn s" id="bAgain">Play Again</button>
+<button class="mbtn p" id="bNextP">Next Puzzle</button>
+</div></div></div>
+
+<div class="ov" id="ovRules"><div class="md">
+<h2>How to Play</h2>
+<div class="rc">
+<h3>Objective</h3>
+<ul><li>Arrange all 7 Tangram pieces to match the target silhouette in the preview card.</li></ul>
+<h3>Controls</h3>
+<ul>
+<li><b>Drag</b> a piece to move it.</li>
+<li><b>Tap / click</b> a piece (without dragging) to rotate it 45 degrees.</li>
+<li>Pieces <b>snap</b> into place when close to the correct position and rotation.</li>
+</ul>
+<h3>Difficulty</h3>
+<ul>
+<li><b>Easy</b> — outlined guides show where each piece goes.</li>
+<li><b>Hard</b> — only the filled silhouette is shown.</li>
+</ul>
+<h3>Scoring</h3>
+<ul>
+<li>Score = shape difficulty / time x 1000. Fewer moves and less time earn a higher score.</li>
+</ul>
+</div>
+<div class="mb"><button class="mbtn p" id="bClR">Got It</button></div>
+</div></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ===== TANGRAM GEOMETRY =====
+   All pieces defined in a unit grid where the full tangram square = 4x4.
+   Points are relative to each piece's own origin (centroid-based positioning). */
+
+var S2 = Math.SQRT2; // ~1.414
+
+// Piece shapes: points defined centered on centroid for clean rotation
+// Order: LargeTriA, LargeTriB, MediumTri, SmallTriA, SmallTriB, Square, Parallelogram
+var SHAPES = [
+  {pts:null, color:'#FF6B6B', name:'Large Triangle'},
+  {pts:null, color:'#4ECDC4', name:'Large Triangle'},
+  {pts:null, color:'#45B7D1', name:'Medium Triangle'},
+  {pts:null, color:'#FECDA6', name:'Small Triangle'},
+  {pts:null, color:'#DDA0DD', name:'Small Triangle'},
+  {pts:null, color:'#FFD93D', name:'Square'},
+  {pts:null, color:'#A8E6CF', name:'Parallelogram'}
+];
+
+// Initialize piece geometry centered on centroid for clean rotation.
+// Classic tangram fits a 4x4 square. All coords centered on each piece's centroid.
+(function(){
+  // Large right triangle: legs = 4, centroid at (4/3, 4/3)
+  var c=4/3;
+  SHAPES[0].pts=[[-c,-c],[4-c,-c],[-c,4-c]];
+  SHAPES[1].pts=[[-c,-c],[4-c,-c],[-c,4-c]];
+  // Medium right triangle: legs = 2*sqrt2, centroid at (2sqrt2/3, 2sqrt2/3)
+  var ml=2*S2, mc=ml/3;
+  SHAPES[2].pts=[[-mc,-mc],[ml-mc,-mc],[-mc,ml-mc]];
+  // Small right triangles: legs = 2, centroid at (2/3, 2/3)
+  var sc=2/3;
+  SHAPES[3].pts=[[-sc,-sc],[2-sc,-sc],[-sc,2-sc]];
+  SHAPES[4].pts=[[-sc,-sc],[2-sc,-sc],[-sc,2-sc]];
+  // Square: side = sqrt2, centered
+  var sh=S2/2;
+  SHAPES[5].pts=[[-sh,-sh],[sh,-sh],[sh,sh],[-sh,sh]];
+  // Parallelogram: (0,0),(2,0),(3,1),(1,1) — centroid at (1.5, 0.5)
+  SHAPES[6].pts=[[-1.5,-.5],[.5,-.5],[1.5,.5],[-.5,.5]];
+})();
+
+/* ===== PUZZLE DATA =====
+   Each puzzle: { name, difficulty(1-3), t: [{x,y,r}, ...x7] }
+   x,y = center position in game coords (0-based, ~0-8 range)
+   r = rotation in 45-degree steps (0-7)
+   Piece order: always [lgTriA, lgTriB, medTri, smTriA, smTriB, square, para] */
+
+var PZ = [
+  { name:'Square', difficulty:1, t:[
+    {x:2,y:1,r:1},{x:2,y:3,r:5},{x:3.4,y:1.4,r:2},
+    {x:1,y:3,r:3},{x:2,y:2,r:7},{x:2.7,y:2.7,r:0},{x:1,y:2,r:0}
+  ]},
+  { name:'Cat', difficulty:2, t:[
+    {x:3,y:3.5,r:5},{x:3,y:3.5,r:1},{x:3,y:1.8,r:6},
+    {x:1.8,y:0.8,r:5},{x:4.2,y:0.8,r:7},{x:3,y:2.3,r:1},{x:3,y:5.5,r:0}
+  ]},
+  { name:'House', difficulty:1, t:[
+    {x:3,y:1.5,r:0},{x:2,y:4,r:0},{x:4,y:3,r:4},
+    {x:2,y:0.8,r:3},{x:4,y:0.8,r:1},{x:3,y:3,r:0},{x:4,y:4.5,r:0}
+  ]},
+  { name:'Bird', difficulty:2, t:[
+    {x:3,y:2.5,r:7},{x:3,y:2.5,r:3},{x:5,y:2.5,r:2},
+    {x:1,y:1.8,r:1},{x:1,y:3.2,r:7},{x:1.7,y:2.5,r:1},{x:5.5,y:1.5,r:6}
+  ]},
+  { name:'Boat', difficulty:1, t:[
+    {x:3,y:2.8,r:7},{x:3,y:2.8,r:3},{x:1.8,y:1.5,r:4},
+    {x:3.5,y:4,r:1},{x:4.8,y:2.8,r:5},{x:4,y:1.5,r:0},{x:1.5,y:4,r:0}
+  ]},
+  { name:'Person', difficulty:3, t:[
+    {x:3,y:3.2,r:5},{x:3,y:3.2,r:1},{x:3,y:1.2,r:6},
+    {x:2,y:5,r:5},{x:4,y:5,r:3},{x:3,y:2,r:1},{x:3,y:4.8,r:0}
+  ]},
+  { name:'Arrow', difficulty:1, t:[
+    {x:3,y:1.5,r:0},{x:3,y:1.5,r:2},{x:3,y:3.5,r:4},
+    {x:1.5,y:1.5,r:1},{x:4.5,y:1.5,r:3},{x:3,y:2.8,r:0},{x:3,y:4.8,r:0}
+  ]},
+  { name:'Heart', difficulty:3, t:[
+    {x:2.2,y:3,r:5},{x:3.8,y:3,r:3},{x:3,y:4.5,r:4},
+    {x:1.5,y:1.5,r:7},{x:4.5,y:1.5,r:5},{x:2.2,y:1.8,r:1},{x:3.8,y:1.8,r:0}
+  ]},
+  { name:'Rabbit', difficulty:3, t:[
+    {x:3,y:4,r:5},{x:3,y:4,r:1},{x:3,y:2,r:6},
+    {x:2.2,y:0.6,r:4},{x:3.8,y:0.6,r:0},{x:3,y:2.6,r:1},{x:3,y:5.8,r:0}
+  ]},
+  { name:'Fish', difficulty:2, t:[
+    {x:3.5,y:3,r:7},{x:3.5,y:3,r:3},{x:5.2,y:3,r:2},
+    {x:1.5,y:2.2,r:1},{x:1.5,y:3.8,r:7},{x:2.3,y:3,r:1},{x:5.5,y:2,r:6}
+  ]},
+  { name:'Candle', difficulty:2, t:[
+    {x:3,y:4,r:1},{x:3,y:4,r:7},{x:3,y:1.2,r:4},
+    {x:2.3,y:2,r:5},{x:3.7,y:2,r:3},{x:3,y:2.5,r:0},{x:3,y:5.8,r:0}
+  ]},
+  { name:'Mountain', difficulty:1, t:[
+    {x:3,y:2,r:0},{x:1.5,y:3.5,r:0},{x:5,y:3,r:4},
+    {x:5,y:3.5,r:7},{x:0.8,y:3.5,r:3},{x:4,y:3.5,r:0},{x:2.5,y:3.5,r:0}
+  ]}
+];
+
+/* ===== STATE ===== */
+var pzI=0, diff='easy', pcs=[], drag=null, dox=0,doy=0, moved=false;
+var moves=0, placed=0, tStart=0, tElap=0, tInt=null, done=false;
+var cw,ch,dpr=1;
+var gc=document.getElementById('gc'), gx=gc.getContext('2d');
+var tc=document.getElementById('tc'), tx=tc.getContext('2d');
+
+/* ===== PIECE ===== */
+function Pc(i,si){
+  this.i=i; this.si=si;
+  var s=SHAPES[si];
+  this.pts=s.pts.map(function(p){return[p[0],p[1]]});
+  this.col=s.color; this.nm=s.name;
+  this.x=0;this.y=0;this.r=0;
+  this.tx=0;this.ty=0;this.tr=0;
+  this.ok=false;this.anim=0;
+}
+
+Pc.prototype.transformed=function(cx,cy,rot){
+  var a=rot*Math.PI/4, co=Math.cos(a), si=Math.sin(a);
+  return this.pts.map(function(p){
+    return[cx+p[0]*co-p[1]*si, cy+p[0]*si+p[1]*co];
+  });
+};
+
+Pc.prototype.world=function(){return this.transformed(this.x,this.y,this.r)};
+Pc.prototype.target=function(){return this.transformed(this.tx,this.ty,this.tr)};
+
+Pc.prototype.hit=function(px,py){
+  var w=this.world();
+  return pip(px,py,w);
+};
+
+function pip(px,py,poly){
+  var ins=false;
+  for(var i=0,j=poly.length-1;i<poly.length;j=i++){
+    var xi=poly[i][0],yi=poly[i][1],xj=poly[j][0],yj=poly[j][1];
+    if(((yi>py)!==(yj>py))&&(px<(xj-xi)*(py-yi)/(yj-yi)+xi)) ins=!ins;
+  }
+  return ins;
+}
+
+/* ===== CANVAS ===== */
+function resize(){
+  dpr=window.devicePixelRatio||1;
+  var r=gc.parentElement.getBoundingClientRect();
+  cw=r.width; ch=r.height;
+  gc.width=cw*dpr; gc.height=ch*dpr;
+  gc.style.width=cw+'px'; gc.style.height=ch+'px';
+  gx.setTransform(dpr,0,0,dpr,0,0);
+  var tw=document.querySelector('.tprev');
+  var ts=tw?tw.offsetWidth:90;
+  tc.width=ts*dpr; tc.height=ts*dpr;
+  tc.style.width=ts+'px'; tc.style.height=ts+'px';
+  tx.setTransform(dpr,0,0,dpr,0,0);
+  draw(); drawThumb();
+}
+
+/* ===== COORDINATE TRANSFORMS ===== */
+// Game coords: roughly 0-6 range. We map them to screen with scale + offset.
+// The "board" area is centered in canvas.
+function scl(){ return Math.min(cw,ch)/8; }
+function ofs(){
+  var s=scl();
+  return { x:(cw-6*s)/2, y:(ch-6*s)/2 - s*0.3 };
+}
+function g2s(gx2,gy2){ var s=scl(),o=ofs(); return[o.x+gx2*s, o.y+gy2*s]; }
+function s2g(sx,sy){ var s=scl(),o=ofs(); return[(sx-o.x)/s, (sy-o.y)/s]; }
+function polyS(pts){ var s=scl(),o=ofs(); return pts.map(function(p){return[o.x+p[0]*s,o.y+p[1]*s]});}
+
+/* ===== DRAWING ===== */
+function fillPoly(c,pts,fill,stroke,lw,al){
+  c.save(); c.globalAlpha=al===undefined?1:al;
+  c.beginPath(); c.moveTo(pts[0][0],pts[0][1]);
+  for(var i=1;i<pts.length;i++) c.lineTo(pts[i][0],pts[i][1]);
+  c.closePath();
+  if(fill){c.fillStyle=fill;c.fill();}
+  if(stroke){c.strokeStyle=stroke;c.lineWidth=lw||2;c.lineJoin='round';c.stroke();}
+  c.restore();
+}
+
+function centroid(pts){
+  var sx=0,sy=0;
+  for(var i=0;i<pts.length;i++){sx+=pts[i][0];sy+=pts[i][1];}
+  return[sx/pts.length,sy/pts.length];
+}
+
+function draw(){
+  gx.clearRect(0,0,cw,ch);
+  var s=scl(),o=ofs();
+
+  // Board background
+  gx.save();
+  gx.fillStyle='rgba(0,0,0,.018)';
+  var bx=o.x, by=o.y, bw=6*s, bh=6*s;
+  roundRect(gx,bx,by,bw,bh,8);
+  gx.fill();
+  gx.strokeStyle='rgba(0,0,0,.05)';
+  gx.lineWidth=1; gx.setLineDash([5,3]);
+  gx.stroke(); gx.setLineDash([]);
+  gx.restore();
+
+  // Target guides
+  if(diff==='easy'){
+    for(var i=0;i<pcs.length;i++){
+      if(!pcs[i].ok){
+        var tp=polyS(pcs[i].target());
+        fillPoly(gx,tp,'rgba(0,0,0,.035)','rgba(0,0,0,.1)',1.5,1);
+      }
+    }
+  } else {
+    gx.save(); gx.globalAlpha=0.06;
+    for(var j=0;j<pcs.length;j++){
+      var tp2=polyS(pcs[j].target());
+      gx.beginPath(); gx.moveTo(tp2[0][0],tp2[0][1]);
+      for(var k=1;k<tp2.length;k++) gx.lineTo(tp2[k][0],tp2[k][1]);
+      gx.closePath(); gx.fillStyle='#000'; gx.fill();
+    }
+    gx.restore();
+  }
+
+  // Sort pieces: placed first, dragging last
+  var ord=pcs.slice().sort(function(a,b){
+    if(a===drag) return 1; if(b===drag) return -1;
+    if(a.ok&&!b.ok) return -1; if(!a.ok&&b.ok) return 1;
+    return a.i-b.i;
+  });
+
+  for(var d=0;d<ord.length;d++){
+    var pc=ord[d], sp=polyS(pc.world()), isDrag=pc===drag;
+    gx.save();
+    if(isDrag){gx.shadowColor='rgba(0,0,0,.2)';gx.shadowBlur=16*dpr;gx.shadowOffsetY=4*dpr;}
+    else if(!pc.ok){gx.shadowColor='rgba(0,0,0,.08)';gx.shadowBlur=8*dpr;gx.shadowOffsetY=2*dpr;}
+    fillPoly(gx,sp,pc.col,'rgba(255,255,255,.3)',2,pc.ok?.82:1);
+    // inner highlight
+    if(!pc.ok){
+      gx.globalAlpha=.12;
+      gx.beginPath(); gx.moveTo(sp[0][0],sp[0][1]);
+      for(var q=1;q<sp.length;q++) gx.lineTo(sp[q][0],sp[q][1]);
+      gx.closePath(); gx.strokeStyle='#fff'; gx.lineWidth=1; gx.stroke();
+    }
+    gx.restore();
+
+    // Snap checkmark
+    if(pc.ok&&pc.anim>0){
+      var cn=centroid(sp);
+      gx.save(); gx.globalAlpha=pc.anim;
+      gx.fillStyle='#fff'; gx.font='bold '+(14*s/50)+'px system-ui';
+      gx.textAlign='center'; gx.textBaseline='middle';
+      gx.fillText('✓',cn[0],cn[1]); gx.restore();
+    }
+  }
+}
+
+function roundRect(c,x,y,w,h,r){
+  c.beginPath();
+  c.moveTo(x+r,y); c.lineTo(x+w-r,y); c.quadraticCurveTo(x+w,y,x+w,y+r);
+  c.lineTo(x+w,y+h-r); c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  c.lineTo(x+r,y+h); c.quadraticCurveTo(x,y+h,x,y+h-r);
+  c.lineTo(x,y+r); c.quadraticCurveTo(x,y,x+r,y);
+  c.closePath();
+}
+
+function drawThumb(){
+  var tw=tc.width/dpr, th=tc.height/dpr;
+  tx.clearRect(0,0,tw,th);
+  if(!pcs.length) return;
+  // Bounding box
+  var mn=[1e9,1e9],mx=[-1e9,-1e9];
+  for(var i=0;i<pcs.length;i++){
+    var tp=pcs[i].target();
+    for(var j=0;j<tp.length;j++){
+      if(tp[j][0]<mn[0])mn[0]=tp[j][0]; if(tp[j][1]<mn[1])mn[1]=tp[j][1];
+      if(tp[j][0]>mx[0])mx[0]=tp[j][0]; if(tp[j][1]>mx[1])mx[1]=tp[j][1];
+    }
+  }
+  var w=mx[0]-mn[0],h=mx[1]-mn[1],pad=8;
+  var vs=tw-pad*2, sc2=Math.min(vs/w,vs/h)*(th<80?.85:.9);
+  var ox2=tw/2-(mn[0]+w/2)*sc2, oy2=th/2-(mn[1]+h/2)*sc2 - 2;
+
+  tx.fillStyle='#b0b0b4';
+  for(var k=0;k<pcs.length;k++){
+    var tp2=pcs[k].target();
+    tx.beginPath();
+    tx.moveTo(ox2+tp2[0][0]*sc2, oy2+tp2[0][1]*sc2);
+    for(var m=1;m<tp2.length;m++) tx.lineTo(ox2+tp2[m][0]*sc2, oy2+tp2[m][1]*sc2);
+    tx.closePath(); tx.fill();
+  }
+}
+
+/* ===== PUZZLE MANAGEMENT ===== */
+function load(idx){
+  pzI=idx; var pz=PZ[idx];
+  done=false; moves=0; placed=0; tElap=0; stopT(); pcs=[];
+  document.getElementById('tl').textContent=pz.name;
+  document.getElementById('sMov').textContent='0';
+  document.getElementById('sPlc').textContent='0';
+  document.getElementById('sTime').textContent='0:00';
+  document.getElementById('hint').style.opacity='';
+
+  var starts=startPos();
+  for(var i=0;i<7;i++){
+    var pc=new Pc(i,i);
+    pc.tx=pz.t[i].x; pc.ty=pz.t[i].y; pc.tr=pz.t[i].r;
+    pc.x=starts[i][0]; pc.y=starts[i][1];
+    pc.r=Math.floor(Math.random()*8);
+    pcs.push(pc);
+  }
+  draw(); drawThumb();
+}
+
+function startPos(){
+  // Place pieces in the lower portion of the visible game area.
+  // We convert from screen percentages into game coords so they're always visible.
+  var positions=[];
+  // The visible game-coord range depends on viewport.
+  // Bottom of visible area in game coords:
+  var botG=s2g(cw/2, ch)[1]; // game-y at bottom of canvas
+  var leftG=s2g(0, ch/2)[0]; // game-x at left
+  var rightG=s2g(cw, ch/2)[0]; // game-x at right
+  var trayY=botG-1.5; // 1.5 game-units from bottom
+  var trayW=rightG-leftG;
+  var gap=Math.min(trayW/7, 1.4);
+  var startX=leftG+(trayW-gap*6)/2;
+  for(var i=0;i<7;i++){
+    positions.push([
+      startX+i*gap+(Math.random()-.5)*.3,
+      trayY+(Math.random()-.5)*.5
+    ]);
+  }
+  return positions;
+}
+
+function shuffle(){
+  if(done) return;
+  var sp=startPos();
+  for(var i=0;i<pcs.length;i++){
+    if(!pcs[i].ok){ pcs[i].x=sp[i][0]; pcs[i].y=sp[i][1]; pcs[i].r=Math.floor(Math.random()*8); }
+  }
+  draw();
+}
+
+/* ===== SNAP ===== */
+function snap(pc){
+  if(pc.ok) return;
+  var dx=pc.x-pc.tx, dy=pc.y-pc.ty;
+  var dist=Math.sqrt(dx*dx+dy*dy);
+  var rotOK=(pc.r%8)===(pc.tr%8);
+  if(dist<0.6&&rotOK){
+    pc.x=pc.tx; pc.y=pc.ty; pc.r=pc.tr;
+    pc.ok=true; pc.anim=1; placed++;
+    document.getElementById('sPlc').textContent=placed;
+    // Fade anim
+    (function(p){
+      var iv=setInterval(function(){ p.anim-=.04; if(p.anim<=0){p.anim=0;clearInterval(iv);} draw();},30);
+    })(pc);
+    if(placed===7) complete();
+  }
+}
+
+/* ===== TIMER ===== */
+function startT(){
+  if(tInt) return;
+  tStart=Date.now()-tElap;
+  tInt=setInterval(function(){
+    tElap=Date.now()-tStart;
+    document.getElementById('sTime').textContent=fmt(tElap);
+  },250);
+}
+function stopT(){ if(tInt){clearInterval(tInt);tInt=null;} }
+function fmt(ms){
+  var s=Math.floor(ms/1000), m=Math.floor(s/60); s%=60;
+  return m+':'+(s<10?'0':'')+s;
+}
+
+/* ===== SCORE ===== */
+function calcScore(){
+  var d=PZ[pzI].difficulty, t=Math.max(1,tElap/1000);
+  return Math.max(1,Math.round(d/t*1000*(100/Math.max(1,moves))));
+}
+
+function complete(){
+  done=true; stopT();
+  var sc=calcScore(), pz=PZ[pzI];
+  document.getElementById('dName').textContent=pz.name;
+  document.getElementById('dScore').textContent=sc.toLocaleString();
+  document.getElementById('dDet').textContent='Time: '+fmt(tElap)+' | Moves: '+moves;
+  var isNew=saveHS(pz.name,sc);
+  document.getElementById('dHs').style.display=isNew?'':'none';
+  try{window.Leaderboard&&Leaderboard.submitScore(sc);}catch(e){}
+  setTimeout(function(){showOv('ovDone');},400);
+}
+
+function saveHS(n,sc){
+  try{
+    var d=JSON.parse(localStorage.getItem('tangram_hs')||'{}');
+    if(sc>(d[n]||0)){d[n]=sc;localStorage.setItem('tangram_hs',JSON.stringify(d));return true;}
+    return false;
+  }catch(e){return false;}
+}
+
+/* ===== OVERLAYS ===== */
+function showOv(id){document.getElementById(id).classList.add('show');}
+function hideOv(id){document.getElementById(id).classList.remove('show');}
+
+/* ===== INPUT ===== */
+function gpos(e){
+  var r=gc.getBoundingClientRect(), x,y;
+  if(e.touches&&e.touches.length){x=e.touches[0].clientX-r.left;y=e.touches[0].clientY-r.top;}
+  else if(e.changedTouches&&e.changedTouches.length){x=e.changedTouches[0].clientX-r.left;y=e.changedTouches[0].clientY-r.top;}
+  else{x=e.clientX-r.left;y=e.clientY-r.top;}
+  return s2g(x,y);
+}
+
+function findAt(gx2,gy2){
+  for(var i=pcs.length-1;i>=0;i--){
+    if(pcs[i].ok) continue;
+    if(pcs[i].hit(gx2,gy2)) return pcs[i];
+  }
+  return null;
+}
+
+function onDown(e){
+  if(done) return; e.preventDefault();
+  var p=gpos(e), pc=findAt(p[0],p[1]);
+  if(!pc) return;
+  drag=pc; dox=pc.x-p[0]; doy=pc.y-p[1]; moved=false;
+  var idx=pcs.indexOf(pc); pcs.splice(idx,1); pcs.push(pc);
+  startT(); draw();
+}
+
+function onMove(e){
+  if(!drag) return; e.preventDefault();
+  var p=gpos(e);
+  drag.x=p[0]+dox; drag.y=p[1]+doy; moved=true;
+  draw();
+}
+
+function onUp(e){
+  if(!drag) return; e.preventDefault();
+  if(!moved){
+    drag.r=(drag.r+1)%8;
+  }
+  moves++; document.getElementById('sMov').textContent=moves;
+  snap(drag); drag=null; draw();
+}
+
+gc.addEventListener('mousedown',onDown);
+window.addEventListener('mousemove',onMove);
+window.addEventListener('mouseup',onUp);
+gc.addEventListener('touchstart',onDown,{passive:false});
+window.addEventListener('touchmove',onMove,{passive:false});
+window.addEventListener('touchend',onUp,{passive:false});
+
+/* ===== BUTTONS ===== */
+document.getElementById('bHelp').onclick=function(){showOv('ovRules');};
+document.getElementById('bClR').onclick=function(){hideOv('ovRules');};
+document.getElementById('bReset').onclick=function(){load(pzI);};
+document.getElementById('bShf').onclick=shuffle;
+document.getElementById('bNxt').onclick=function(){load((pzI+1)%PZ.length);};
+document.getElementById('bPrv').onclick=function(){load((pzI-1+PZ.length)%PZ.length);};
+document.getElementById('bAgain').onclick=function(){hideOv('ovDone');load(pzI);};
+document.getElementById('bNextP').onclick=function(){hideOv('ovDone');load((pzI+1)%PZ.length);};
+
+// Difficulty
+document.querySelectorAll('.dbtn').forEach(function(b){
+  b.onclick=function(){
+    diff=this.getAttribute('data-d');
+    document.querySelectorAll('.dbtn').forEach(function(x){x.classList.remove('on');});
+    this.classList.add('on'); draw();
+  };
+});
+
+// Close overlay on bg click
+document.querySelectorAll('.ov').forEach(function(o){
+  o.onclick=function(e){if(e.target===o)o.classList.remove('show');};
+});
+
+/* ===== INIT ===== */
+window.addEventListener('resize',resize);
+resize();
+load(0);
+
+})();
+</script>
+<script src="../shared-leaderboard.js"></script>
+<section class="related"><h2>You Might Also Like</h2><div class="related-grid">
+<a href="/jigsaw/" class="related-card"><span class="related-name">Jigsaw</span></a>
+<a href="/nonogram/" class="related-card"><span class="related-name">Nonogram</span></a>
+<a href="/sokoban/" class="related-card"><span class="related-name">Sokoban</span></a>
+<a href="/slidingpuzzle/" class="related-card"><span class="related-name">Slidingpuzzle</span></a>
+</div></section>
+</body>
+</html>

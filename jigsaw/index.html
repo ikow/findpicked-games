@@ -1,0 +1,1473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Play Jigsaw Puzzle Online Free — Drag & Drop Pieces | FindPicked Games</title>
+<meta name="description" content="Play Jigsaw Puzzle free online — drag pieces to complete the picture. 3 difficulty levels. No downloads, no sign-ups. Works on desktop & mobile.">
+<link rel="canonical" href="https://game.findpicked.com/jigsaw/">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="theme-color" content="#0071e3">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="FindPicked Games">
+<meta property="og:title" content="Play Jigsaw Puzzle Online Free — Drag & Drop Pieces | FindPicked Games">
+<meta property="og:description" content="Play Jigsaw Puzzle free online — drag pieces to complete the picture. 3 difficulty levels. No downloads, no sign-ups.">
+<meta property="og:url" content="https://game.findpicked.com/jigsaw/">
+<meta property="og:image" content="https://game.findpicked.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="en_US">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Play Jigsaw Puzzle Online Free | FindPicked Games">
+<meta name="twitter:description" content="Play Jigsaw Puzzle free online — drag pieces to complete the picture. No downloads needed.">
+<meta name="twitter:image" content="https://game.findpicked.com/og-image.png">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230071e3'/%3E%3Ctext x='16' y='23' font-size='18' fill='white' text-anchor='middle' font-family='system-ui'%3E%F0%9F%A7%A9%3C/text%3E%3C/svg%3E">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #86868b;
+  --accent: #0071e3;
+  --accent-hover: #0077ed;
+  --border: rgba(0, 0, 0, 0.08);
+  --shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.12);
+  --radius: 16px;
+}
+
+html, body {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px 16px 80px;
+  touch-action: manipulation;
+}
+
+.wrap {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+h1 {
+  font-size: clamp(28px, 7vw, 42px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.stats {
+  display: flex;
+  gap: 8px;
+}
+
+.stat-box {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 10px 14px;
+  min-width: 72px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  margin-bottom: 2px;
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.controls p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.btn {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  height: 44px;
+  padding: 0 24px;
+  border-radius: 22px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  min-width: 44px;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn:active { transform: scale(0.97); }
+
+.btn.secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
+}
+.btn.secondary:hover { background: rgba(0, 113, 227, 0.06); }
+
+.btn.small {
+  height: 36px;
+  padding: 0 16px;
+  font-size: 13px;
+  border-radius: 18px;
+}
+
+.diff-btns {
+  display: flex;
+  gap: 8px;
+}
+
+.diff-btn {
+  border: none;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 22px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  min-width: 44px;
+}
+.diff-btn:hover { color: var(--text-primary); box-shadow: var(--shadow-hover); }
+.diff-btn.active {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 113, 227, 0.3);
+}
+
+/* Game area */
+.game-area {
+  position: relative;
+  width: 100%;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.preview-area {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: #f0f0f0;
+  cursor: default;
+}
+
+.preview-area canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.tray {
+  width: 100%;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+  min-height: 120px;
+  position: relative;
+  overflow: auto;
+}
+
+.tray-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  margin-bottom: 12px;
+}
+
+.tray-pieces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  min-height: 80px;
+}
+
+.tray-pieces canvas {
+  cursor: grab;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  border-radius: 4px;
+}
+.tray-pieces canvas:hover {
+  transform: scale(1.05);
+}
+
+/* Dragging piece */
+.drag-piece {
+  position: fixed;
+  pointer-events: none;
+  z-index: 10000;
+  filter: drop-shadow(0 8px 24px rgba(0,0,0,0.25));
+  transition: none;
+}
+
+/* Overlay screens */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9998;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal {
+  background: var(--bg-card);
+  border-radius: 20px;
+  padding: 36px 32px;
+  max-width: 380px;
+  width: calc(100% - 40px);
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  transform: scale(0.9);
+  transition: transform 0.3s ease;
+}
+.overlay.show .modal {
+  transform: scale(1);
+}
+
+.modal h2 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+
+.modal p {
+  font-size: 15px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 6px;
+}
+
+.modal .score-display {
+  font-size: 48px;
+  font-weight: 800;
+  color: var(--accent);
+  margin: 16px 0;
+  letter-spacing: -0.03em;
+}
+
+.modal .detail {
+  font-size: 14px;
+  color: var(--text-tertiary);
+  margin-bottom: 20px;
+}
+
+.modal-btns {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+/* How to Play */
+.rules-content {
+  text-align: left;
+  margin: 16px 0;
+}
+
+.rules-content ol {
+  padding-left: 20px;
+}
+
+.rules-content li {
+  font-size: 15px;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+/* Progress bar */
+.progress-bar {
+  width: 100%;
+  height: 4px;
+  background: rgba(0,0,0,0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+  width: 0%;
+}
+
+/* Grid overlay for drop targets */
+.grid-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Placed piece glow */
+@keyframes snapGlow {
+  0% { filter: brightness(1.3) drop-shadow(0 0 12px rgba(0,113,227,0.6)); }
+  100% { filter: brightness(1) drop-shadow(0 0 0 transparent); }
+}
+
+.snap-anim {
+  animation: snapGlow 0.4s ease-out;
+}
+
+/* Completion confetti */
+@keyframes confettiFall {
+  0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+
+.confetti {
+  position: fixed;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  z-index: 9997;
+  pointer-events: none;
+  animation: confettiFall linear forwards;
+}
+
+/* Reference image toggle */
+.ref-toggle {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  z-index: 10;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(6px);
+  border: none;
+  border-radius: 22px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.ref-toggle:hover { background: rgba(255,255,255,0.95); color: var(--text-primary); }
+
+/* High score badge */
+.high-score {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  text-align: center;
+  margin-top: 4px;
+}
+
+@media (max-width: 480px) {
+  body { padding: 16px 12px 70px; }
+  .wrap { gap: 16px; }
+  .stat-box { padding: 8px 10px; min-width: 64px; }
+  .stat-value { font-size: 17px; }
+  .diff-btns { gap: 6px; }
+  .diff-btn { padding: 0 12px; font-size: 12px; }
+  .tray { padding: 12px; }
+  .modal { padding: 28px 24px; }
+}
+
+.breadcrumb{padding:8px 16px;font-size:13px;color:#6e6e73}
+.breadcrumb a{color:#0071e3;text-decoration:none}
+.breadcrumb span{margin:0 4px}
+.related{max-width:680px;margin:24px auto;padding:0 20px}
+.related h2{font-size:18px;font-weight:600;margin-bottom:12px;color:#1d1d1f}
+.related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.related-card{display:block;padding:12px 16px;background:#fff;border-radius:12px;text-decoration:none;color:#1d1d1f;border:1px solid rgba(0,0,0,0.06);font-size:14px;font-weight:500;transition:transform 0.2s,box-shadow 0.2s}
+.related-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.08)}
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Jigsaw Puzzle",
+  "description": "Play Jigsaw Puzzle free online — drag pieces to complete the picture. 3 difficulty levels. No downloads, no sign-ups. Works on desktop & mobile.",
+  "url": "https://game.findpicked.com/jigsaw/",
+  "playMode": "SinglePlayer",
+  "applicationCategory": "Game",
+  "applicationSubCategory": "Puzzle",
+  "gamePlatform": [
+    "Web Browser",
+    "Mobile Browser"
+  ],
+  "operatingSystem": "Any",
+  "browserRequirements": "Requires JavaScript",
+  "inLanguage": "en",
+  "isAccessibleForFree": true,
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD",
+    "availability": "https://schema.org/InStock"
+  },
+  "author": {
+    "@type": "Organization",
+    "name": "FindPicked Games",
+    "url": "https://game.findpicked.com/"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "FindPicked Games",
+      "item": "https://game.findpicked.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Puzzle Games",
+      "item": "https://game.findpicked.com/puzzle/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Jigsaw Puzzle",
+      "item": "https://game.findpicked.com/jigsaw/"
+    }
+  ]
+}
+</script>
+</head>
+<body>
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Games</a> <span>›</span> <a href="/puzzle/">Puzzle</a> <span>›</span> <span>Jigsaw Puzzle</span></nav>
+
+<a href="../" style="position:fixed;top:16px;left:16px;color:#6e6e73;text-decoration:none;font-size:15px;z-index:9999">&#8592; Back</a>
+
+<div class="wrap">
+  <header>
+    <h1>Jigsaw</h1>
+    <div style="display:flex;gap:8px">
+      <button class="btn small secondary" id="howBtn">How to Play</button>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="diff-btns">
+      <button class="diff-btn active" data-size="3">Easy 3&times;3</button>
+      <button class="diff-btn" data-size="4">Medium 4&times;4</button>
+      <button class="diff-btn" data-size="5">Hard 5&times;5</button>
+    </div>
+    <button class="btn" id="newGameBtn">New Game</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat-box">
+      <div class="stat-label">Time</div>
+      <div class="stat-value" id="timer">0:00</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Placed</div>
+      <div class="stat-value" id="placed">0/9</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Best</div>
+      <div class="stat-value" id="bestScore">--</div>
+    </div>
+  </div>
+
+  <div class="progress-bar">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+
+  <div class="game-area">
+    <div class="preview-area" id="boardArea">
+      <canvas id="boardCanvas"></canvas>
+      <canvas id="piecesCanvas"></canvas>
+      <button class="ref-toggle" id="refToggle">Show Reference</button>
+    </div>
+  </div>
+
+  <div class="tray" id="tray">
+    <div class="tray-label">Pieces</div>
+    <div class="tray-pieces" id="trayPieces"></div>
+  </div>
+</div>
+
+<!-- How to Play overlay -->
+<div class="overlay" id="howOverlay">
+  <div class="modal">
+    <h2>How to Play</h2>
+    <div class="rules-content">
+      <ol>
+        <li>Choose a difficulty level: Easy (3x3), Medium (4x4), or Hard (5x5).</li>
+        <li>A colorful image is generated and cut into jigsaw pieces.</li>
+        <li>Drag pieces from the tray below onto the puzzle board.</li>
+        <li>Pieces snap into place when dropped near the correct spot.</li>
+        <li>Complete the puzzle as fast as you can for a higher score!</li>
+        <li>Score = difficulty bonus divided by time taken.</li>
+      </ol>
+    </div>
+    <div class="modal-btns">
+      <button class="btn" id="howClose">Got It</button>
+    </div>
+  </div>
+</div>
+
+<!-- Game over overlay -->
+<div class="overlay" id="winOverlay">
+  <div class="modal">
+    <h2>Puzzle Complete!</h2>
+    <div class="score-display" id="finalScore">0</div>
+    <p id="winMsg">Great job!</p>
+    <div class="detail" id="winDetail"></div>
+    <div class="high-score" id="newHighScore" style="display:none">New Personal Best!</div>
+    <div class="modal-btns">
+      <button class="btn" id="playAgainBtn">Play Again</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reference image overlay -->
+<div class="overlay" id="refOverlay">
+  <div class="modal" style="padding:20px">
+    <h2 style="margin-bottom:12px">Reference Image</h2>
+    <canvas id="refCanvas" style="width:100%;border-radius:12px"></canvas>
+    <div class="modal-btns">
+      <button class="btn" id="refClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // --- DOM refs ---
+  const boardArea = document.getElementById('boardArea');
+  const boardCanvas = document.getElementById('boardCanvas');
+  const piecesCanvas = document.getElementById('piecesCanvas');
+  const trayEl = document.getElementById('trayPieces');
+  const timerEl = document.getElementById('timer');
+  const placedEl = document.getElementById('placed');
+  const bestScoreEl = document.getElementById('bestScore');
+  const progressFill = document.getElementById('progressFill');
+  const howOverlay = document.getElementById('howOverlay');
+  const winOverlay = document.getElementById('winOverlay');
+  const refOverlay = document.getElementById('refOverlay');
+  const refCanvas = document.getElementById('refCanvas');
+  const finalScoreEl = document.getElementById('finalScore');
+  const winMsgEl = document.getElementById('winMsg');
+  const winDetailEl = document.getElementById('winDetail');
+  const newHighScoreEl = document.getElementById('newHighScore');
+
+  // --- State ---
+  let gridSize = 3;
+  let pieces = [];
+  let placedPieces = [];
+  let sourceImage = null;
+  let timerInterval = null;
+  let startTime = 0;
+  let elapsedSeconds = 0;
+  let gameActive = false;
+  let dragging = null;
+  let dragOffsetX = 0;
+  let dragOffsetY = 0;
+  let dragEl = null;
+  let showingRef = false;
+  let trayOrder = []; // stable shuffle order for tray
+
+  const TAB_SIZE = 0.22; // tab size relative to piece size
+  const SNAP_DIST = 0.38; // snap threshold relative to piece size
+
+  // --- DPR helper ---
+  function setupCanvas(canvas, w, h) {
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    return ctx;
+  }
+
+  // --- Generate abstract art ---
+  function generateImage(size) {
+    const c = document.createElement('canvas');
+    c.width = size;
+    c.height = size;
+    const ctx = c.getContext('2d');
+
+    // Background gradient
+    const bgColors = [
+      ['#667eea', '#764ba2'],
+      ['#f093fb', '#f5576c'],
+      ['#4facfe', '#00f2fe'],
+      ['#43e97b', '#38f9d7'],
+      ['#fa709a', '#fee140'],
+      ['#a18cd1', '#fbc2eb'],
+      ['#ffecd2', '#fcb69f'],
+      ['#89f7fe', '#66a6ff']
+    ];
+    const bgPair = bgColors[Math.floor(Math.random() * bgColors.length)];
+    const angle = Math.random() * Math.PI * 2;
+    const grd = ctx.createLinearGradient(
+      size/2 + Math.cos(angle) * size/2, size/2 + Math.sin(angle) * size/2,
+      size/2 - Math.cos(angle) * size/2, size/2 - Math.sin(angle) * size/2
+    );
+    grd.addColorStop(0, bgPair[0]);
+    grd.addColorStop(1, bgPair[1]);
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, size, size);
+
+    // Shapes
+    const shapes = 12 + Math.floor(Math.random() * 10);
+    const palette = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
+                     '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9',
+                     '#F1948A', '#82E0AA', '#F8C471', '#AED6F1', '#D7BDE2',
+                     '#A3E4D7', '#FAD7A0', '#FADBD8', '#D5F5E3', '#FCF3CF'];
+
+    for (let i = 0; i < shapes; i++) {
+      const x = Math.random() * size;
+      const y = Math.random() * size;
+      const r = 30 + Math.random() * size * 0.3;
+      const color = palette[Math.floor(Math.random() * palette.length)];
+
+      ctx.save();
+      ctx.globalAlpha = 0.3 + Math.random() * 0.5;
+      ctx.translate(x, y);
+      ctx.rotate(Math.random() * Math.PI * 2);
+
+      const shape = Math.floor(Math.random() * 5);
+      ctx.fillStyle = color;
+
+      if (shape === 0) {
+        // Circle
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (shape === 1) {
+        // Rounded rect
+        const w = r * 1.5;
+        const h = r;
+        ctx.beginPath();
+        ctx.roundRect(-w/2, -h/2, w, h, r * 0.2);
+        ctx.fill();
+      } else if (shape === 2) {
+        // Triangle
+        ctx.beginPath();
+        ctx.moveTo(0, -r);
+        ctx.lineTo(r * 0.87, r * 0.5);
+        ctx.lineTo(-r * 0.87, r * 0.5);
+        ctx.closePath();
+        ctx.fill();
+      } else if (shape === 3) {
+        // Star
+        ctx.beginPath();
+        for (let j = 0; j < 10; j++) {
+          const a = (j * Math.PI) / 5 - Math.PI / 2;
+          const rad = j % 2 === 0 ? r : r * 0.45;
+          ctx.lineTo(Math.cos(a) * rad, Math.sin(a) * rad);
+        }
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        // Diamond
+        ctx.beginPath();
+        ctx.moveTo(0, -r);
+        ctx.lineTo(r * 0.6, 0);
+        ctx.lineTo(0, r);
+        ctx.lineTo(-r * 0.6, 0);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // Add some lines for visual interest
+    for (let i = 0; i < 5; i++) {
+      ctx.save();
+      ctx.globalAlpha = 0.15 + Math.random() * 0.2;
+      ctx.strokeStyle = palette[Math.floor(Math.random() * palette.length)];
+      ctx.lineWidth = 2 + Math.random() * 6;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      const sx = Math.random() * size;
+      const sy = Math.random() * size;
+      ctx.moveTo(sx, sy);
+      ctx.bezierCurveTo(
+        Math.random() * size, Math.random() * size,
+        Math.random() * size, Math.random() * size,
+        Math.random() * size, Math.random() * size
+      );
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    return c;
+  }
+
+  // --- Jigsaw piece path ---
+  // Each edge: 0 = flat, 1 = tab out, -1 = tab in
+  function jigsawPiecePath(ctx, x, y, w, h, edges) {
+    // edges = { top, right, bottom, left } each 0, 1, or -1
+    const tabW = w * TAB_SIZE;
+    const tabH = h * TAB_SIZE;
+
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+
+    // Top edge
+    if (edges.top === 0) {
+      ctx.lineTo(x + w, y);
+    } else {
+      const dir = edges.top;
+      ctx.lineTo(x + w * 0.35, y);
+      ctx.bezierCurveTo(
+        x + w * 0.35, y - dir * tabH * 0.2,
+        x + w * 0.35 - tabW * 0.15, y - dir * tabH * 0.8,
+        x + w * 0.5 - tabW * 0.35, y - dir * tabH * 0.8
+      );
+      ctx.bezierCurveTo(
+        x + w * 0.5 - tabW * 0.55, y - dir * tabH * 0.8,
+        x + w * 0.5 - tabW * 0.55, y - dir * tabH * 1.4,
+        x + w * 0.5, y - dir * tabH * 1.4
+      );
+      ctx.bezierCurveTo(
+        x + w * 0.5 + tabW * 0.55, y - dir * tabH * 1.4,
+        x + w * 0.5 + tabW * 0.55, y - dir * tabH * 0.8,
+        x + w * 0.5 + tabW * 0.35, y - dir * tabH * 0.8
+      );
+      ctx.bezierCurveTo(
+        x + w * 0.65 + tabW * 0.15, y - dir * tabH * 0.8,
+        x + w * 0.65, y - dir * tabH * 0.2,
+        x + w * 0.65, y
+      );
+      ctx.lineTo(x + w, y);
+    }
+
+    // Right edge
+    if (edges.right === 0) {
+      ctx.lineTo(x + w, y + h);
+    } else {
+      const dir = edges.right;
+      ctx.lineTo(x + w, y + h * 0.35);
+      ctx.bezierCurveTo(
+        x + w + dir * tabW * 0.2, y + h * 0.35,
+        x + w + dir * tabW * 0.8, y + h * 0.35 - tabH * 0.15,
+        x + w + dir * tabW * 0.8, y + h * 0.5 - tabH * 0.35
+      );
+      ctx.bezierCurveTo(
+        x + w + dir * tabW * 0.8, y + h * 0.5 - tabH * 0.55,
+        x + w + dir * tabW * 1.4, y + h * 0.5 - tabH * 0.55,
+        x + w + dir * tabW * 1.4, y + h * 0.5
+      );
+      ctx.bezierCurveTo(
+        x + w + dir * tabW * 1.4, y + h * 0.5 + tabH * 0.55,
+        x + w + dir * tabW * 0.8, y + h * 0.5 + tabH * 0.55,
+        x + w + dir * tabW * 0.8, y + h * 0.5 + tabH * 0.35
+      );
+      ctx.bezierCurveTo(
+        x + w + dir * tabW * 0.8, y + h * 0.65 + tabH * 0.15,
+        x + w + dir * tabW * 0.2, y + h * 0.65,
+        x + w, y + h * 0.65
+      );
+      ctx.lineTo(x + w, y + h);
+    }
+
+    // Bottom edge (drawn right to left)
+    if (edges.bottom === 0) {
+      ctx.lineTo(x, y + h);
+    } else {
+      const dir = edges.bottom;
+      ctx.lineTo(x + w * 0.65, y + h);
+      ctx.bezierCurveTo(
+        x + w * 0.65, y + h + dir * tabH * 0.2,
+        x + w * 0.65 + tabW * 0.15, y + h + dir * tabH * 0.8,
+        x + w * 0.5 + tabW * 0.35, y + h + dir * tabH * 0.8
+      );
+      ctx.bezierCurveTo(
+        x + w * 0.5 + tabW * 0.55, y + h + dir * tabH * 0.8,
+        x + w * 0.5 + tabW * 0.55, y + h + dir * tabH * 1.4,
+        x + w * 0.5, y + h + dir * tabH * 1.4
+      );
+      ctx.bezierCurveTo(
+        x + w * 0.5 - tabW * 0.55, y + h + dir * tabH * 1.4,
+        x + w * 0.5 - tabW * 0.55, y + h + dir * tabH * 0.8,
+        x + w * 0.5 - tabW * 0.35, y + h + dir * tabH * 0.8
+      );
+      ctx.bezierCurveTo(
+        x + w * 0.35 - tabW * 0.15, y + h + dir * tabH * 0.8,
+        x + w * 0.35, y + h + dir * tabH * 0.2,
+        x + w * 0.35, y + h
+      );
+      ctx.lineTo(x, y + h);
+    }
+
+    // Left edge (drawn bottom to top)
+    if (edges.left === 0) {
+      ctx.lineTo(x, y);
+    } else {
+      const dir = edges.left;
+      ctx.lineTo(x, y + h * 0.65);
+      ctx.bezierCurveTo(
+        x - dir * tabW * 0.2, y + h * 0.65,
+        x - dir * tabW * 0.8, y + h * 0.65 + tabH * 0.15,
+        x - dir * tabW * 0.8, y + h * 0.5 + tabH * 0.35
+      );
+      ctx.bezierCurveTo(
+        x - dir * tabW * 0.8, y + h * 0.5 + tabH * 0.55,
+        x - dir * tabW * 1.4, y + h * 0.5 + tabH * 0.55,
+        x - dir * tabW * 1.4, y + h * 0.5
+      );
+      ctx.bezierCurveTo(
+        x - dir * tabW * 1.4, y + h * 0.5 - tabH * 0.55,
+        x - dir * tabW * 0.8, y + h * 0.5 - tabH * 0.55,
+        x - dir * tabW * 0.8, y + h * 0.5 - tabH * 0.35
+      );
+      ctx.bezierCurveTo(
+        x - dir * tabW * 0.8, y + h * 0.35 - tabH * 0.15,
+        x - dir * tabW * 0.2, y + h * 0.35,
+        x, y + h * 0.35
+      );
+      ctx.lineTo(x, y);
+    }
+
+    ctx.closePath();
+  }
+
+  // --- Generate edge map ---
+  function generateEdges(n) {
+    // For each internal edge, randomly pick 1 or -1
+    // Horizontal edges (between rows): n-1 rows, n cols
+    // Vertical edges (between cols): n rows, n-1 cols
+    const hEdges = [];
+    const vEdges = [];
+
+    for (let r = 0; r < n - 1; r++) {
+      hEdges[r] = [];
+      for (let c = 0; c < n; c++) {
+        hEdges[r][c] = Math.random() < 0.5 ? 1 : -1;
+      }
+    }
+    for (let r = 0; r < n; r++) {
+      vEdges[r] = [];
+      for (let c = 0; c < n - 1; c++) {
+        vEdges[r][c] = Math.random() < 0.5 ? 1 : -1;
+      }
+    }
+
+    return { hEdges, vEdges };
+  }
+
+  function getPieceEdges(row, col, n, edgeMap) {
+    return {
+      top: row === 0 ? 0 : -edgeMap.hEdges[row - 1][col],
+      bottom: row === n - 1 ? 0 : edgeMap.hEdges[row][col],
+      left: col === 0 ? 0 : -edgeMap.vEdges[row][col - 1],
+      right: col === n - 1 ? 0 : edgeMap.vEdges[row][col]
+    };
+  }
+
+  // --- Cut a single piece from the source image ---
+  function cutPiece(srcCanvas, row, col, n, edges, pieceW, pieceH) {
+    const margin = Math.max(pieceW, pieceH) * TAB_SIZE * 1.6;
+    const cw = pieceW + margin * 2;
+    const ch = pieceH + margin * 2;
+
+    const c = document.createElement('canvas');
+    const dpr = window.devicePixelRatio || 1;
+    c.width = cw * dpr;
+    c.height = ch * dpr;
+    c.style.width = cw + 'px';
+    c.style.height = ch + 'px';
+    const ctx = c.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    // Clip to jigsaw shape
+    ctx.save();
+    jigsawPiecePath(ctx, margin, margin, pieceW, pieceH, edges);
+    ctx.clip();
+
+    // Draw source image portion
+    const sx = col * pieceW;
+    const sy = row * pieceH;
+    ctx.drawImage(srcCanvas, sx - margin, sy - margin, cw, ch, 0, 0, cw, ch);
+    ctx.restore();
+
+    // Draw outline
+    ctx.save();
+    jigsawPiecePath(ctx, margin, margin, pieceW, pieceH, edges);
+    ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.restore();
+
+    return { canvas: c, margin: margin, width: cw, height: ch };
+  }
+
+  // --- Draw board grid ---
+  function drawBoard() {
+    const rect = boardArea.getBoundingClientRect();
+    const w = rect.width;
+    const h = rect.height;
+
+    const bCtx = setupCanvas(boardCanvas, w, h);
+
+    // Light background
+    bCtx.fillStyle = '#f5f5f7';
+    bCtx.fillRect(0, 0, w, h);
+
+    // Draw grid lines
+    const cellW = w / gridSize;
+    const cellH = h / gridSize;
+
+    bCtx.strokeStyle = 'rgba(0,0,0,0.08)';
+    bCtx.lineWidth = 1;
+    bCtx.setLineDash([4, 4]);
+
+    for (let i = 1; i < gridSize; i++) {
+      bCtx.beginPath();
+      bCtx.moveTo(i * cellW, 0);
+      bCtx.lineTo(i * cellW, h);
+      bCtx.stroke();
+      bCtx.beginPath();
+      bCtx.moveTo(0, i * cellH);
+      bCtx.lineTo(w, i * cellH);
+      bCtx.stroke();
+    }
+
+    bCtx.setLineDash([]);
+
+    // Draw cell hints (very faint numbers)
+    bCtx.fillStyle = 'rgba(0,0,0,0.04)';
+    bCtx.font = `${Math.max(14, cellW * 0.15)}px -apple-system, sans-serif`;
+    bCtx.textAlign = 'center';
+    bCtx.textBaseline = 'middle';
+    for (let r = 0; r < gridSize; r++) {
+      for (let c = 0; c < gridSize; c++) {
+        bCtx.fillText(`${r * gridSize + c + 1}`, (c + 0.5) * cellW, (r + 0.5) * cellH);
+      }
+    }
+  }
+
+  // --- Draw placed pieces on the board ---
+  function drawPlacedPieces() {
+    const rect = boardArea.getBoundingClientRect();
+    const w = rect.width;
+    const h = rect.height;
+
+    const ctx = setupCanvas(piecesCanvas, w, h);
+    ctx.clearRect(0, 0, w, h);
+
+    const cellW = w / gridSize;
+    const cellH = h / gridSize;
+
+    for (const pp of placedPieces) {
+      const p = pp.piece;
+      const drawW = p.cutData.width;
+      const drawH = p.cutData.height;
+      const margin = p.cutData.margin;
+
+      const dx = pp.col * cellW - margin;
+      const dy = pp.row * cellH - margin;
+
+      ctx.drawImage(p.cutData.canvas, 0, 0, p.cutData.canvas.width, p.cutData.canvas.height,
+                    dx, dy, drawW, drawH);
+    }
+  }
+
+  // --- Create tray pieces ---
+  function populateTray() {
+    trayEl.innerHTML = '';
+
+    // Use stable shuffle order (set once per game in newGame)
+    for (const idx of trayOrder) {
+      const p = pieces[idx];
+      if (p.placed) continue;
+
+      const trayPieceSize = Math.min(70, (window.innerWidth - 80) / Math.min(gridSize + 1, 5));
+      const scale = trayPieceSize / Math.max(p.cutData.width, p.cutData.height);
+
+      const display = document.createElement('canvas');
+      const dpr = window.devicePixelRatio || 1;
+      const dw = p.cutData.width * scale;
+      const dh = p.cutData.height * scale;
+      display.width = dw * dpr;
+      display.height = dh * dpr;
+      display.style.width = dw + 'px';
+      display.style.height = dh + 'px';
+      display.style.minWidth = '44px';
+      display.style.minHeight = '44px';
+
+      const dCtx = display.getContext('2d');
+      dCtx.scale(dpr, dpr);
+      dCtx.drawImage(p.cutData.canvas, 0, 0, p.cutData.canvas.width, p.cutData.canvas.height,
+                     0, 0, dw, dh);
+
+      display.dataset.row = p.row;
+      display.dataset.col = p.col;
+      display.setAttribute('role', 'img');
+      display.setAttribute('aria-label', `Puzzle piece ${p.row * gridSize + p.col + 1}`);
+
+      trayEl.appendChild(display);
+    }
+  }
+
+  // --- Timer ---
+  function startTimer() {
+    startTime = Date.now();
+    elapsedSeconds = 0;
+    clearInterval(timerInterval);
+    timerInterval = setInterval(function() {
+      elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+      const m = Math.floor(elapsedSeconds / 60);
+      const s = elapsedSeconds % 60;
+      timerEl.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+    }, 200);
+  }
+
+  function stopTimer() {
+    clearInterval(timerInterval);
+  }
+
+  // --- Score ---
+  function calcScore() {
+    const diffBonus = { 3: 1000, 4: 3000, 5: 6000 };
+    const bonus = diffBonus[gridSize] || 1000;
+    const time = Math.max(1, elapsedSeconds);
+    return Math.round(bonus / time * 100);
+  }
+
+  // --- High scores ---
+  function getHighScore() {
+    try {
+      const key = 'jigsaw-best-' + gridSize;
+      return parseInt(localStorage.getItem(key)) || 0;
+    } catch(e) { return 0; }
+  }
+
+  function setHighScore(score) {
+    try {
+      const key = 'jigsaw-best-' + gridSize;
+      localStorage.setItem(key, score);
+    } catch(e) {}
+  }
+
+  function updateBestDisplay() {
+    const best = getHighScore();
+    bestScoreEl.textContent = best > 0 ? best : '--';
+  }
+
+  // --- Check win ---
+  function checkWin() {
+    if (placedPieces.length === gridSize * gridSize) {
+      gameActive = false;
+      stopTimer();
+
+      const score = calcScore();
+      const best = getHighScore();
+      const isNew = score > best;
+
+      if (isNew) {
+        setHighScore(score);
+        updateBestDisplay();
+      }
+
+      finalScoreEl.textContent = score;
+      const m = Math.floor(elapsedSeconds / 60);
+      const s = elapsedSeconds % 60;
+      winMsgEl.textContent = gridSize <= 3 ? 'Nice work!' : gridSize === 4 ? 'Great job!' : 'Impressive!';
+      winDetailEl.textContent = `${gridSize}x${gridSize} completed in ${m}:${s < 10 ? '0' : ''}${s}`;
+      newHighScoreEl.style.display = isNew ? 'block' : 'none';
+
+      setTimeout(function() {
+        winOverlay.classList.add('show');
+        spawnConfetti();
+      }, 400);
+
+      // Submit to leaderboard
+      if (window.Leaderboard && Leaderboard.submitScore) {
+        Leaderboard.submitScore(score);
+      }
+    }
+  }
+
+  // --- Confetti ---
+  function spawnConfetti() {
+    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#0071e3', '#DDA0DD', '#F7DC6F'];
+    for (let i = 0; i < 60; i++) {
+      const el = document.createElement('div');
+      el.className = 'confetti';
+      el.style.left = Math.random() * 100 + 'vw';
+      el.style.background = colors[Math.floor(Math.random() * colors.length)];
+      el.style.width = (6 + Math.random() * 8) + 'px';
+      el.style.height = (6 + Math.random() * 8) + 'px';
+      el.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+      el.style.animationDelay = (Math.random() * 0.8) + 's';
+      document.body.appendChild(el);
+      setTimeout(function() { el.remove(); }, 4000);
+    }
+  }
+
+  // --- Reference image ---
+  function showReference() {
+    const rect = boardArea.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    refCanvas.width = sourceImage.width;
+    refCanvas.height = sourceImage.height;
+    refCanvas.style.width = '100%';
+    refCanvas.style.height = 'auto';
+    const ctx = refCanvas.getContext('2d');
+    ctx.drawImage(sourceImage, 0, 0);
+    refOverlay.classList.add('show');
+  }
+
+  // --- Drag and drop ---
+  function findPiece(row, col) {
+    return pieces.find(function(p) { return p.row === row && p.col === col && !p.placed; });
+  }
+
+  function startDrag(e, pieceEl) {
+    if (!gameActive) return;
+
+    const row = parseInt(pieceEl.dataset.row);
+    const col = parseInt(pieceEl.dataset.col);
+    const piece = findPiece(row, col);
+    if (!piece) return;
+
+    dragging = piece;
+
+    // Create floating drag element
+    const rect = boardArea.getBoundingClientRect();
+    const cellW = rect.width / gridSize;
+    const cellH = rect.height / gridSize;
+
+    const margin = piece.cutData.margin;
+    const drawW = piece.cutData.width;
+    const drawH = piece.cutData.height;
+
+    // Scale for board
+    dragEl = document.createElement('canvas');
+    const dpr = window.devicePixelRatio || 1;
+    dragEl.width = drawW * dpr;
+    dragEl.height = drawH * dpr;
+    dragEl.style.width = drawW + 'px';
+    dragEl.style.height = drawH + 'px';
+    dragEl.className = 'drag-piece';
+
+    const dCtx = dragEl.getContext('2d');
+    dCtx.scale(dpr, dpr);
+    dCtx.drawImage(piece.cutData.canvas, 0, 0, piece.cutData.canvas.width, piece.cutData.canvas.height,
+                   0, 0, drawW, drawH);
+
+    document.body.appendChild(dragEl);
+
+    const touch = e.touches ? e.touches[0] : e;
+    dragOffsetX = drawW / 2;
+    dragOffsetY = drawH / 2;
+
+    dragEl.style.left = (touch.clientX - dragOffsetX) + 'px';
+    dragEl.style.top = (touch.clientY - dragOffsetY) + 'px';
+
+    // Hide from tray
+    pieceEl.style.opacity = '0.3';
+    pieceEl.style.pointerEvents = 'none';
+
+    e.preventDefault();
+  }
+
+  function moveDrag(e) {
+    if (!dragging || !dragEl) return;
+    const touch = e.touches ? e.touches[0] : e;
+    dragEl.style.left = (touch.clientX - dragOffsetX) + 'px';
+    dragEl.style.top = (touch.clientY - dragOffsetY) + 'px';
+    e.preventDefault();
+  }
+
+  function endDrag(e) {
+    if (!dragging || !dragEl) return;
+
+    const touch = e.changedTouches ? e.changedTouches[0] : e;
+    const dropX = touch.clientX;
+    const dropY = touch.clientY;
+
+    const rect = boardArea.getBoundingClientRect();
+    const cellW = rect.width / gridSize;
+    const cellH = rect.height / gridSize;
+
+    // Check if dropped on board
+    const bx = dropX - rect.left;
+    const by = dropY - rect.top;
+
+    const margin = dragging.cutData.margin;
+    const targetX = dragging.col * cellW + cellW / 2;
+    const targetY = dragging.row * cellH + cellH / 2;
+
+    const snapThresh = cellW * SNAP_DIST;
+
+    let snapped = false;
+    if (bx >= -snapThresh && bx <= rect.width + snapThresh &&
+        by >= -snapThresh && by <= rect.height + snapThresh) {
+      const dist = Math.hypot(bx - targetX, by - targetY);
+      if (dist < snapThresh) {
+        // Snap!
+        snapped = true;
+        dragging.placed = true;
+        placedPieces.push({ piece: dragging, row: dragging.row, col: dragging.col });
+
+        placedEl.textContent = placedPieces.length + '/' + (gridSize * gridSize);
+        progressFill.style.width = (placedPieces.length / (gridSize * gridSize) * 100) + '%';
+
+        drawPlacedPieces();
+        populateTray();
+
+        // Snap animation on the board canvas
+        piecesCanvas.classList.add('snap-anim');
+        setTimeout(function() { piecesCanvas.classList.remove('snap-anim'); }, 400);
+
+        checkWin();
+      }
+    }
+
+    if (!snapped) {
+      // Return to tray
+      populateTray();
+    }
+
+    dragEl.remove();
+    dragEl = null;
+    dragging = null;
+  }
+
+  // --- Event listeners for tray ---
+  function attachTrayEvents() {
+    trayEl.addEventListener('mousedown', function(e) {
+      const target = e.target;
+      if (target.tagName === 'CANVAS' && target.dataset.row !== undefined) {
+        startDrag(e, target);
+      }
+    });
+
+    trayEl.addEventListener('touchstart', function(e) {
+      const target = e.target;
+      if (target.tagName === 'CANVAS' && target.dataset.row !== undefined) {
+        startDrag(e, target);
+      }
+    }, { passive: false });
+  }
+
+  document.addEventListener('mousemove', moveDrag);
+  document.addEventListener('touchmove', moveDrag, { passive: false });
+  document.addEventListener('mouseup', endDrag);
+  document.addEventListener('touchend', endDrag);
+
+  // --- New game ---
+  function newGame() {
+    stopTimer();
+    gameActive = false;
+    winOverlay.classList.remove('show');
+
+    pieces = [];
+    placedPieces = [];
+
+    // Generate source image
+    const imgSize = 600;
+    sourceImage = generateImage(imgSize);
+
+    // Compute edges
+    const edgeMap = generateEdges(gridSize);
+
+    // Piece dimensions (in display coords)
+    const rect = boardArea.getBoundingClientRect();
+    const boardW = rect.width;
+    const boardH = rect.height;
+    const pieceW = boardW / gridSize;
+    const pieceH = boardH / gridSize;
+
+    // Scale factor: source image to display
+    const scaleX = imgSize / boardW;
+    const scaleY = imgSize / boardH;
+
+    // Generate pieces
+    for (let r = 0; r < gridSize; r++) {
+      for (let c = 0; c < gridSize; c++) {
+        const edges = getPieceEdges(r, c, gridSize, edgeMap);
+        const srcPieceW = imgSize / gridSize;
+        const srcPieceH = imgSize / gridSize;
+
+        const cutData = cutPiece(sourceImage, r, c, gridSize, edges, srcPieceW, srcPieceH);
+
+        // Scale cut data dimensions to board space
+        const displayMargin = cutData.margin / scaleX;
+        const displayW = cutData.width / scaleX;
+        const displayH = cutData.height / scaleY;
+
+        pieces.push({
+          row: r,
+          col: c,
+          edges: edges,
+          placed: false,
+          cutData: {
+            canvas: cutData.canvas,
+            margin: displayMargin,
+            width: displayW,
+            height: displayH
+          }
+        });
+      }
+    }
+
+    // Stable shuffle order for tray
+    trayOrder = pieces.map(function(_, i) { return i; });
+    for (let i = trayOrder.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      var tmp = trayOrder[i]; trayOrder[i] = trayOrder[j]; trayOrder[j] = tmp;
+    }
+
+    drawBoard();
+    drawPlacedPieces();
+    populateTray();
+
+    placedEl.textContent = '0/' + (gridSize * gridSize);
+    progressFill.style.width = '0%';
+    timerEl.textContent = '0:00';
+    updateBestDisplay();
+
+    gameActive = true;
+    startTimer();
+  }
+
+  // --- Difficulty buttons ---
+  document.querySelectorAll('.diff-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.diff-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      gridSize = parseInt(btn.dataset.size);
+      updateBestDisplay();
+      newGame();
+    });
+  });
+
+  // --- Button handlers ---
+  document.getElementById('newGameBtn').addEventListener('click', newGame);
+  document.getElementById('howBtn').addEventListener('click', function() { howOverlay.classList.add('show'); });
+  document.getElementById('howClose').addEventListener('click', function() { howOverlay.classList.remove('show'); });
+  document.getElementById('playAgainBtn').addEventListener('click', function() {
+    winOverlay.classList.remove('show');
+    newGame();
+  });
+  document.getElementById('refToggle').addEventListener('click', function() {
+    if (sourceImage) showReference();
+  });
+  document.getElementById('refClose').addEventListener('click', function() { refOverlay.classList.remove('show'); });
+
+  // Close overlays on backdrop click
+  [howOverlay, winOverlay, refOverlay].forEach(function(ov) {
+    ov.addEventListener('click', function(e) {
+      if (e.target === ov) ov.classList.remove('show');
+    });
+  });
+
+  // --- Attach tray events ---
+  attachTrayEvents();
+
+  // --- Handle resize ---
+  let resizeTimeout;
+  window.addEventListener('resize', function() {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(function() {
+      if (gameActive || placedPieces.length > 0) {
+        drawBoard();
+        drawPlacedPieces();
+      }
+    }, 200);
+  });
+
+  // --- Init ---
+  updateBestDisplay();
+  newGame();
+})();
+</script>
+<script src="../shared-leaderboard.js"></script>
+<section class="related"><h2>You Might Also Like</h2><div class="related-grid">
+<a href="/2048/" class="related-card"><span class="related-name">2048</span></a>
+<a href="/sudoku/" class="related-card"><span class="related-name">Sudoku</span></a>
+<a href="/tangram/" class="related-card"><span class="related-name">Tangram</span></a>
+<a href="/nonogram/" class="related-card"><span class="related-name">Nonogram</span></a>
+</div></section>
+</body>
+</html>
